@@ -72,3 +72,18 @@ crashlytics-build.properties
 #   "来源不明的改动"的探针**（今晚靠它确认过 GameUi.cs 完好）。让探针常年有噪音 = 把探针废掉。
 /Assets/Editor/QaTestHelpers.cs
 /Assets/Editor/QaTestHelpers.cs.meta
+
+# ---- 自动截图：Unity 自己抓的，**不是有意留证的** ----
+# 台账见 `E:\GameProject\docs\artifacts\screenshots-ledger.md`。
+# 2026-09-29 实测（复算过两遍）：`Assets/Screenshots/` 被追踪 **62** 个文件
+#   = **31** 张 PNG + 31 个同名 `.meta`；
+#   其中 **20** 张是自动抓的 `screenshot-<时间戳>.png`，另 **11** 张是人工留证。
+# ⚠️ **这条规则能做什么、不能做什么，必须说清**（否则会被当成"已经处理好了"）：
+#   * 能：让**将来**新产生的自动截图不再进入版本库 → 保住 **"git status 干净" 这个探针**
+#         （本项目靠它发现"来源不明的改动"，常年有噪音就等于把探针废掉）。
+#   * **不能 ①**：对**已被追踪**的文件**完全无效** —— `.gitignore` 不管已追踪文件，
+#                 那 20 张仍在库里、`git status` 也不会因为它们而变脏。
+#   * **不能 ②**：**不阻止 Unity 继续往磁盘写图** —— 只是不纳入版本管理。
+#   * **不能 ③**：历史里已删不掉（**不再做第二次历史重写**，代价大于收益；用户已裁定）。
+/Assets/Screenshots/screenshot-*.png
+/Assets/Screenshots/screenshot-*.png.meta

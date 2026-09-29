@@ -50,3 +50,15 @@ crashlytics-build.properties
 # ---- Addressables / 流式资源 的运行时产物 ----
 /[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/*.bin*
 /[Aa]ssets/[Ss]treamingAssets/aa.*
+
+# ---- ⛔ 不可发布的素材：Rudeus（**只"不发布"，不删除**）----
+# 2026-09-29 用户决定：Rudeus 相关文件**不推送**。两条原因：
+#   ① 该素材已被用户本人否决（当初用"面数预算"思维做的，他要的是观感）；
+#   ② 它是《无职转生》的 IP，公开发布有版权风险（见 HANDOFF §8.4）。
+# ⚠️ 历史已被 `git filter-branch` **重写**，从全部提交里清除了这些 blob
+#    —— 只做 `git rm --cached` 是没用的：旧 blob 仍会随 push 一起被推上去。
+#    **若日后有人把它们重新 `git add` 进来，这次历史清理就白做了**，故在此显式 ignore。
+# 工作区**保留副本**（用户只批准"不发布"，**没有**批准删除磁盘文件）。
+/Assets/Generated/Models/Rudeus/
+/Assets/Generated/Models/Rudeus.meta
+/Docs/Rudeus/

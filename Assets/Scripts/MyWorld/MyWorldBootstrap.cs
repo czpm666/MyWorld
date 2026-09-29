@@ -469,6 +469,11 @@ namespace MyWorld
             go.AddComponent<PlayerHealth>();   // 敌人近战要打这个
             go.AddComponent<PlayerCombat>();   // 输入分发 + 各武器行为
 
+            // 音效（T-063）：玩家身上一个 AudioSource + 5 个 clip 槽位。
+            // ⚠️ 槽位**可以有空的** —— 播放路径是 `clip != null` 才播，空槽静默跳过。
+            // 素材到位后在 Inspector 上给槽位赋值即可（或重建世界时由 MyWorldBaker 填）。
+            go.AddComponent<GameAudio>();
+
             BuildUi(go);
             return go;
         }

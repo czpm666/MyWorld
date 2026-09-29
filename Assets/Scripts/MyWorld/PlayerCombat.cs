@@ -203,6 +203,7 @@ namespace MyWorld
             cooldown = cd;
             aimTurnTimer = aimTurnDuration;   // 出手瞬间把朝向交给鼠标
             mage?.PlayCast();
+            GameAudio.PlayCast();             // ④ 施法音（T-063；槽位空则静默跳过）
 
             // 弹道方向：锁定 > 鼠标 > 角色朝向。
             // 用鼠标方向而不是 transform.forward，是因为朝向要经过 Lerp 吸附，
@@ -310,6 +311,8 @@ namespace MyWorld
 
             if (weapon == null) return;   // 没有待发的箭（例如事件重放）→ 什么都不做
 
+            GameAudio.PlayBowShot();      // ③ 放箭音（T-063）—— 与箭生成同一帧（离弦那一刻）
+
             ArrowProjectile.Spawn(origin, dir, transform,
                 weapon.damage, weapon.arrowSpeed, weapon.arrowLifeTime, weapon.arrowRadius);
         }
@@ -372,6 +375,7 @@ namespace MyWorld
             pendingSwing = weapon;            // 伤害与特效推迟到命中帧，见 OnSlashImpact
             pendingStep = comboStep;          // 快照段位：命中帧回调时 comboStep 可能已经变了
             mage?.PlayAttack(comboStep);
+            GameAudio.PlaySwing();            // ① 挥砍音（T-063）—— 起手就响，挥空也有声
         }
 
         /// <summary>
@@ -421,6 +425,10 @@ namespace MyWorld
                                              weapon.stabKnockbackGrids * 2f);   // 1 格 = 2 米，和敌人技能同一套换算
                 }
             }
+
+            // ② 命中音（T-063）：**只在真的打中目标时才响** —— `meleeDamaged` 非空即"打到了"。
+            // ⚠️ 不要挪到循环外面无条件播：那样"挥空也响命中音"会误导玩家以为自己打中了。
+            if (meleeDamaged.Count > 0) GameAudio.PlayHit();
 
             // 挥砍刀光：一段有厚度的弧带，形状／朝向／层宽／颜色全部在 SkillVfx 里。
             // 这里只把**判定**用的半径和半张角原样递过去，视觉参数一概不写在本文件。

@@ -132,6 +132,8 @@ namespace MyWorld
             if (!IsAlive) return;
             if (invulnerable > 0f) return;
 
+            GameAudio.PlayHurt();   // ⑤ 受击音（T-063）—— 真正吃到伤害时才响（上面两道门都已放行）
+
             // 举盾格挡：只挡正面来的伤害，按盾的倍率减伤
             if (combat == null) combat = GetComponent<PlayerCombat>();
             if (combat != null && combat.IsBlocking)

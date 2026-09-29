@@ -1,0 +1,52 @@
+# Unity 标准 .gitignore —— My World
+# 由工程部（eng）在 T-060 建立。目标：仓库里只留"重建这个工程真正需要的东西"。
+#   提交：Assets/ · Packages/ · ProjectSettings/ · .gitignore
+#   排除：Library/ Temp/ Logs/ UserSettings/ obj/ Build/ 以及 IDE 生成的工程文件
+# ⚠️ 不要排除 .meta —— Unity 靠 .meta 里的 GUID 维持引用；丢了 .meta 等于丢了全部引用关系。
+
+# ---- Unity 生成目录（**必需排除**；Library 通常几十 GB 且可完全重建）----
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# Asset Store 下载缓存
+/[Aa]ssets/AssetStoreTools*
+
+# ---- IDE / 自动生成的工程文件 ----
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+.vs/
+.vscode/
+.idea/
+*.swp
+
+# ---- 操作系统 ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Unity 崩溃 / 诊断 ----
+sysinfo.txt
+crashlytics-build.properties
+
+# ---- Addressables / 流式资源 的运行时产物 ----
+/[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/*.bin*
+/[Aa]ssets/[Ss]treamingAssets/aa.*

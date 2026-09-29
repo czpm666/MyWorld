@@ -62,3 +62,13 @@ crashlytics-build.properties
 /Assets/Generated/Models/Rudeus/
 /Assets/Generated/Models/Rudeus.meta
 /Docs/Rudeus/
+
+# ---- 派生副本（不是源文件）：qa 的测试助手 ----
+# 正本 = `E:\GameProject\tools\QaTestHelpers.cs`（qa 的仪器，不在本仓库内）。
+# 这一份只是为了让 Unity 能编译而**复制**进工程的派生产物 —— 与构建产物同类，故不纳入版本管理。
+# 已核实（2026-09-29）：两份**逐字节相同**（8469 B / sha256 `723ECE8ED0A6C6F3`），
+#   且工程内**没有任何 .cs 引用它**（0 命中）→ 可整体删除。
+# ⚠️ 之所以必须 ignore 而不是放着不管：**"git status 干净"是本项目用来发现
+#   "来源不明的改动"的探针**（今晚靠它确认过 GameUi.cs 完好）。让探针常年有噪音 = 把探针废掉。
+/Assets/Editor/QaTestHelpers.cs
+/Assets/Editor/QaTestHelpers.cs.meta

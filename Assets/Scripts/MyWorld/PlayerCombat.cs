@@ -98,6 +98,7 @@ namespace MyWorld
             if (cooldown > 0f) cooldown -= Time.deltaTime;
             if (aimTurnTimer > 0f) aimTurnTimer -= Time.deltaTime;
             if (comboWindow > 0f) comboWindow -= Time.deltaTime;
+            UpdateArrowTimeout();   // 弓的事件兜底（T-050）
 
             EnsureRefs();
             if (input == null || loadout == null) return;
@@ -212,14 +213,96 @@ namespace MyWorld
 
         // ---------------- 弓 ----------------
 
+        /// <summary>
+        /// 已起手、但还没到"离弦帧"的那一箭（T-050）。与 `pendingSwing`/`pendingStep` 同一套约定：
+        /// 起手时**快照**、事件回调里**消费并清空**、每次出手**覆盖**。
+        /// </summary>
+        private WeaponDefinition pendingShot;
+
+        /// <summary>起手那一刻就定死的弹道。不能在离弦帧才取方向 —— 那 0.45s 里玩家可能已经转身了。</summary>
+        private Vector3 pendingShotDir;
+        private Vector3 pendingShotOrigin;
+
+        /// <summary>兜底计时，见 UpdateArrowTimeout()。</summary>
+        private float pendingShotTimer;
+        private bool warnedArrowTimeout;
+
+        /// <summary>
+        /// `OnArrowRelease` 事件的兜底超时。取剪辑长度 + 余量；正常路径事件约 0.45s 到达，不会走这里。
+        /// </summary>
+        private const float ArrowReleaseTimeout = 1.2f;
+
+        /// <summary>
+        /// 兜底：事件**没派发**时（relay 挂错物体 / 事件名不一致 / 剪辑被换掉……）箭矢会
+        /// **永远不出来，而且 Console 一条错都没有** —— 本项目最典型的静默失败形状。
+        /// 所以到点就照原样把箭放出去，并**明确警告一次**，让"事件丢了"这件事可见而不是无声。
+        /// </summary>
+        private void UpdateArrowTimeout()
+        {
+            if (pendingShot == null) return;
+
+            pendingShotTimer -= Time.deltaTime;
+            if (pendingShotTimer > 0f) return;
+
+            var weapon = pendingShot;
+            Vector3 dir = pendingShotDir;
+            Vector3 origin = pendingShotOrigin;
+            ClearPendingShot();
+
+            if (!warnedArrowTimeout)
+            {
+                warnedArrowTimeout = true;
+                Debug.LogWarning("[My World] 弓箭的 OnArrowRelease 动画事件没有在 "
+                                 + ArrowReleaseTimeout.ToString("F2") + "s 内派发 —— 本次是**兜底补发**的"
+                                 + "（箭已射出，但时机是猜的）。请检查：① Ranged_Shoot.anim 上是否还有该事件；"
+                                 + "② AnimEventRelay 是否挂在 Animator 所在物体上；③ 事件名是否一致。");
+            }
+
+            ArrowProjectile.Spawn(origin, dir, transform,
+                weapon.damage, weapon.arrowSpeed, weapon.arrowLifeTime, weapon.arrowRadius);
+        }
+
+        private void ClearPendingShot()
+        {
+            pendingShot = null;
+            pendingShotTimer = 0f;
+        }
+
+        /// <summary>
+        /// 起手：只广播动作、记录快照，**不生成箭矢**（T-050）。
+        ///
+        /// 改前它在**当帧**就 `ArrowProjectile.Spawn(...)`，而动画还在抬弓 → "箭比动作先出"。
+        /// 现在箭只在剪辑的 `OnArrowRelease` 事件回调里生成，与剑的 `OnSlashImpact@0.200` 完全同构
+        /// （HANDOFF 6.1：判定由动画事件驱动，所以动作与判定天然同步）。
+        /// </summary>
         private void ShootArrow(WeaponDefinition weapon)
         {
             cooldown = weapon.cooldown;
             aimTurnTimer = aimTurnDuration;   // 出手时转向鼠标
-            mage?.PlayAttack();
 
-            Vector3 dir = CurrentAimDirection();
-            ArrowProjectile.Spawn(CastOrigin, dir, transform,
+            // 快照：方向在**起手这一刻**定死，离弦帧只负责拿去用
+            pendingShot = weapon;
+            pendingShotDir = CurrentAimDirection();
+            pendingShotOrigin = CastOrigin;
+            pendingShotTimer = ArrowReleaseTimeout;
+
+            mage?.PlayBowShot();              // 弓自己的 Trigger，绝不碰 Slash/ComboStep
+        }
+
+        /// <summary>
+        /// 离弦帧回调。由 `Ranged_Shoot.anim` 上的 `OnArrowRelease` 动画事件驱动，
+        /// 经 `AnimEventRelay` 从 Animator 所在物体转发上来。
+        /// </summary>
+        public void OnArrowRelease()
+        {
+            var weapon = pendingShot;
+            Vector3 dir = pendingShotDir;
+            Vector3 origin = pendingShotOrigin;
+            ClearPendingShot();
+
+            if (weapon == null) return;   // 没有待发的箭（例如事件重放）→ 什么都不做
+
+            ArrowProjectile.Spawn(origin, dir, transform,
                 weapon.damage, weapon.arrowSpeed, weapon.arrowLifeTime, weapon.arrowRadius);
         }
 

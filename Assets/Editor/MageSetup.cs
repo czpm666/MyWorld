@@ -39,28 +39,55 @@ namespace MyWorld.EditorTools
         /// <summary>角色预制体路径。世界生成器要拿它做玩家外观，所以是 public。</summary>
         public const string PrefabPath = Root + "/MageCharacter.prefab";
 
-        /// <summary>要抽出来的剪辑：源名匹配关键词 → (目标名, 是否循环)。</summary>
-        private static readonly (string name, bool loop, string[] keys)[] Wanted =
+        /// <summary>
+        /// 要抽出来的剪辑：(目标名, 是否循环, 匹配关键词, **期望的源剪辑名**)。
+        ///
+        /// ⚠️ `expectSource` 是 T-050 加的**白名单断言**（监察部要求）。
+        /// 为什么需要：`剪辑 X ← 源名` 那条日志**只能证明"找到了某条"，证不了"找到的是对的那条"** ——
+        /// 反例：日志打 `剪辑 Ranged_Shoot ← 1H_Ranged_Shooting` 也是"成功"的样子，但那是 48 帧的连射剪辑。
+        /// 抽取后逐条断言 `found.name == expectSource`，不等即 LogError（见 ExtractClips）。
+        /// 这里 11 条源名的值都来自 headless Blender 实测（`tools/list_fbx_clips.py`），不是猜的。
+        /// </summary>
+        private static readonly (string name, bool loop, string[] keys, string expectSource)[] Wanted =
         {
-            ("Idle",   true,  new[] { "idle" }),
-            ("Walk",   true,  new[] { "walking_a", "walking", "walk" }),
-            ("Run",    true,  new[] { "running_a", "running", "run" }),
-            ("Cast",   false, new[] { "spellcast_shoot", "spellcast", "spellcasting", "cast" }),
-            ("Hit",    false, new[] { "hit_a", "hit" }),
-            ("Death",  false, new[] { "death_a", "death", "die" }),
+            ("Idle",   true,  new[] { "idle" }, "Idle"),
+            ("Walk",   true,  new[] { "walking_a", "walking", "walk" }, "Walking_A"),
+            ("Run",    true,  new[] { "running_a", "running", "run" }, "Running_A"),
+            ("Cast",   false, new[] { "spellcast_shoot", "spellcast", "spellcasting", "cast" }, "Spellcast_Shoot"),
+            ("Hit",    false, new[] { "hit_a", "hit" }, "Hit_A"),
+            ("Death",  false, new[] { "death_a", "death", "die" }, "Death_A"),
             // 剑的一套四段连招：横劈 → 下劈 → 斜劈 → 突刺。
             // FBX 里本来就有这四个单手攻击，当初只抽了上面 6 个，所以挥剑时没有动作可播。
-            ("Attack_1", false, new[] { "1H_Melee_Attack_Slice_Horizontal" }),  // 横劈
-            ("Attack_2", false, new[] { "1H_Melee_Attack_Chop" }),              // 下劈
-            ("Attack_3", false, new[] { "1H_Melee_Attack_Slice_Diagonal" }),    // 斜劈
-            ("Attack_4", false, new[] { "1H_Melee_Attack_Stab" }),              // 突刺（收招，带击退）
+            ("Attack_1", false, new[] { "1H_Melee_Attack_Slice_Horizontal" }, "1H_Melee_Attack_Slice_Horizontal"),  // 横劈
+            ("Attack_2", false, new[] { "1H_Melee_Attack_Chop" }, "1H_Melee_Attack_Chop"),                          // 下劈
+            ("Attack_3", false, new[] { "1H_Melee_Attack_Slice_Diagonal" }, "1H_Melee_Attack_Slice_Diagonal"),      // 斜劈
+            ("Attack_4", false, new[] { "1H_Melee_Attack_Stab" }, "1H_Melee_Attack_Stab"),                          // 突刺（带击退）
+            // ---- T-050 弓：事件驱动（用户拍板）----
+            // ⚠️ 取 `1H_Ranged_Shoot`（32 帧 / 1.0667s），**不是** `1H_Ranged_Shooting`（48 帧 / 1.600s，
+            //    那是一条 0.4s 无缝循环的待机摇摆，按单次播会在末尾突然跳回起手位）。
+            //    `"1H_Ranged_Shooting"` **包含** `"1H_Ranged_Shoot"` 这个子串，所以只靠"先全名后子串"的
+            //    匹配有静默绑错的风险 —— 上面 expectSource 就是为这条加的保险。
+            ("Ranged_Shoot", false, new[] { "1H_Ranged_Shoot" }, "1H_Ranged_Shoot"),
         };
 
-        /// <summary>连招用的四个剪辑，顺序就是出招顺序。</summary>
+        /// <summary>连招用的四个剪辑，顺序就是出招顺序。**只表示剑的连招段位**。</summary>
         private static readonly string[] ComboClips = { "Attack_1", "Attack_2", "Attack_3", "Attack_4" };
 
         /// <summary>每段攻击的命中帧上要打的动画事件名。AnimEventRelay 上有同名方法。</summary>
         private const string SlashImpactEvent = "OnSlashImpact";
+
+        /// <summary>弓的放箭剪辑（资产名）。T-050。</summary>
+        private const string BowShootClip = "Ranged_Shoot";
+
+        /// <summary>放箭那一刻要在剪辑上打的事件名。AnimEventRelay 上有同名方法。</summary>
+        private const string ArrowReleaseEvent = "OnArrowRelease";
+
+        /// <summary>
+        /// 弓自己的 Animator Trigger。**绝不复用 `Slash` / `ComboStep`**：
+        /// `PlayerMage.PlayAttack()` 会 `SetInteger(ComboStep, n)` + `SetTrigger(Slash)`，
+        /// 拿它来播射箭会造成两个**静默** bug —— ①射箭播的是横劈；②Trigger 残留、之后又触发一次剑招。
+        /// </summary>
+        private const string BowShotTrigger = "BowShot";
 
         /// <summary>
         /// 连招每一段的裁剪目标，三个数决定手感：
@@ -72,6 +99,16 @@ namespace MyWorld.EditorTools
         /// （站姿微调），包络几乎覆盖全长，实测裁出来还是 1.03s / 1.57s，等于没裁。
         /// 改成"以峰值帧为锚点、取固定长度的窗口"，四段节奏才统一。
         /// </summary>
+        /// <summary>
+        /// 弓（远程）自己的裁剪参数。**故意与剑的 `Combo*` 常量分开**（T-050，监察部口径）：
+        /// 两者当前数值相同（0.20 / 0.62 / 0.18），但语义不同 —— 剑的那组是"连招四段的手感"，
+        /// 弓这组是"抬起→保持→放箭的节奏"。**若共用一组，以后调剑的连招手感会连带改到弓的放箭时机**，
+        /// 而且这种连带**不会报错**。数值归用户，所以更不能让两个手感绑死在一个常量上。
+        /// </summary>
+        private const float RangedLeadIn = 0.20f;
+        private const float RangedClipLength = 0.62f;
+        private const float RangedTrimTailMin = 0.18f;
+
         private const float ComboLeadIn = 0.20f;
         private const float ComboClipLength = 0.62f;
         private const float ComboTrimTailMin = 0.18f;
@@ -188,7 +225,7 @@ namespace MyWorld.EditorTools
             var src = SourceClips();
             var result = new Dictionary<string, AnimationClip>();
 
-            foreach (var (name, loop, keys) in Wanted)
+            foreach (var (name, loop, keys, expectSource) in Wanted)
             {
                 AnimationClip found = null;
                 foreach (var k in keys)
@@ -209,9 +246,19 @@ namespace MyWorld.EditorTools
 
                 if (found == null)
                 {
-                    Debug.LogWarning($"[My World] 没找到动画 '{name}'（关键词 {string.Join("/", keys)}）");
+                    Debug.LogError($"[My World] 没找到动画 '{name}'（关键词 {string.Join("/", keys)}）");
                     continue;
                 }
+
+                // ✅ T-050 白名单断言：找到的名字必须**正好**是期望的那条。
+                // 只报错、**不跳过** —— 断言是为了让人看见，不是为了把安装搞坏。
+                // 这条专治"日志看起来成功、其实绑到了错的剪辑"（如绑到 1H_Ranged_Shooting）。
+                string verdict = string.Equals(found.name, expectSource, System.StringComparison.Ordinal)
+                    ? "OK"
+                    : "MISMATCH";
+                if (verdict == "MISMATCH")
+                    Debug.LogError($"[My World] ❌ 剪辑 '{name}' 源名不匹配：期望 '{expectSource}'，实际拿到 '{found.name}'。"
+                                   + "（可能被同名子串抢先匹配，请检查 Wanted 的关键词顺序）");
 
                 string path = $"{ClipDir}/{name}.anim";
                 AssetDatabase.DeleteAsset(path);
@@ -224,11 +271,57 @@ namespace MyWorld.EditorTools
 
                 AssetDatabase.CreateAsset(copy, path);
                 result[name] = AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
-                Debug.Log($"[My World] 剪辑 {name} ← {found.name}（{(loop ? "循环" : "单次")}，{found.length:F2}s）");
+                Debug.Log($"[My World] 剪辑 {name} ← {found.name}（{(loop ? "循环" : "单次")}，"
+                          + $"{found.length:F2}s，expectSource={verdict}）");
             }
 
             return result;
         }
+
+        /// <summary>
+        /// 后处理清单的一项：裁哪个剪辑、打什么事件、事件钉在哪。
+        ///
+        /// 为什么单开一个清单、**不把弓塞进 `ComboClips`**（T-050 设计判断）：
+        /// `ComboClips` 现在身兼两义 —— ①`BuildAnimator` 用它建**连招状态与 AnyState 转换**，
+        /// ②`PostProcessClips` 用它当裁剪清单。把弓加进去会给它凭空造出"第 5 段连招"的状态与
+        /// `ComboStep==4` 转换，而 `PlayerMage.ComboLength = 4` 与 `Mathf.Clamp(comboStep, 0, 3)`
+        /// 都是写死的 → 弓会污染剑的连招段位语义（且不报错）。
+        /// 所以：`ComboClips` **只表示剑的连招段位**；"要裁要打事件的剪辑"由本清单表示，两者解耦。
+        /// </summary>
+        private struct ImpactSpec
+        {
+            public string clip;
+            public string eventName;
+            /// <summary>false = 钉在**峰值帧**（挥砍：动作最快那一刻就是命中点）；
+            /// true = 钉在**末尾收势前**（放箭：峰值在"抬弓"段，命中点却在"举弓保持"段，不能靠峰值找）。</summary>
+            public bool eventNearEnd;
+
+            public ImpactSpec(string clip, string eventName, bool eventNearEnd)
+            {
+                this.clip = clip;
+                this.eventName = eventName;
+                this.eventNearEnd = eventNearEnd;
+            }
+        }
+
+        private static readonly ImpactSpec[] ImpactSpecs =
+        {
+            new ImpactSpec("Attack_1", SlashImpactEvent, false),
+            new ImpactSpec("Attack_2", SlashImpactEvent, false),
+            new ImpactSpec("Attack_3", SlashImpactEvent, false),
+            new ImpactSpec("Attack_4", SlashImpactEvent, false),
+            // ---- T-050 弓：放箭帧 ----
+            // 实测（Unity 侧逐帧手臂位移，见 tmp/cs_t050_measure.cs 的输出）：
+            //   `1H_Ranged_Shoot` 32 帧：峰值在 **f5（0.167s，抬弓段）**，
+            //   最静止的一段是 **f11..f23（0.367..0.767s，举弓保持段）**，之后 f25+ 是放下段。
+            //   以峰值锚定的裁剪窗口 = **f0..f18** → 裁完 0.633s。
+            // 所以**不能用峰值当放箭点**（那是抬弓最快的一帧，弓还没举稳）；
+            // 也不能照抄 vfx 测出的 f23 = 0.767s —— 那个秒数在**未裁剪**的剪辑上成立，
+            // 裁完之后 f18 就是末帧，0.767s 已经出界。
+            // 采用"末尾留出收势"（复用 ComboTrimTailMin = 0.18s）→ 事件落在裁后 0.453s，
+            // 换算回原剪辑 ≈ f14，**落在举弓保持段 f11..f23 内**，弓仍举着 → 视觉说得通。
+            new ImpactSpec(BowShootClip, ArrowReleaseEvent, true),
+        };
 
         /// <summary>
         /// 抽完、存盘、刷新**之后**再回头改剪辑内容（裁帧 + 打命中事件）。
@@ -239,19 +332,23 @@ namespace MyWorld.EditorTools
         /// </summary>
         private static void PostProcessClips()
         {
-            foreach (var name in ComboClips)
+            foreach (var spec in ImpactSpecs)
             {
-                var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{ClipDir}/{name}.anim");
+                var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{ClipDir}/{spec.clip}.anim");
                 if (clip == null)
                 {
-                    Debug.LogWarning($"[My World] 后处理找不到剪辑 {name}");
+                    Debug.LogError($"[My World] 后处理找不到剪辑 {spec.clip}");
                     continue;
                 }
 
                 // 顺序不能反：事件时间是相对剪辑自身的，裁完再测峰值才对。
-                var range = ComboTrimRange(clip);
+                // 弓用自己那组常量（Ranged*），剑用 Combo* —— 手感的耦合在源码层面就断开了。
+                bool ranged = spec.clip == BowShootClip;
+                var range = ranged
+                    ? ComboTrimRange(clip, RangedLeadIn, RangedClipLength, RangedTrimTailMin)
+                    : ComboTrimRange(clip, ComboLeadIn, ComboClipLength, ComboTrimTailMin);
                 TrimClip(clip, range.from, range.to);
-                AddImpactEvent(clip);
+                AddImpactEvent(clip, spec.eventName, spec.eventNearEnd);
 
                 EditorUtility.SetDirty(clip);
             }
@@ -301,20 +398,22 @@ namespace MyWorld.EditorTools
         }
 
         /// <summary>
-        /// 以峰值帧为锚点，取一个固定长度的窗口：命中帧落在开头 ComboLeadIn 秒处，
-        /// 总长 ComboClipLength 秒。四段用同一套参数，所以节奏一致。
+        /// 以峰值帧为锚点，取一个固定长度的窗口：事件帧落在开头 <paramref name="leadIn"/> 秒处，
+        /// 总长 <paramref name="clipLength"/> 秒，命中之后至少留 <paramref name="tailMin"/> 秒收势。
         ///
         /// 越界时优先挪窗口而不是缩窗口 —— 缩了节奏就不齐了。
+        /// （T-050：改为**显式传参**，让剑与弓各用自己那组常量，避免两边手感静默耦合。）
         /// </summary>
-        private static (int from, int to) ComboTrimRange(AnimationClip clip)
+        private static (int from, int to) ComboTrimRange(
+            AnimationClip clip, float leadIn, float clipLength, float tailMin)
         {
             int fps, frames;
             var motion = MotionProfile(clip, out fps, out frames);
             int peak = PeakFrame(motion, frames);
 
-            int span = Mathf.Max(4, Mathf.RoundToInt(ComboClipLength * fps));
-            int lead = Mathf.RoundToInt(ComboLeadIn * fps);
-            int tail = Mathf.RoundToInt(ComboTrimTailMin * fps);
+            int span = Mathf.Max(4, Mathf.RoundToInt(clipLength * fps));
+            int lead = Mathf.RoundToInt(leadIn * fps);
+            int tail = Mathf.RoundToInt(tailMin * fps);
             span = Mathf.Max(span, lead + tail + 1);
 
             int from = peak - lead;
@@ -365,12 +464,21 @@ namespace MyWorld.EditorTools
         }
 
         /// <summary>
-        /// 在剪辑上打命中帧事件。帧位**不写死**：取手臂链逐帧位移量的峰值帧 —— 挥得最快的那一帧，
-        /// 也就是视觉上的命中点。裁剪之后重新测，所以时间始终是相对裁好的剪辑。
+        /// 在剪辑上打命中帧事件。
         ///
-        /// 注意这只是启发式：角速度峰值通常略早于真正的接触帧，最终该按手感微调。
+        /// **两种钉法**（T-050 拆开）：
+        ///  * `nearEnd = false`（挥砍）—— 钉在**手臂链逐帧位移的峰值帧**，即挥得最快的那一帧。
+        ///    裁剪之后重新测，所以时间始终是相对裁好的剪辑；四段实测都落在 0.200s。
+        ///  * `nearEnd = true`（放箭）—— 钉在**末尾收势前** `clip.length - tailMin`。
+        ///    **为什么放箭不能也用峰值**（实测，见 tmp/cs_t050_measure.cs）：
+        ///    `1H_Ranged_Shoot` 的峰值在 f5（抬弓段），而"举弓保持段"是 f11..f23；
+        ///    且峰值锚定的窗口因越界被夹到 f0 起，**峰值落在裁后 0.167s —— 仍在抬弓**。
+        ///    照峰值挂事件 = 弓还没举稳箭就飞了，正是要修的那个不同步。
+        ///    末尾留出收势 → 0.453s，换算回原剪辑 ≈ f14，落在保持段内。
+        ///
+        /// 注意峰值只是启发式：角速度峰值通常略早于真正的接触帧，最终该按手感微调。
         /// </summary>
-        private static void AddImpactEvent(AnimationClip clip)
+        private static void AddImpactEvent(AnimationClip clip, string eventName, bool nearEnd)
         {
             if (clip == null) return;
 
@@ -380,18 +488,29 @@ namespace MyWorld.EditorTools
             int peak = 1;
             for (int i = 1; i < frames; i++)
                 if (motion[i] > motion[peak]) peak = i;
-            float t = peak / (float)fps;
+
+            float t;
+            if (nearEnd)
+            {
+                // 复用"留够收势"的同一语义，但用**远程自己的常量**，避免与剑的手感耦合（见 RangedTrimTailMin）。
+                t = Mathf.Clamp(clip.length - RangedTrimTailMin, 0.05f, Mathf.Max(0.06f, clip.length - 0.02f));
+            }
+            else
+            {
+                t = peak / (float)fps;
+            }
 
             var ev = new AnimationEvent
             {
-                functionName = SlashImpactEvent,
+                functionName = eventName,
                 time = t,
                 messageOptions = SendMessageOptions.DontRequireReceiver,
             };
             AnimationUtility.SetAnimationEvents(clip, new[] { ev });
             EditorUtility.SetDirty(clip);
-            Debug.Log($"[My World] 挥砍命中事件 {SlashImpactEvent} @ {t:F3}s" +
-                      $"（第 {peak} 帧 / 共 {frames} 帧，实测角速度峰值）");
+            Debug.Log($"[My World] 动画事件 {eventName} @ {t:F3}s" +
+                      $"（{(nearEnd ? "末尾收势前" : "角速度峰值帧")}，第 {peak} 帧 / 共 {frames} 帧，"
+                      + $"剪辑长 {clip.length:F3}s）");
         }
 
         // ---------------- 动画状态机 ----------------
@@ -466,6 +585,33 @@ namespace MyWorld.EditorTools
 
             BackToIdle(cast, idle);
             BackToIdle(hit, idle);
+
+            // ---- T-050 弓：自己的 Trigger + 状态 ----
+            // **为什么不复用 Slash/ComboStep**：复用会造成两个**静默** bug ——
+            //   ① `PlayerMage.PlayAttack(n)` 会 SetInteger(ComboStep,n)+SetTrigger(Slash)
+            //      → 射箭播的是横劈，而且**动到了剑的连招段位**；
+            //   ② Trigger 若当帧没被消费会残留，之后又触发一次剑招（表现为"莫名挥了一刀"）。
+            // 这里用独立的 `BowShot` Trigger，与剑的连招完全无关。
+            ctrl.AddParameter(BowShotTrigger, AnimatorControllerParameterType.Trigger);
+
+            clips.TryGetValue(BowShootClip, out var cBow);
+            if (cBow == null)
+            {
+                Debug.LogError($"[My World] controller 里没有 {BowShootClip} 剪辑，弓的射箭状态被跳过。");
+            }
+            else
+            {
+                var bowState = AddState(sm, "BowShot", cBow);
+                var bt = sm.AddAnyStateTransition(bowState);
+                bt.hasExitTime = false;
+                bt.duration = 0.07f;
+                // 允许打断自己：连射时后一箭应该重新起手，而不是等前一箭播完
+                bt.canTransitionToSelf = true;
+                bt.AddCondition(AnimatorConditionMode.If, 0f, BowShotTrigger);
+                bt.AddCondition(AnimatorConditionMode.IfNot, 0f, "Dead");
+                // ⚠️ 必须自己接回 Idle：否则会**卡在放箭姿势里**再也不回待机（且不报错）
+                BackToIdle(bowState, idle);
+            }
 
             return ctrl;
         }

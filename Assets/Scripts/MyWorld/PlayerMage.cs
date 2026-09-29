@@ -24,6 +24,9 @@ namespace MyWorld
         private static readonly int HitHash = Animator.StringToHash("Hit");
         private static readonly int DeadHash = Animator.StringToHash("Dead");
 
+        /// <summary>弓的**独立**触发器（T-050）。见 PlayBowShot 的说明。</summary>
+        private static readonly int BowShotHash = Animator.StringToHash("BowShot");
+
         /// <summary>一套连招有几段。要和 MageSetup 里 ComboClips 的长度一致。</summary>
         public const int ComboLength = 4;
 
@@ -73,6 +76,20 @@ namespace MyWorld
             if (animator == null) return;
             animator.SetInteger(ComboHash, Mathf.Clamp(comboStep, 0, ComboLength - 1));
             animator.SetTrigger(SlashHash);
+        }
+
+        /// <summary>
+        /// 播放射箭动作（T-050）。用**独立的 `BowShot` 触发器**，理由与 `PlayAttack` 用 `Slash` 完全一致：
+        /// 若改用 `PlayAttack()`，它会 `SetInteger(ComboStep, 0)` + `SetTrigger(Slash)` ——
+        /// 结果是 **①射箭播横劈**、**②动到剑的连招段位**、**③Trigger 若当帧没被消费会残留**，
+        /// 之后莫名再挥一刀。三个都是静默的。
+        ///
+        /// ⚠️ 本方法**只起手**；箭矢由剪辑上的 `OnArrowRelease` 事件经 `AnimEventRelay` 回调
+        /// `PlayerCombat.OnArrowRelease()` 才生成。
+        /// </summary>
+        public void PlayBowShot()
+        {
+            if (animator != null) animator.SetTrigger(BowShotHash);
         }
 
         /// <summary>供木桩/敌人回调，播受击动作。</summary>

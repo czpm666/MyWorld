@@ -1,0 +1,67 @@
+NOTICE
+======
+
+This repository is a **non-commercial, unofficial fan project**.
+
+It is **not affiliated with, authorized by, sponsored by, or endorsed by** the
+author(s), publisher(s), or any other rights holder of any work that may have
+inspired it. No such affiliation, authorization, sponsorship, or endorsement
+exists or is claimed.
+
+
+Non-commercial use only
+-----------------------
+
+This project is **strictly non-commercial**. It generates **no revenue of any
+kind**. In particular:
+
+* No advertising.
+* Nothing is sold, and no paid tier/subscription exists.
+* Donations are **not** accepted in connection with this project.
+* No commercial product or service is derived from, bundled with, or promoted by it.
+
+The project is published openly for the purpose of **learning, experimentation and
+receiving feedback**.
+
+
+Intellectual property
+---------------------
+
+Any characters, names, settings, story elements, or other material belonging to a
+third-party work remain the property of their respective rights holders.
+Nothing in this repository grants or implies any license to such material.
+
+
+Take-down
+---------
+
+**If you are a rights holder and you object to any part of this repository, please
+open an issue or otherwise make contact. The material will be removed promptly.**
+
+
+Third-party assets
+------------------
+
+Third-party assets used by this project remain under **their own original licenses**.
+See `CREDITS.md` for the full list (name / author / license / source / whether
+attribution is required). They are **not** relicensed by this project's `LICENSE`.
+
+
+Scope of the licenses in this repository
+----------------------------------------
+
+This repository uses **different licenses for different kinds of content**:
+
+| Content | License |
+|---|---|
+| **Source code** | **PolyForm Noncommercial License 1.0.0** (see `LICENSE`) |
+| **Project content** — documents, map/world data, original configuration and original artwork authored for this project | **CC BY-NC-SA 4.0** |
+| **Third-party assets** | their **own original licenses** (see `CREDITS.md`) |
+
+> ⚠️ **Scope note (stated plainly, no overclaiming):** the **PolyForm Noncommercial
+> License has no ShareAlike clause.** So, with respect to the *code*, others **may**
+> create and distribute **closed-source non-commercial derivatives**, as long as they
+> keep the `Required Notice:` line and pass these terms along. The code license is
+> therefore **not "viral"/copyleft**. (ShareAlike applies only to the CC BY-NC-SA 4.0
+> content, not to the code. Classic copyleft licenses such as the GPL cannot be
+> combined with a non-commercial restriction, which is why they are not used here.)

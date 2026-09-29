@@ -68,7 +68,42 @@ namespace MyWorld.EditorTools
             //    `"1H_Ranged_Shooting"` **包含** `"1H_Ranged_Shoot"` 这个子串，所以只靠"先全名后子串"的
             //    匹配有静默绑错的风险 —— 上面 expectSource 就是为这条加的保险。
             ("Ranged_Shoot", false, new[] { "1H_Ranged_Shoot" }, "1H_Ranged_Shoot"),
+            // ---- T-058 第一批：跳跃组 5 条（用户已批准提取；施工底稿见 docs/artifacts/T-058/gap-spec.md §7）----
+            // ⚠️ 关键词**一律用裸全名**：侦察部核实 Unity 侧的剪辑名**不带** `Rig|` 前缀
+            //    （`Rig|` 只是 Blender 的 action 命名，见 gap-spec §3 R1）。
+            //    照它初版（带前缀）写会**全部提取失败**。
+            // ⚠️ loop 一栏是侦察部的**推断**（按命名/语义），不是实测 —— 所以本批**不据此改行为**，
+            //    只把剪辑抽出来 + 建状态；**滞空/落地的实际衔接是后来的功能任务**。
+            ("Jump_Start",      false, new[] { "Jump_Start" },      "Jump_Start"),
+            ("Jump_Idle",       true,  new[] { "Jump_Idle" },       "Jump_Idle"),      // 实测(T-069 闭合比)：滞空保持 → 循环
+            ("Jump_Land",       false, new[] { "Jump_Land" },       "Jump_Land"),
+            ("Jump_Full_Short", false, new[] { "Jump_Full_Short" }, "Jump_Full_Short"),
+            ("Jump_Full_Long",  false, new[] { "Jump_Full_Long" },  "Jump_Full_Long"),
         };
+
+        /// <summary>
+        /// T-058 第一批：跳跃组的**独立状态清单**（顺序即 AddState 顺序）。
+        ///
+        /// ⚠️ **为什么不放进 `ComboClips`**：`ComboClips` 只表示**剑的连招段位**语义 —---
+        /// 它同时被 `BuildAnimator`（建连招状态与 `ComboStep` 转换）和玩家的 `comboStep` 逻辑引用。
+        /// 把跳跃塞进去会给它凭空造出多余的"连招段位"，**且不报错**（与 T-050 对弓的处理同理）。
+        /// </summary>
+        private static readonly (string name, bool loop)[] JumpStates =
+        {
+            ("Jump_Start",      false),
+            ("Jump_Idle",       true),    // 循环：**不给 BackToIdle**（§3 R4：BackToIdle 只用于非循环单次）
+            ("Jump_Land",       false),
+            ("Jump_Full_Short", false),
+            ("Jump_Full_Long",  false),
+        };
+
+        /// <summary>
+        /// 跳跃组的 Animator 触发器（T-058）。**新增参数必须被 Set**，否则是**静默失败**（§3 R6）——
+        /// 本批只建"能被播到"的最小通路：`Jump` 触发 → `Jump_Start`；
+        /// 其余 4 个状态**暂时只能由 `Animator.Play(name)` 直接寻址**（用于验收抽查）。
+        /// **真正的滞空/落地衔接属于后续功能任务，不在本批范围内** —— 所以这里**故意不做**完整跳跃状态机。
+        /// </summary>
+        private const string JumpTrigger = "Jump";
 
         /// <summary>连招用的四个剪辑，顺序就是出招顺序。**只表示剑的连招段位**。</summary>
         private static readonly string[] ComboClips = { "Attack_1", "Attack_2", "Attack_3", "Attack_4" };
@@ -611,6 +646,40 @@ namespace MyWorld.EditorTools
                 bt.AddCondition(AnimatorConditionMode.IfNot, 0f, "Dead");
                 // ⚠️ 必须自己接回 Idle：否则会**卡在放箭姿势里**再也不回待机（且不报错）
                 BackToIdle(bowState, idle);
+            }
+
+            // ---- T-058 第一批：跳跃组 5 个状态 ----
+            // 目的：**把剪辑接入控制器、可被寻址、可被播到**。
+            // ⛔ **本批不做完整跳跃状态机**（滞空↔落地的衔接是**后续功能任务**，
+            //    而 `loop` 一栏还只是侦察部的推断，未实测首尾闭合）—— 所以这里只建最小通路：
+            //    * `Jump` 触发 → `Jump_Start`（AnyState，`Dead` 守卫）→ 于是"新剪辑真的能被播到"可被验证
+            //    * 其余 4 个状态可经 `Animator.Play(name)` 直接寻址（验收抽查用）
+            // ⚠️ `BackToIdle` 只给**非循环单次**剪辑（§3 R4）；`Jump_Idle` 是循环，**不给**。
+            ctrl.AddParameter(JumpTrigger, AnimatorControllerParameterType.Trigger);
+
+            AnimatorState jumpStartState = null;
+            foreach (var js in JumpStates)
+            {
+                clips.TryGetValue(js.name, out var jumpClip);
+                if (jumpClip == null)
+                {
+                    Debug.LogError($"[My World] controller 里没有 {js.name} 剪辑，该跳跃状态被跳过。");
+                    continue;
+                }
+
+                var st = AddState(sm, js.name, jumpClip);
+                if (!js.loop) BackToIdle(st, idle);      // 非循环才回 Idle
+                if (js.name == "Jump_Start") jumpStartState = st;
+            }
+
+            if (jumpStartState != null)
+            {
+                var jt = sm.AddAnyStateTransition(jumpStartState);
+                jt.hasExitTime = false;
+                jt.duration = 0.08f;
+                jt.canTransitionToSelf = false;   // 起跳不重复打断自己
+                jt.AddCondition(AnimatorConditionMode.If, 0f, JumpTrigger);
+                jt.AddCondition(AnimatorConditionMode.IfNot, 0f, "Dead");
             }
 
             return ctrl;

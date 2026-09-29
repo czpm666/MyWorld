@@ -28,6 +28,38 @@ namespace MyWorld
         private static Material _glowMat;
         private static readonly Dictionary<Color, Material> glowCache = new Dictionary<Color, Material>();
 
+        /// <summary>
+        /// 发光增益（T-068）：把自发光颜色抬到 **HDR（&gt;1）**，Bloom（`threshold=1.0`）才抓得到它。
+        /// 源色最亮分量普遍正好是 **1.00** —— 卡在阈值上等于**永远不发光**，所以必须乘一个 &gt;1 的增益。
+        /// **只乘 RGB，不动 A**（改 A 会改混合行为，不是本次要动的东西）。
+        ///
+        /// ⚠️ **当"启动常量"用**：本字段虽是 public static，但 `glowCache` 按 **HDR 后的颜色** 缓存，
+        /// 若在**已有特效生成之后**改它，旧材质仍是旧亮度 → 需手动调 `ClearGlowCache()`。
+        ///
+        /// ⛔ **不要为了让它更亮去改 `bloomThreshold`** —— 那是观感变更，须走用户。
+        ///    方向是**抬自发光去够阈值**，不是降阈值来凑。
+        ///
+        /// **1.7 是暂定起点**（偏弱→2.0，过曝→1.4）；最终值由用户看图定。**改这一个数就够。**
+        /// </summary>
+        public static float GlowGain = 1.7f;
+
+        /// <summary>
+        /// 把源色抬到 HDR（只乘 RGB，A 原样返回）。
+        /// 单独暴露成函数，是为了让**走其它材质路径**的特效（如月牙的顶点色）也能用**同一个增益**，
+        /// 而不是各自硬编码一个数。
+        /// </summary>
+        public static Color AppliedGlow(Color color)
+        {
+            float g = GlowGain;
+            return new Color(color.r * g, color.g * g, color.b * g, color.a);
+        }
+
+        /// <summary>改过 `GlowGain` 之后调用：丢掉按旧增益生成的材质。</summary>
+        public static void ClearGlowCache()
+        {
+            glowCache.Clear();
+        }
+
         /// <summary>默认的青色奥术发光材质。</summary>
         public static Material GetGlowMaterial()
         {
@@ -40,15 +72,22 @@ namespace MyWorld
         /// </summary>
         public static Material GetGlowMaterial(Color color)
         {
-            if (glowCache.TryGetValue(color, out var cached) && cached != null) return cached;
+            // ⚠️ 顺序是关键，写反了会**静默失效**：
+            //   必须**先算 HDR、再用 HDR 当缓存键**。
+            //   若先拿源色查缓存再乘增益，同一个源色会命中**旧的未增益材质**，
+            //   症状是"代码明明改了、画面毫无变化"。
+            Color hdr = AppliedGlow(color);
+            if (glowCache.TryGetValue(hdr, out var cached) && cached != null) return cached;
 
             var shader = Shader.Find("Universal Render Pipeline/Unlit");
             if (shader == null) shader = Shader.Find("Unlit/Color");
 
             var m = new Material(shader) { name = "M_Glow_" + ColorUtility.ToHtmlStringRGB(color) };
-            if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", color);
-            m.color = color;
-            glowCache[color] = m;
+            // 材质名**故意用源色**而不是 hdr：HDR 值经 ToHtmlStringRGB 会被夹到白，
+            // 一堆材质会全叫 M_Glow_FFFFFF，调试时反而分不出来。
+            if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", hdr);
+            m.color = hdr;
+            glowCache[hdr] = m;
             return m;
         }
 

@@ -37,7 +37,11 @@ namespace MyWorld
         /// <summary>左键是否按住。按住就自动连发，不用一下下点。</summary>
         public bool AttackHeld { get; private set; }
 
-        /// <summary>本帧是否按下了中键（锁定/解锁）。切换式，只在按下的那一帧为 true。</summary>
+        /// <summary>
+        /// 本帧是否按下了锁定键（锁定/解锁）。切换式，只在按下的那一帧为 true。
+        /// ⚠️ 实际绑定是 **`Q`**（`<Keyboard>/q`，见本文件 :91；手柄为 `<Gamepad>/buttonNorth`）。
+        /// 本文原先写"**中键**"—— 那是**错的**，会和已上线的 HUD 文案（`Q 锁定`）矛盾（T-051 订正）。
+        /// </summary>
         public bool LockOnPressed { get; private set; }
 
         /// <summary>右键：用副手武器。本帧按下。</summary>

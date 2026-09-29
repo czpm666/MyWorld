@@ -4,8 +4,11 @@ using UnityEngine;
 namespace MyWorld
 {
     /// <summary>
-    /// 当前装备。主手、副手各只能装一件（用户的规则），C 键只切换"当前操作的手"，不换装备。
+    /// 当前装备。主手、副手各只能装一件（用户的规则）。
     /// 捡到的武器进背包列表，不自动装备。
+    ///
+    /// ⚠️ **T-051 订正**：本文原先写"C 键只切换'当前操作的手'，不换装备" —— **全工程没有 C 键绑定**。
+    /// `SwitchHand()` 是**预留的扩展点、当前零调用者**（**保留不删**，但别当成已有功能）。
     ///
     /// 注意：这个类必须单独一个文件 —— Unity 要求 MonoBehaviour 的类名和文件名一致，
     /// 否则 AddComponent 出来的组件在场景里会变成 MISSING(null)。
@@ -71,7 +74,11 @@ namespace MyWorld
             offHand = null;
         }
 
-        /// <summary>当前手（C 切换的那个）上的武器。</summary>
+        /// <summary>
+        /// 当前操作的那只手上的武器（由 `activeHand` 决定）。
+        /// ⚠️ 原写"（**C 切换的**那个）"—— **没有 C 键**。切手是 `SwitchHand()`，
+        /// 那是**预留的扩展点、当前零调用者**，所以 `activeHand` 目前恒为 `MainHand`（T-051 订正）。
+        /// </summary>
         public WeaponDefinition Active => activeHand == HandSlot.MainHand ? mainHand : offHand;
 
         /// <summary>背包里捡到但没装备的武器。</summary>

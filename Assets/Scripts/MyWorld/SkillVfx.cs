@@ -96,7 +96,11 @@ namespace MyWorld
             var v = go.AddComponent<CrescentSlash>();
             v.InitStyled(origin, f,
                 hitRange * SlashRadiusScale,     // 视觉弧半径
-                hitHalfAngleDegrees * 2f,        // 视觉弧角 = 判定弧角，视觉不撒谎
+                // ⚠️ T-051 订正：原注释写"视觉弧角 = 判定弧角，**视觉不撒谎**" —— **只对角度成立，对半径不成立。**
+                // 角度这一项确实一致（判定半张角 ×2）；但**半径另有 `SlashRadiusScale = 0.85` 系数**
+                // （本文件 :32），所以视觉弧半径 = 判定半径 × 0.85 —— **弧带内缘 < 判定半径、外缘 > 判定半径**，
+                // 两者并不重合。写"不撒谎"会让后来的人以为视觉与判定对齐，从而**不去核这件事**。
+                hitHalfAngleDegrees * 2f,        // 视觉弧角 = 判定弧角（角度一致；半径见上一行）
                 finisher ? SwordFinisherColor : SwordSlashColor,
                 style);
         }

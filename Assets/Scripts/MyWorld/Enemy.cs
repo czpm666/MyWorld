@@ -287,10 +287,23 @@ namespace MyWorld
         {
             if (knockbackVelocity.sqrMagnitude <= 0.0001f) return;
 
-            // CharacterController.Move 的位移会按 transform 缩放打折（敌人缩放 0.68），
-            // 冲刺里也是这么补偿的，这里保持一致。
-            float scale = Mathf.Max(0.01f, transform.lossyScale.y);
-            Vector3 step = knockbackVelocity * (dt / scale);
+            // ⚠️ **不要**在这里除以 transform.lossyScale（T-065 修 bug）。
+            // 本文原先写"CharacterController.Move 的位移会按 transform 缩放打折（敌人缩放 0.68），
+            // 冲刺里也是这么补偿的" —— **那条认知是错的，它就是本 bug 的成因。**
+            // 实测（测试部，2026-09-29）：
+            //   * `lossyScale = (0.68, 0.68, 0.68)`
+            //   * `cc.Move(1.00m)` → 实测位移 **1.0000m**，比值 **1.0000** → **Move 不打折**
+            //   * 旧代码 `ApplyKnockback(dir, 4f)` 首帧位移 **0.5580m**，
+            //     而 `v0*dt = 0.3794m`、`v0*dt/scale = 0.5579m` → **实测贴的是"除以 scale"那条**
+            //   * 结果：baseTotal **6.162m** vs 契约 **4.00m**（多 54%），交叉验算 4.19/0.68 = 6.16 ✓
+            //
+            // 为什么会搞错：**缩放确实影响 CharacterController 的"胶囊尺寸"，但不影响 `Move()` 的位移。**
+            // 两者容易混为一谈 —— `MyWorldBootstrap.cs:223` 那里把 `cc.height` 除以 lossyScale 是**对的**
+            // （胶囊按缩放走），但位移不是。**别把那条经验搬到 Move() 上。**
+            //
+            // 注：这属于**修 bug，不是改平衡**。"1 格 = 2 米"的换算（`gridUnit`）敌我共用，
+            // 改完两个方向都对齐。
+            Vector3 step = knockbackVelocity * dt;
             cc.Move(new Vector3(step.x, 0f, step.z));
 
             float sp = knockbackVelocity.magnitude;
@@ -513,12 +526,15 @@ namespace MyWorld
             float speed = CurrentDashSpeed();
             float stepLen = distanceBased ? Mathf.Min(speed * dt, remain) : speed * dt;
 
-            // CharacterController.Move 的位移会**按 transform 缩放打折**（敌人缩放 0.68），
-            // 所以这里除以缩放补偿，才能得到想要的世界位移。
+            // ⚠️ **不要**在这里除以 transform.lossyScale（T-065 修 bug，与 TickKnockback 同一处错误）。
+            // 本文原先写"Move 的位移会按 transform 缩放打折，所以除以缩放补偿" —— **错的**：
+            // 实测 `cc.Move(1.00m)` 在 `lossyScale = 0.68` 下位移就是 **1.0000m**，不打折。
+            // 旧代码把冲刺位移放大了 `1/0.68 ≈ 1.47` 倍 →
+            // `dashSlashDashDistance = 4f` 实际冲出约 **5.9m**，而不是契约的 4m。
+            // 修完：冲刺距离与"1 格 = 2 米"的换算（`gridUnit`）重新对齐。
             // 注意不能直接写 transform.position：其它阶段还在调 cc.Move，
             // 会把直接写入的位置覆盖回它内部维护的位置。
-            float scale = Mathf.Max(0.01f, transform.lossyScale.y);
-            Vector3 step = dashDir * (stepLen / scale);
+            Vector3 step = dashDir * stepLen;
             cc.Move(new Vector3(step.x, verticalVelocity * dt, step.z));
             SetAnimSpeed(1f, dt);
 

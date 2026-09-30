@@ -155,33 +155,46 @@ namespace MyWorld
                     break;
 
                 case WeaponKind.Grapple:
-                    // 出手时也要转向鼠标，否则钩子会朝着"角色还没转过去的旧朝向"飞
-                    aimTurnTimer = aimTurnDuration;
-                    if (grapple != null)
+                    // 🔴 T-080①：**补上"判 + 写"冷却** —— 与 `Staff/Gauntlet/Sword/Bow/Shield` 同一套语义。
+                    // 改前这里**既不判也不写**（实测：`Use` 之后 `PlayerCombat.cooldown` 仍是 **0.000**），
+                    // 于是 `WeaponDefinition.cooldown = 0.3` 对抓钩**是死数据**（定义了却被绕过）。
+                    //
+                    // ⚠️ **真正的限速一直是** `GrappleWeapon.Fire` 开头的 `if (state != State.Idle) return false;`
+                    //    实测：钩索从出手回到 Idle = **25 帧 ≈ 0.500 s**（3 次一致）。
+                    //    → **打满全程时这道 0.3 s 冷却几乎不 binding（0.5 > 0.3）**；
+                    //      **只有玩家提前 `Release()`（松右键）时，才会真的多一道 0.3 s 的门。**
+                    //      —— 这句量化描述是给用户判"0.3 s 合不合适"用的，别删。
+                    if (cooldown <= 0f)
                     {
-                        // T-075① 的**第二处**（同一条铁律："你瞄的地方"与"东西飞出去的方向"必须同源）。
-                        //
-                        // 抓钩的发射点是 `GrappleWeapon.MuzzlePosition()`（= 副手挂点 `mount.OffHandSlot`），
-                        // 而 `CurrentAimDirection()` 的锁定分支是从 `transform.position`（**脚底**）算的
-                        // → 与弓箭 T-075① 是**同一类缺陷**（实测：muzzle 高出脚底 **0.4209 m**，
-                        //    到目标距离 24.01 m 处比 `AimPoint` **高 0.4211 m**）。
-                        //
-                        // 统一到本工程**已经存在的正确写法**（施法那条用的是 `AimPoint - CastOrigin`）——
-                        // 也就是说"正确的那一种"本来就在工程里，弓箭与抓钩是两处**没跟上**的。
-                        //
-                        // ⛔ 同样**不动 `CurrentAimDirection()` 本体**：弓（`ShootArrow`）也共用它，
-                        //    在共享函数里改起点会同时改掉另一条链。
-                        // ⚠️ 鼠标分支与朝向分支**一字不改**（`PlayerAim` 的 `0f` 是另一件事，见下）。
-                        Vector3 gdir = CurrentAimDirection();
-                        if (lockOn != null && lockOn.IsLocked)
+                        // 出手时也要转向鼠标，否则钩子会朝着"角色还没转过去的旧朝向"飞
+                        aimTurnTimer = aimTurnDuration;
+                        if (grapple != null)
                         {
-                            // muzzle 为空时用 `CastOrigin` 兜底：`GrappleWeapon.MuzzlePosition()` 的兜底公式
-                            // 与 `CastOrigin` **逐字相同**（`pos + up*1.05 + forward*0.6`），所以不必抄一遍魔数。
-                            Vector3 muzzle = grapple.Muzzle != null ? grapple.Muzzle.position : CastOrigin;
-                            Vector3 toAim = lockOn.AimPoint - muzzle;
-                            if (toAim.sqrMagnitude > 0.0001f) gdir = toAim;
+                            // T-075① 的**第二处**（同一条铁律："你瞄的地方"与"东西飞出去的方向"必须同源）。
+                            //
+                            // 抓钩的发射点是 `GrappleWeapon.MuzzlePosition()`（= 副手挂点 `mount.OffHandSlot`），
+                            // 而 `CurrentAimDirection()` 的锁定分支是从 `transform.position`（**脚底**）算的
+                            // → 与弓箭 T-075① 是**同一类缺陷**（实测：muzzle 高出脚底 **0.4209 m**，
+                            //    到目标距离 24.01 m 处比 `AimPoint` **高 0.4211 m**）。
+                            //
+                            // 统一到本工程**已经存在的正确写法**（施法那条用的是 `AimPoint - CastOrigin`）——
+                            // 也就是说"正确的那一种"本来就在工程里，弓箭与抓钩是两处**没跟上**的。
+                            //
+                            // ⛔ 同样**不动 `CurrentAimDirection()` 本体**：弓（`ShootArrow`）也共用它，
+                            //    在共享函数里改起点会同时改掉另一条链。
+                            // ⚠️ 鼠标分支与朝向分支**一字不改**（`PlayerAim` 的 `0f` 是另一件事，见下）。
+                            Vector3 gdir = CurrentAimDirection();
+                            if (lockOn != null && lockOn.IsLocked)
+                            {
+                                // muzzle 为空时用 `CastOrigin` 兜底：`GrappleWeapon.MuzzlePosition()` 的兜底公式
+                                // 与 `CastOrigin` **逐字相同**（`pos + up*1.05 + forward*0.6`），所以不必抄一遍魔数。
+                                Vector3 muzzle = grapple.Muzzle != null ? grapple.Muzzle.position : CastOrigin;
+                                Vector3 toAim = lockOn.AimPoint - muzzle;
+                                if (toAim.sqrMagnitude > 0.0001f) gdir = toAim;
+                            }
+                            // 只在**真的把钩子放出去了**才写冷却（`Fire` 被 `state != Idle` 拒时不该罚冷却）
+                            if (grapple.Fire(weapon, gdir)) cooldown = weapon.cooldown;
                         }
-                        grapple.Fire(weapon, gdir);
                     }
                     break;
 

@@ -19,6 +19,40 @@ namespace MyWorld
         public static readonly Color ChargeColor = new Color(1f, 0.55f, 0.12f, 1f);    // 橙：蓄力
         public static readonly Color HeavyColor = new Color(0.85f, 0.15f, 0.75f, 1f);  // 品红：重击/流血
 
+        /// <summary>
+        /// **春绿：格挡**（T-081）。
+        ///
+        /// 为什么是 145°：既有色里离它最近的是玩家刀光·冰青 **187.5°（差 42.5°）**、奥术青 **200.0°（差 55.0°）**、
+        /// 旧的格挡蓝白 **220.0°（差 75.0°）** —— 全部 ≥ 42.5° > T-011 定的 **25°** 门槛；饱和度 **0.632 ≥ 0.40**。
+        /// 🔴 **旧格挡色 `(0.75,0.8,0.9)` = 220.0°，与"法术打墙/地面"的冷青 200.0° 只差 20.0°** ——
+        /// 那正是用户说"好像打到了敌人但是没打中"的现场（T-081 §0.2）。**这个常量就是为了把它从冷青槽里搬走。**
+        ///
+        /// ⚠️ 规格 §3：经 `PlaceholderArt.GlowGain = 1.7` 后是 `(0.595, 1.615, 1.02)`（真 >1）→ **会过 Bloom**。
+        /// 这是**既有的全局行为**（与旧蓝白爆花同样会发光），**不是本片新增**；区分**不依赖亮度**。
+        /// </summary>
+        public static readonly Color BlockColor = new Color(0.35f, 0.95f, 0.60f, 1f);  // 春绿：格挡（T-081）
+
+        /// <summary>
+        /// T-081：**格挡表现** —— 一道朝攻击来向的春绿盾弧 + 一束定向火花。
+        ///
+        /// 与旧表现（`ArcaneBurst` 蓝白球壳 `scale 0.7`）的三处**结构性**差异：
+        ///   ① **没有球壳**（F3 的失败线就是"球壳仍在"）→ 本方法**完全不碰 `ArcaneBurst`**；
+        ///   ② **有方向** —— 弧点在"垂直于攻击来向"的平面内张开，火花沿来向飞出（F4 量质心位移方向）；
+        ///   ③ **急停不缓散** —— 尺寸一次到位，之后只把 alpha 拉到 0（旧球壳是"边胀边散"，0.35 s）。
+        ///
+        /// ⚠️ **弧用 `LineAlignment.View`（billboard）**：若用世界朝向，攻击者位于敌人正前/正后时
+        /// 弧面≈矢状面 → 屏幕上退化成一条竖线（T-011 §0 已证）。
+        /// </summary>
+        /// <param name="anchor">回退锚点（规格：敌人胸口高度 + 朝攻击者偏移 0.35 m）</param>
+        /// <param name="toAttacker">攻击来向（由 `hitPoint` 或攻击者位置算出，**y 已置 0**）</param>
+        /// <param name="shield">优先锚点：敌人的盾网格（取不到传 null）</param>
+        public static void BlockArc(Vector3 anchor, Vector3 toAttacker, Transform shield)
+        {
+            var go = new GameObject("Vfx_BlockArc");
+            var v = go.AddComponent<BlockArcVfx>();
+            v.Init(anchor, toAttacker, shield);
+        }
+
         // ==================== 玩家剑的挥砍刀光（T-010） ====================
         //
         // ⚠️ 下面这一组**只决定刀光长什么样**，不参与任何判定。
@@ -626,6 +660,139 @@ namespace MyWorld
             float t = life / MaxLife;
             if (t >= 1f) { Destroy(gameObject); return; }
             ApplyShape(t);
+        }
+    }
+
+    /// <summary>
+    /// T-081 **格挡表现**：一道盾弧 + 一束定向火花，总时长 `Life = 0.18 s`（旧爆花 0.35 s 的一半）。
+    ///
+    /// 🔴 **它刻意不生成任何球壳**（`ArcaneBurst` 会建一个 `Shell` 子物体）—— 规格 F3 的失败线就是"球壳仍在"。
+    /// 🔴 **它有方向**：弧点在"垂直于攻击来向"的平面内张开；火花沿来向飞出 → 规格 F4 量的是
+    ///    **火花群质心的位移方向 vs 攻击来向 ≤ 60°**（由探针独立测，不是自证）。
+    /// 🔴 **急停不缓散**：尺寸在 0.045 s 内一次到位、0.10 s 保持，之后 0.08 s 内 alpha 归零；
+    ///    **旧球壳是"边胀边散"** —— 那才是"被挡比打中还响"的根源。
+    ///
+    /// 渲染：`PlaceholderArt.GetGlowMaterial`（URP/Unlit，**不夹取**）→ 春绿 ×`GlowGain 1.7` 会过 Bloom。
+    /// ⚠️ **不是** `LineRenderer.colorGradient` 那条被 8bit 夹取的顶点色路径（T-068 已证）：这里
+    ///    **渐变保持白色、颜色由材质 `_BaseColor` 携带**，alpha 才走渐变。
+    /// </summary>
+    public class BlockArcVfx : MonoBehaviour
+    {
+        /// <summary>总存活（秒）。规格 F5：**≤ 0.20 s**。</summary>
+        public const float Life = 0.18f;
+        /// <summary>出现阶段结束时刻（此后只掉 alpha）。</summary>
+        private const float SnapEnd = 0.10f;
+        /// <summary>盾弧横向世界尺寸（规格 1.0–1.2 m ≈ 40–47 px）。</summary>
+        private const float Span = 1.10f;
+        private const int ArcPoints = 13;
+        private const int SparkCount = 7;
+        /// <summary>火花飞出距离（规格 ≈0.6 m）。</summary>
+        private const float SparkFly = 0.60f;
+        /// <summary>每条火花自身的长度（规格 0.3 m）。</summary>
+        private const float SparkLen = 0.30f;
+
+        private LineRenderer arc;
+        private LineRenderer[] sparks;
+        private Vector3[] sparkStart;
+        private Vector3[] sparkDir;
+        private Vector3 rightAxis;
+        private float t;
+
+        private static AnimationCurve Taper = new AnimationCurve(
+            new Keyframe(0f, 0.12f), new Keyframe(0.5f, 1f), new Keyframe(1f, 0.12f));
+
+        public void Init(Vector3 anchor, Vector3 toAttacker, Transform shield)
+        {
+            Vector3 dir = toAttacker;
+            dir.y = 0f;
+            if (dir.sqrMagnitude < 1e-6f) dir = transform.forward;
+            dir.Normalize();
+            rightAxis = Vector3.Cross(Vector3.up, dir);
+            if (rightAxis.sqrMagnitude < 1e-6f) rightAxis = Vector3.right;
+            rightAxis.Normalize();
+
+            // 锚点：**优先盾网格**（"就是这面盾挡下的"，语义最强）；取不到用规格的回退（胸口 + 朝攻击者 0.35 m）
+            Vector3 basePos = anchor;
+            if (shield != null)
+            {
+                var rs = shield.GetComponentsInChildren<Renderer>(true);
+                basePos = rs.Length > 0 ? rs[0].bounds.center : shield.position;
+            }
+            transform.position = basePos;
+
+            var mat = PlaceholderArt.GetGlowMaterial(SkillVfx.BlockColor);
+            PlaceholderArt.StripCollider(gameObject);
+
+            // ---- 盾弧：垂直于来向的一段浅弧；**billboard 渲染**（永不退化，见类注释）----
+            var arcGo = new GameObject("BlockArc");
+            arcGo.transform.SetParent(transform, false);
+            arc = arcGo.AddComponent<LineRenderer>();
+            arc.material = mat;
+            arc.useWorldSpace = true;
+            arc.alignment = LineAlignment.View;
+            arc.positionCount = ArcPoints;
+            arc.widthMultiplier = 0.10f;
+            arc.widthCurve = Taper;
+            arc.numCapVertices = 2;
+            for (int i = 0; i < ArcPoints; i++)
+            {
+                float u = -1f + 2f * i / (ArcPoints - 1);
+                arc.SetPosition(i, basePos + rightAxis * (Span * 0.5f * u)
+                                       + Vector3.up * (0.30f * (1f - u * u) - 0.15f));
+            }
+
+            // ---- 火花：沿**攻击来向**飞（质心位移方向 = F4 的被测量）----
+            sparks = new LineRenderer[SparkCount];
+            sparkStart = new Vector3[SparkCount];
+            sparkDir = new Vector3[SparkCount];
+            for (int i = 0; i < SparkCount; i++)
+            {
+                float u = SparkCount == 1 ? 0f : (-1f + 2f * i / (SparkCount - 1));
+                var sgo = new GameObject("BlockSpark" + i);
+                sgo.transform.SetParent(transform, false);
+                var lr = sgo.AddComponent<LineRenderer>();
+                lr.material = mat;
+                lr.useWorldSpace = true;
+                lr.alignment = LineAlignment.View;
+                lr.positionCount = 2;
+                lr.widthMultiplier = 0.035f;
+                lr.numCapVertices = 0;
+                sparkStart[i] = basePos + rightAxis * (Span * 0.42f * u)
+                                         + Vector3.up * (0.26f * (1f - Mathf.Abs(u)) - 0.10f);
+                // 沿来向飞；只给 12% 的横向散开（散太多会把质心方向拉偏，F4 就假了）
+                sparkDir[i] = (dir + rightAxis * (0.12f * u)).normalized;
+                sparks[i] = lr;
+            }
+
+            Apply(0f);
+        }
+
+        private void Update()
+        {
+            t += Time.deltaTime;
+            if (t >= Life) { Destroy(gameObject); return; }
+            Apply(t);
+        }
+
+        private void Apply(float time)
+        {
+            // **尺寸一次到位（急停）**：只有 alpha 在尾段掉下去 → 与旧球壳"边胀边散"相反
+            float a = time <= SnapEnd
+                ? Mathf.Clamp01(time / 0.045f)
+                : Mathf.Clamp01(1f - (time - SnapEnd) / (Life - SnapEnd));
+            var c = new Color(1f, 1f, 1f, a);
+            if (arc != null) { arc.startColor = c; arc.endColor = c; }
+
+            float fly = SparkFly * Mathf.Clamp01(time / Life);
+            for (int i = 0; i < sparks.Length; i++)
+            {
+                if (sparks[i] == null) continue;
+                var p0 = sparkStart[i] + sparkDir[i] * fly;
+                sparks[i].SetPosition(0, p0);
+                sparks[i].SetPosition(1, p0 + sparkDir[i] * SparkLen);
+                sparks[i].startColor = c;
+                sparks[i].endColor = c;
+            }
         }
     }
 }

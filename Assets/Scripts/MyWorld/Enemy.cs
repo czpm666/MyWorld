@@ -222,15 +222,53 @@ namespace MyWorld
 
         // ---------------- 受击 ----------------
 
+        /// <summary>T-081：盾网格锚点缓存（**非序列化字段** → 不需要重建场景）。</summary>
+        private Transform shieldAnchorCache;
+
+        /// <summary>
+        /// T-081：把格挡表现锚到**敌人自己的盾网格**上（`Barbarian_Round_Shield` 是 KayKit 资产里独立的盾网格）。
+        /// 取不到返回 `null` → 表现层按规格回退到"胸口高度 + 朝攻击者偏移 0.35 m"。
+        /// ⚠️ 只查一次并缓存；**名字对不上不报错**，只是走回退（回退本身是规格允许的设计）。
+        /// </summary>
+        private Transform ShieldAnchor()
+        {
+            if (shieldAnchorCache == null)
+            {
+                var all = GetComponentsInChildren<Transform>(true);
+                for (int i = 0; i < all.Length; i++)
+                    if (all[i].name == "Barbarian_Round_Shield") { shieldAnchorCache = all[i]; break; }
+            }
+            return shieldAnchorCache;
+        }
+
         public void TakeDamage(float amount, Vector3 hitPoint, Vector3 hitNormal)
         {
             if (!alive) return;
 
-            // 举盾格挡：概率免伤，并给个明确的反馈
+            // 举盾格挡：概率免伤，并给个**一眼能分辨**的反馈（T-081）
+            //
+            // 🔴 T-081 换掉了旧表现（`ArcaneBurst` 蓝白球壳 `scale 0.7` = 直径 1.54 m ≈ 61 px）：
+            //    ① 旧色的色相 **220.0°** 与"法术打墙/地面"的冷青 **200.0°** 只差 **20.0°** ——
+            //       即**它落在既有颜色语言里"没打中"的那一档**，这正是用户说"好像打到了敌人但是没打中"的现场；
+            //    ② 旧球壳比"箭命中"的球壳（`scale 0.5` = 1.10 m）**更大** → 用弓时"被挡"比"打中"还响。
+            //    → 现在：**春绿盾弧 + 一束朝攻击来向的火花**（`SkillVfx.BlockArc`），总时长 0.18 s（旧 0.35 s）。
+            // ⚠️ **颜色常量在 `SkillVfx.BlockColor`**（与 `WarningColor`/`ChargeColor`/`HeavyColor` 并列），
+            //    **不散落在这个逻辑文件里**（规格 §6）。
+            // ⚠️ 本段**在 `flashTimer = flashDuration` 之前 `return`** ⇒ 与"命中白闪"**结构上互斥**：
+            //    "身上闪白 = 掉血了；出现绿弧 = 被挡了"这条可学习规则**由代码保证**，不靠玩家记两条。
             if (Random.value < blockChance)
             {
-                ArcaneBurst.Spawn(transform.position + Vector3.up * 1.0f, Vector3.up, 0.7f,
-                    new Color(0.75f, 0.8f, 0.9f));
+                Vector3 toAttacker = hitPoint - transform.position;
+                toAttacker.y = 0f;
+                if (toAttacker.sqrMagnitude < 1e-6f && player != null)
+                    toAttacker = player.transform.position - transform.position;   // 近战贴脸时 hitPoint 可能压在敌人身上
+                toAttacker.y = 0f;
+                if (toAttacker.sqrMagnitude < 1e-6f) toAttacker = -transform.forward;
+                toAttacker.Normalize();
+
+                // 锚点：优先盾网格（语义最强），回退"胸口高度 + 朝攻击者偏移 0.35 m"（规格 §6.1）
+                SkillVfx.BlockArc(transform.position + Vector3.up * 1.0f + toAttacker * 0.35f,
+                    toAttacker, ShieldAnchor());
                 Debug.Log("[My World] 敌人举盾格挡，本次免伤");
                 return;
             }

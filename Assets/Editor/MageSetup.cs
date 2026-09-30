@@ -152,6 +152,34 @@ namespace MyWorld.EditorTools
         private const string IsBlockingParam = "IsBlocking";
 
         /// <summary>
+        /// T-079 §⑧ 片 3（侧移组）：**侧移组的独立状态清单**（顺序即 `AddState` 顺序）。
+        /// `dir` = `StrafeDir` 参数里代表该状态的取值（**0 恒表示"不启用侧移组"**）。
+        ///
+        /// ⚠️ 三条全是**循环**剪辑（`Wanted[]` 首列 `Walk_Back`/`Run_Strafe_L`/`Run_Strafe_R`，loop = true）
+        ///    → **一条都不给 `BackToIdle`**（§3 R4）；它们的出边是"`StrafeDir == 0` + **既有** `Speed` 阈值"。
+        /// ⚠️ 状态名取 `Wanted[]` 的**首列**（不是 `expectSource` —— 这三条恰好两边都不同名：陷阱 21）。
+        /// </summary>
+        private static readonly (string name, int dir)[] StrafeStates =
+        {
+            ("Walk_Back",    1),   // 向后
+            ("Run_Strafe_L", 2),   // 向角色左侧
+            ("Run_Strafe_R", 3),   // 向角色右侧
+        };
+
+        /// <summary>
+        /// T-079 §⑧ 片 3：**侧移方向**参数名（Int），由 `PlayerController8Dir.Update` 每帧喂
+        /// （那个类同时持有"移动方向"与"朝向"，`Airborne` 也在那里喂）。
+        /// 取值见 `StrafeStates`；**0 = 不启用侧移组**（未锁定，或锁定下朝前走）。
+        ///
+        /// ⚠️ **"只在锁定态启用"是结构性保证**：喂参数的那段**只有 `hasForcedFacing == true`
+        ///    （= `PlayerLockOn` 锁定时才 `SetForcedFacing`）才计算相对方向**，否则一律写 0
+        ///    → 未锁定时这三条边的条件**不可能成立**。
+        /// ⚠️ **必须与运行时侧逐字一致**：`PlayerController8Dir.StrafeDirParam` 与那三个常量。
+        ///    **名字不匹配不会报错，只会让侧移静默不动**（陷阱 20 / 21）。
+        /// </summary>
+        private const string StrafeDirParam = "StrafeDir";
+
+        /// <summary>
         /// T-079 §⑦ 片 2：格挡组的**独立状态清单**（顺序即 `AddState` 顺序）。
         ///
         /// ⚠️ **不放进 `ComboClips`** —— 理由与 `JumpStates` 完全相同：那会给剑**凭空造出连招段位**，
@@ -860,6 +888,75 @@ namespace MyWorld.EditorTools
                 tOut.exitTime = 0.90f;
                 tOut.duration = 0.12f;
                 tOut.AddCondition(AnimatorConditionMode.IfNot, 0f, IsBlockingParam);
+            }
+
+            // ================= T-079 §⑧ 片 3：**侧移组** =================
+            //   三个**循环**状态：`Walk_Back`(向后) / `Run_Strafe_L`(向左) / `Run_Strafe_R`(向右)
+            //   唯一新参数：`StrafeDir`(Int)，由 `PlayerController8Dir.Update` 每帧喂
+            //   （它才是"移动方向 + 朝向"的持有者，`Airborne` 也在那儿喂）。
+            //
+            //   ⚠️ **为什么入口边不用 AnyState**：`StrafeDir == 1` 会在"锁定 + 一直向后走"期间**持续为真**，
+            //      AnyState 边就会**反复把攻击/施法/受击里的人拽出来**（挥剑被走路的边打断）——
+            //      那是既有行为的回归。这里只从 `Idle/Walk/Run` **和三个侧移态自己**出发
+            //      （后者用于"左右互切"，否则从"向左"切到"向右"必须停下来经过 Idle，操作会顿一下）。
+            //
+            //   ⚠️ **"只在锁定态启用"不靠自觉**：喂参数那段**只在 `hasForcedFacing`（= 锁定）时**
+            //      才折算相对方向，否则一律写 0 → 未锁定时这三条边的条件**不可能成立**。
+            ctrl.AddParameter(StrafeDirParam, AnimatorControllerParameterType.Int);
+
+            AnimatorState walkBackSt = null, strafeLSt = null, strafeRSt = null;
+            foreach (var ss in StrafeStates)
+            {
+                clips.TryGetValue(ss.name, out var strafeClip);
+                if (strafeClip == null)
+                {
+                    Debug.LogError($"[My World] controller 里没有 {ss.name} 剪辑，该侧移状态被跳过。");
+                    continue;
+                }
+
+                var st = AddState(sm, ss.name, strafeClip);
+                if (ss.name == "Walk_Back") walkBackSt = st;
+                else if (ss.name == "Run_Strafe_L") strafeLSt = st;
+                else if (ss.name == "Run_Strafe_R") strafeRSt = st;
+            }
+
+            var strafeAll = new[] { walkBackSt, strafeLSt, strafeRSt };
+            for (int i = 0; i < strafeAll.Length; i++)
+            {
+                var target = strafeAll[i];
+                if (target == null) continue;
+                int dir = StrafeStates[i].dir;
+
+                // 入口 + 互切
+                var sources = new[] { idle, walk, run, walkBackSt, strafeLSt, strafeRSt };
+                for (int s = 0; s < sources.Length; s++)
+                {
+                    if (sources[s] == null || sources[s] == target) continue;
+                    var tin = sources[s].AddTransition(target);
+                    tin.hasExitTime = false;
+                    tin.duration = 0.12f;
+                    tin.AddCondition(AnimatorConditionMode.Equals, dir, StrafeDirParam);
+                }
+
+                // 退出：`StrafeDir == 0` 时按**既有**的 Speed 阈值回到 locomotion。
+                // ⚠️ 顺序要紧：先 Run(>0.75) 再 Walk(>0.15)，否则跑步时会被 >0.15 那条先截住。
+                var tRun = target.AddTransition(run);
+                tRun.hasExitTime = false;
+                tRun.duration = 0.12f;
+                tRun.AddCondition(AnimatorConditionMode.Equals, 0f, StrafeDirParam);
+                tRun.AddCondition(AnimatorConditionMode.Greater, 0.75f, "Speed");
+
+                var tWalk = target.AddTransition(walk);
+                tWalk.hasExitTime = false;
+                tWalk.duration = 0.12f;
+                tWalk.AddCondition(AnimatorConditionMode.Equals, 0f, StrafeDirParam);
+                tWalk.AddCondition(AnimatorConditionMode.Greater, 0.15f, "Speed");
+
+                var tIdle = target.AddTransition(idle);
+                tIdle.hasExitTime = false;
+                tIdle.duration = 0.12f;
+                tIdle.AddCondition(AnimatorConditionMode.Equals, 0f, StrafeDirParam);
+                tIdle.AddCondition(AnimatorConditionMode.Less, 0.15f, "Speed");
             }
 
             return ctrl;

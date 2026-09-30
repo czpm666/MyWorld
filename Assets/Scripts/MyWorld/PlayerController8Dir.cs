@@ -74,6 +74,17 @@ namespace MyWorld
         private const string JumpTriggerParam = "Jump";
         private const string AirborneParam = "Airborne";
         private const string IdleStateName = "Idle";
+
+        // ---- T-079 §⑧ 片 3：侧移组 ----
+        // ⚠️ 下面这个字符串与四个取值**必须与 `MageSetup` 的 `StrafeDirParam` / `StrafeStates`
+        //    （以及那三个状态名）**逐字一致**。Editor 程序集 ↔ 运行时程序集**不能互相引用**，
+        //    只能各写一份 → **改名不报错，只会让侧移静默不动**（陷阱 20 / 21）。
+        /// <summary>侧移方向参数名（Int）。**0 = 不启用侧移组**（未锁定，或锁定下朝前走）。</summary>
+        private const string StrafeDirParam = "StrafeDir";
+        private const int StrafeDirNone = 0;     // 不启用
+        private const int StrafeDirBack = 1;     // 向后（→ `Walk_Back`）
+        private const int StrafeDirLeft = 2;     // 向角色左侧（→ `Run_Strafe_L`）
+        private const int StrafeDirRight = 3;    // 向角色右侧（→ `Run_Strafe_R`）
         private float yaw;                // 当前朝向(度)
         private float yawTarget;          // 吸附到 8 方向后的目标朝向
         private float animSpeed;          // 喂给 Animator 的语义化速度
@@ -256,6 +267,42 @@ namespace MyWorld
         /// <summary>当前朝向对应的 8 方向索引，0=正前(+Z)，顺时针递增。</summary>
         public int FacingIndex => Mathf.RoundToInt(Mathf.Repeat(yawTarget, 360f) / 45f) % 8;
 
+        /// <summary>
+        /// T-079 §⑧ 片 3：把"锁定态下的移动方向"折算成 `StrafeDir`。
+        ///
+        /// **分类只用"哪一轴占优"这条纯比较 —— 不引入任何新阈值**：
+        /// 朝向是 45° 吸附的、输入也是 8 方向，所以"占优轴"本身就是正确的分类器
+        /// （这也顺带满足"本片不新增数值"的约束）。
+        ///
+        /// **未锁定时一律返回 0**：未锁定态下朝向本来就跟着移动方向转，
+        /// 这时播"倒退/侧移"等于**播一个不存在的行为**（§⑧ H1 的反向臂）。
+        /// 判"锁没锁"用的是 `hasForcedFacing` —— 全工程**只有 `PlayerLockOn` 在锁定时**会
+        /// `SetForcedFacing`（`PlayerLockOn.cs:132-134`，解锁时 `:153` 清掉）。
+        ///
+        /// ⚠️ **本方法不碰速度、不碰朝向、不碰位移** —— 它只产出一个给动画层的整数。
+        /// </summary>
+        private int ComputeStrafeDir(Vector2 moveInput)
+        {
+            if (!hasForcedFacing) return StrafeDirNone;
+
+            Vector3 fwd = transform.forward;
+            fwd.y = 0f;
+            if (fwd.sqrMagnitude < 0.0001f) return StrafeDirNone;
+            fwd.Normalize();
+
+            // 世界移动方向：相机 yaw 恒为 0，屏幕右 = +X、屏幕上 = +Z（与 Update 里的映射一致）
+            float mx = moveInput.x;
+            float mz = moveInput.y;
+
+            float f = mx * fwd.x + mz * fwd.z;    // 前后分量（+ = 朝前）
+            float r = mx * fwd.z - mz * fwd.x;    // 左右分量（+ = 朝角色右侧；right = (fwd.z, 0, -fwd.x)）
+
+            if (Mathf.Abs(r) > Mathf.Abs(f))
+                return r < 0f ? StrafeDirLeft : StrafeDirRight;
+
+            return f < 0f ? StrafeDirBack : StrafeDirNone;
+        }
+
         private void Awake()
         {
             cc = GetComponent<CharacterController>();
@@ -368,6 +415,14 @@ namespace MyWorld
                     }
                 }
             }
+
+            // ---- T-079 §⑧ 片 3：把"锁定态下的移动方向"喂给侧移组 ----
+            // ⚠️ 位置要紧：必须在上面那段 `if (air) … else if (…)` 的**后面**。
+            //    插在 `if` 与 `else if` 之间会**直接编译不过**
+            //    （我本轮就踩了一次：`error CS8641: 'else' cannot start a statement`，被编译探针当场抓住）。
+            // 每帧都写：`0` 就是"不启用"，所以**松键 / 解锁的那一帧**参数立刻回 0，
+            // 不会卡在侧移动作里（与 `Airborne` 同一纪律：电平量每帧刷）。
+            if (anim != null) anim.SetInteger(StrafeDirParam, ComputeStrafeDir(move));
 
             Vector3 motion = planarVelocity + Vector3.up * verticalVelocity;
             cc.Move(motion * dt);

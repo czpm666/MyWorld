@@ -51,7 +51,7 @@ namespace MyWorld
         private const float ToastFadeSeconds = 0.5f;
 
         // 边沿检测用的上一帧快照（-1 = 尚未对齐基线）
-        private int lastBackpackCount = -1;
+        private int lastPickupCount = -1;   // T-076：改用**拾取计数**（背包不再承载武器，数量不再变）
         private bool lastHadMainHand;
 
         // 这些引用必须序列化：烘焙出的组件在场景重载时要从场景文件恢复。
@@ -232,8 +232,9 @@ namespace MyWorld
         /// <summary>
         /// 两个**无声发生**的武器事件 → 提示。都是**边沿检测**（对比上一帧），不是状态检测。
         ///
-        /// A 拾取：背包只追加（`WeaponLoadout.AddToBackpack`），装装备走的是"从背包移除"，
-        ///   所以"数量变多"不会因装备而误触发。
+        /// A 拾取：🔴 **T-076（分支 B）换了触发源** —— 武器**不再进背包**，
+        ///   所以原先"`Backpack.Count` 变多"的边沿检测**永远不会触发** → **拾取会无声发生**
+        ///   （玩家不知道捡到了什么）。改成 `WeaponLoadout.PickupCount`（拾取处显式 +1）。
         /// B 主手被打掉：`MainHand` 变 null 的**唯一**路径是 `DropMainHand()`，
         ///   其唯一调用者是 `PlayerCombat.KnockOffMainHand()`（由敌人盾击触发）→ 无假阳性。
         /// </summary>
@@ -241,12 +242,17 @@ namespace MyWorld
         {
             if (loadout == null) return;
 
-            int count = loadout.Backpack.Count;
-            if (lastBackpackCount < 0)
-                lastBackpackCount = count;               // 首帧只对齐基线，不弹提示
-            else if (count > lastBackpackCount)
-                ShowToast($"已拾取 {loadout.Backpack[count - 1].displayName} → 进背包（Tab 菜单里查看）");
-            lastBackpackCount = count;
+            int picks = loadout.PickupCount;
+            if (lastPickupCount < 0)
+                lastPickupCount = picks;                 // 首帧只对齐基线，不弹提示
+            else if (picks > lastPickupCount)
+            {
+                // T-076 §4.3#1：武器**不再进背包** → Toast 必须改指**武器页**，
+                // 并说明它在那里以"未装备"出现（否则玩家会去背包页找一件不在那儿的武器）。
+                var picked = loadout.LastPickedUp;
+                ShowToast($"已拾取 {(picked != null ? picked.displayName : "武器")} → 在左侧「武器」页（未装备，点一下装备）");
+            }
+            lastPickupCount = picks;
 
             bool hasMain = loadout.MainHand != null;
             if (!hasMain && lastHadMainHand)
@@ -371,7 +377,26 @@ namespace MyWorld
             equipped.rectTransform.anchoredPosition = new Vector2(0f, -42f);
             equipped.rectTransform.sizeDelta = new Vector2(0f, 34f);
 
-            float y = -92f;
+            // T-076（分支 B）：本页现在必须**自己说清"这里放什么"**，并承接**两处从背包页搬来的既有修复**：
+            //   ① T-023 的"武器在哪"指引行 —— 它原来长在背包页空状态里，而背包页已不放武器，
+            //      总控裁定"**改指向正确的事、不要删**" → 落到这一页（本页就是武器所在）。
+            //   ② T-056 / R-001 的"为什么会掉武器"解释 —— 被缴械的武器 T-076 之后出现在**这一页**，
+            //      解释必须跟着走，否则会丢掉一个已经修好的可发现性问题（玩家不知道为什么武器没了）。
+            //   依据 R-001：`WeaponPickup.Spawn` 全工程唯一调用点是 `KnockOffMainHand()`，
+            //   其唯一调用者是**敌人的盾击** → "打掉敌人会掉武器"这条机制**结构上不存在**。
+            string ownExplain = loadout.Owned.Count > 0
+                ? "这一页是你已拥有的武器；● 表示正装在手上，没有 ● 的是未装备。"
+                  + "\n只有敌人的盾击会打掉你的主手武器，掉在地上走过去就能捡 —— 捡回后它仍只在这一页，以「未装备」出现。"
+                : "（没有任何武器）本局还没有得到过武器。这一页会列出你已拥有的武器；● 表示正装在手上。";
+            var own = MakeText(parent, ownExplain, 19, TextAnchor.UpperLeft, new Color(0.72f, 0.78f, 0.72f));
+            own.rectTransform.anchorMin = new Vector2(0f, 1f);
+            own.rectTransform.anchorMax = new Vector2(1f, 1f);
+            own.rectTransform.pivot = new Vector2(0f, 1f);
+            own.rectTransform.anchoredPosition = new Vector2(0f, -80f);
+            own.rectTransform.sizeDelta = new Vector2(0f, 44f);
+
+            // 位置：页头 0..-40、当前装备 -42..-76、上面的说明 -80..-124 → 槽位自 -130 起（间隔 6px 不重叠）
+            float y = -130f;
             y = BuildWeaponSlot(parent, "主手", HandSlot.MainHand, y);
             y = BuildWeaponSlot(parent, "副手", HandSlot.OffHand, y - 12f);
 
@@ -571,7 +596,7 @@ namespace MyWorld
                 return;
             }
 
-            var head = MakeText(parent, "背包（捡到的武器不会自动装备，在这里装上）",
+            var head = MakeText(parent, "背包（这里放武器以外的物品）",
                 24, TextAnchor.UpperLeft, new Color(0.9f, 0.92f, 0.95f));
             head.rectTransform.anchorMin = new Vector2(0f, 1f);
             head.rectTransform.anchorMax = new Vector2(1f, 1f);
@@ -579,44 +604,39 @@ namespace MyWorld
             head.rectTransform.anchoredPosition = Vector2.zero;
             head.rectTransform.sizeDelta = new Vector2(0f, 40f);
 
-            // 当前装备
-            var equipped = MakeText(parent,
-                "主手：" + (loadout.MainHand != null ? loadout.MainHand.displayName : "空")
-                + "      副手：" + (loadout.OffHand != null ? loadout.OffHand.displayName : "空"),
-                22, TextAnchor.UpperLeft, new Color(0.75f, 0.85f, 0.75f));
-            equipped.rectTransform.anchorMin = new Vector2(0f, 1f);
-            equipped.rectTransform.anchorMax = new Vector2(1f, 1f);
-            equipped.rectTransform.pivot = new Vector2(0f, 1f);
-            equipped.rectTransform.anchoredPosition = new Vector2(0f, -44f);
-            equipped.rectTransform.sizeDelta = new Vector2(0f, 34f);
+            // 🔴 T-076 严格读法下的修正：**本页不再显示"主手/副手"状态行**。
+            // 原因（是判据逼出来的，不是审美）：F1 的原文是"同一件武器在任何时刻**只在一个分类页上出现一次**"。
+            //   T-076 前这里有一行 `主手：剑  副手：抓钩` —— 就算武器**不再进背包**，
+            //   这行也会让**武器名出现在背包页**上 → 严格读法下 F1 仍然不通过。
+            //   而分支 B 下本页的定位是"**武器以外的物品**"，武器状态行属于武器页的事
+            //   （武器页已有同一行 `当前 主手/副手`，信息不丢）。
+            // ⚠️ 这是我用探针查出来的：第一版留着这行时，F8 报"背包页仍出现该武器"。
 
             if (loadout.Backpack.Count == 0)
             {
-                // 文案依据（R-001 裁定）：敌人**没有武器槽**，"打掉敌人会掉武器"这条行为
-                // **结构上不存在** —— `WeaponPickup.Spawn` 全工程唯一调用点是
-                // `PlayerCombat.cs:359` 的 `KnockOffMainHand()`，其唯一调用者是 `Enemy.cs:624`
-                // 的敌人盾击。所以旧句"打掉敌人…武器会掉在地上"是在描述一个不存在的机制。
-                var empty = MakeText(parent, "（空的）只有敌人的盾击把你的武器打掉时，它才会掉在地上，走过去就能捡。",
+                // T-076（分支 B）：这一页改成"武器以外的物品"，而**当前结构上必然为空**
+                // （全工程只有 WeaponDefinition 一种可持有物）→ 必须**诚实说明"还没有这类物品"**，
+                // 否则就是"玩家面对空列表不知道怎么回事"的老问题重演。
+                //
+                // ⚠️ 两处**已完成的修复曾被长在这一页上，T-076 把它们搬去了武器页**（不是删掉）：
+                //   * T-023 的"武器在哪"指引行（原在下方，已被本页移除）→ 搬到武器页
+                //   * T-056 / R-001 的"为什么武器会掉"解释（原在下面这句里）→ 搬到武器页
+                //     依据：R-001 裁定"敌人没有武器槽，打不掉敌人的武器"，而被缴械的武器
+                //     T-076 之后出现在**武器页**，所以那句解释必须跟着走，否则玩家不知道为什么武器没了。
+                var empty = MakeText(parent,
+                    "（空的）这里放武器以外的物品（材料、道具等）。目前游戏里还没有这类物品。",
                     22, TextAnchor.UpperLeft, new Color(0.6f, 0.63f, 0.68f));
                 empty.rectTransform.anchorMin = new Vector2(0f, 1f);
                 empty.rectTransform.anchorMax = new Vector2(1f, 1f);
                 empty.rectTransform.pivot = new Vector2(0f, 1f);
-                empty.rectTransform.anchoredPosition = new Vector2(0f, -92f);
+                empty.rectTransform.anchoredPosition = new Vector2(0f, -52f);
                 empty.rectTransform.sizeDelta = new Vector2(0f, 34f);
-
-                // T-023：不改默认页（默认仍是背包页），只补"武器在哪"的指引。
-                // 玩家打开 Tab 面对一个空列表，最先需要的不是"背包是空的"，而是"武器在隔壁那页"。
-                // 位置：现有空状态文本 y=-92 高 34（下沿 -126），新行自 -132 起 → 间隔 6px 不重叠。
-                var pointer = MakeText(parent, $"你拥有 {loadout.Owned.Count} 件武器，去左侧「武器」页换装 →",
-                    22, TextAnchor.UpperLeft, new Color(1f, 0.85f, 0.4f));
-                pointer.rectTransform.anchorMin = new Vector2(0f, 1f);
-                pointer.rectTransform.anchorMax = new Vector2(1f, 1f);
-                pointer.rectTransform.pivot = new Vector2(0f, 1f);
-                pointer.rectTransform.anchoredPosition = new Vector2(0f, -132f);
-                pointer.rectTransform.sizeDelta = new Vector2(0f, 30f);
                 return;
             }
 
+            // ⚠️ T-076：下面这段是**兼容路径**（背包里若真有东西）。
+            // 武器正常不再进背包，而"其他物品"目前还没有类型 —— 所以这段在正常游玩里走不到，
+            // 但**保留**它，好让 F8 的"过渡态"（背包里存在武器）仍可被验证不复制、不丢失。
             for (int i = 0; i < loadout.Backpack.Count; i++)
             {
                 int index = i;
@@ -626,7 +646,7 @@ namespace MyWorld
 
                 var b = MakeButton(parent, $"{w.displayName}   [{slot}]   点击装备",
                     new Vector2(0f, 1f), new Vector2(1f, 1f),
-                    new Vector2(0f, -92f - i * 58f), new Vector2(0f, 48f),
+                    new Vector2(0f, -52f - i * 58f), new Vector2(0f, 48f),
                     delegate
                     {
                         loadout.EquipFromBackpack(index);

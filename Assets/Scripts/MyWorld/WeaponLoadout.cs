@@ -5,7 +5,13 @@ namespace MyWorld
 {
     /// <summary>
     /// 当前装备。主手、副手各只能装一件（用户的规则）。
-    /// 捡到的武器进背包列表，不自动装备。
+    ///
+    /// ⚠️ **T-076（分支 B）改了拾取的归宿**：捡到的武器**不再进 `backpack`** ——
+    /// 武器的归属**只由 `owned` 决定**（它只增不减，被打掉的也一直在里面）。
+    /// `backpack` 现在表示**"武器以外的物品"**（材料/道具等），**当前结构上必然为空**
+    /// （全工程只有 `WeaponDefinition` 一种可持有物）。
+    /// 理由：原先"打掉的武器仍在 `owned`、捡回又 `Add` 进 `backpack`"会**让同一件武器同时出现在两页**。
+    /// `AddToBackpack` / `EquipFromBackpack` **保留**（给旧入口与"过渡态"用），但**正常游玩不再走它们**。
     ///
     /// ⚠️ **T-051 订正**：本文原先写"C 键只切换'当前操作的手'，不换装备" —— **全工程没有 C 键绑定**。
     /// `SwitchHand()` 是**预留的扩展点、当前零调用者**（**保留不删**，但别当成已有功能）。
@@ -81,8 +87,34 @@ namespace MyWorld
         /// </summary>
         public WeaponDefinition Active => activeHand == HandSlot.MainHand ? mainHand : offHand;
 
-        /// <summary>背包里捡到但没装备的武器。</summary>
+        /// <summary>
+        /// 背包：**武器以外的物品**（T-076 分支 B）。**当前结构上必然为空** ——
+        /// 全工程只有 `WeaponDefinition` 一种可持有物，所以还没有东西可放。
+        /// ⚠️ **它不再承载武器**：武器的归属只看 `owned`。
+        /// </summary>
         public IReadOnlyList<WeaponDefinition> Backpack => backpack;
+
+        // ---- T-076：拾取事件的"通知游标" ----
+        // 为什么需要它：原先"拾取"是靠**背包数量变多**做边沿检测的（`GameUi.WatchWeaponEvents`），
+        // 而 T-076 之后武器**不再进背包** → 数量不变 → **拾取会变成无声发生**（玩家不知道捡到了）。
+        // 所以改成由拾取处显式通知。**这不是数值**（没有引入任何时长/阈值/上限常量），只是一个计数器 + 名字。
+        [System.NonSerialized] private int pickupCount;
+        [System.NonSerialized] private WeaponDefinition lastPickedUp;
+
+        /// <summary>拾取次数（单调递增）。UI 用它做"有没有新拾取"的边沿检测。</summary>
+        public int PickupCount => pickupCount;
+
+        /// <summary>最近拾取的那件武器（没有则为 null）。</summary>
+        public WeaponDefinition LastPickedUp => lastPickedUp;
+
+        /// <summary>拾取一件武器时由拾取处调用：登记归属 + 通知 UI。</summary>
+        public void NotifyPickedUp(WeaponDefinition weapon)
+        {
+            if (weapon == null) return;
+            RegisterOwned(weapon);        // 幂等（内部有 Contains 去重）
+            lastPickedUp = weapon;
+            pickupCount++;
+        }
 
         /// <summary>副手是不是魔法护手（决定施法增益）。</summary>
         public bool HasGauntlet => offHand != null && offHand.kind == WeaponKind.Gauntlet;
@@ -102,7 +134,11 @@ namespace MyWorld
             offHand = off;
         }
 
-        /// <summary>拾取：只进背包，不自动装备。</summary>
+        /// <summary>
+        /// 拾取：把一件武器放进背包。
+        /// ⚠️ **T-076 之后正常游玩不再走这条路** —— 武器归属只看 `owned`（见 `NotifyPickedUp`）。
+        /// **保留**它是为了：(a) 旧入口仍可达时不至于编译不过/丢失数据；(b) F8 判据要构造"背包里有武器"的过渡态。
+        /// </summary>
         public void AddToBackpack(WeaponDefinition weapon)
         {
             if (weapon != null) backpack.Add(weapon);

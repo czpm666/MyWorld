@@ -157,7 +157,32 @@ namespace MyWorld
                 case WeaponKind.Grapple:
                     // 出手时也要转向鼠标，否则钩子会朝着"角色还没转过去的旧朝向"飞
                     aimTurnTimer = aimTurnDuration;
-                    if (grapple != null) grapple.Fire(weapon, CurrentAimDirection());
+                    if (grapple != null)
+                    {
+                        // T-075① 的**第二处**（同一条铁律："你瞄的地方"与"东西飞出去的方向"必须同源）。
+                        //
+                        // 抓钩的发射点是 `GrappleWeapon.MuzzlePosition()`（= 副手挂点 `mount.OffHandSlot`），
+                        // 而 `CurrentAimDirection()` 的锁定分支是从 `transform.position`（**脚底**）算的
+                        // → 与弓箭 T-075① 是**同一类缺陷**（实测：muzzle 高出脚底 **0.4209 m**，
+                        //    到目标距离 24.01 m 处比 `AimPoint` **高 0.4211 m**）。
+                        //
+                        // 统一到本工程**已经存在的正确写法**（施法那条用的是 `AimPoint - CastOrigin`）——
+                        // 也就是说"正确的那一种"本来就在工程里，弓箭与抓钩是两处**没跟上**的。
+                        //
+                        // ⛔ 同样**不动 `CurrentAimDirection()` 本体**：弓（`ShootArrow`）也共用它，
+                        //    在共享函数里改起点会同时改掉另一条链。
+                        // ⚠️ 鼠标分支与朝向分支**一字不改**（`PlayerAim` 的 `0f` 是另一件事，见下）。
+                        Vector3 gdir = CurrentAimDirection();
+                        if (lockOn != null && lockOn.IsLocked)
+                        {
+                            // muzzle 为空时用 `CastOrigin` 兜底：`GrappleWeapon.MuzzlePosition()` 的兜底公式
+                            // 与 `CastOrigin` **逐字相同**（`pos + up*1.05 + forward*0.6`），所以不必抄一遍魔数。
+                            Vector3 muzzle = grapple.Muzzle != null ? grapple.Muzzle.position : CastOrigin;
+                            Vector3 toAim = lockOn.AimPoint - muzzle;
+                            if (toAim.sqrMagnitude > 0.0001f) gdir = toAim;
+                        }
+                        grapple.Fire(weapon, gdir);
+                    }
                     break;
 
                 case WeaponKind.Bow:
@@ -178,6 +203,19 @@ namespace MyWorld
                                       + transform.forward * castForward;
 
         /// <summary>当前该打的方向：锁定目标 > 鼠标 > 角色朝向。</summary>
+        /// <remarks>
+        /// 🔴 **T-075 反复确认的两件事，改它之前必须知道**：
+        /// 1. **本函数有三个调用方**：抓钩（`Use` 里）、弓（`ShootArrow`）、以及它自己。
+        ///    ⚠️ **不要在函数里把锁定分支的起点从 `transform.position` 改成枪口** ——
+        ///    各兵器的枪口**不是同一个点**（弓是 `CastOrigin`、抓钩是 `MuzzlePosition()`/副手挂点），
+        ///    在共享函数里改会连带改错另一条链。**正确做法是在各自调用点按自己的枪口算**（两处都已如此改）。
+        /// 2. 🟠 **鼠标分支（就是下面 `aim.MouseDirection` 那条）没有竖直瞄准能力** ——
+        ///    `PlayerAim.cs:60` 把鼠标方向的 `y` **显式置 0**（它瞄的是"过角色原点的水平面"上的一点）。
+        ///    所以鼠标射击恒为水平、且因无重力而**永不收敛到瞄准点**。
+        ///    **这是弓箭与抓钩共有的同一个问题**（不是各自独立的）→
+        ///    **一旦用户同意"给真实三维瞄准"，这两处必须一起改，别只改弓箭。**
+        ///    ⚠️ **用户尚未同意**，属**手感变更**，别自行改。
+        /// </remarks>
         private Vector3 CurrentAimDirection()
         {
             if (lockOn != null && lockOn.IsLocked)
@@ -482,12 +520,16 @@ namespace MyWorld
             Debug.Log($"[My World] 主手武器被打掉：{dropped.displayName}");
         }
 
-        /// <summary>拾取一件武器到背包（不装备）。</summary>
+        /// <summary>
+        /// 拾取一件武器（**不装备**）。⚠️ **T-076 分支 B**：武器**不再进背包** ——
+        /// 它的归属只看 `owned`（被打掉时 `owned` 也没减，所以它本来就在里面）；
+        /// 拾取只是把它"标为可再次装备"并**通知 UI**（否则拾取会无声发生，见 `WeaponLoadout.NotifyPickedUp`）。
+        /// </summary>
         public void PickUp(WeaponDefinition weapon)
         {
             if (loadout == null || weapon == null) return;
-            loadout.AddToBackpack(weapon);
-            Debug.Log($"[My World] 拾取 {weapon.displayName} → 背包（共 {loadout.Backpack.Count} 件，未装备）");
+            loadout.NotifyPickedUp(weapon);
+            Debug.Log($"[My World] 拾取 {weapon.displayName} → 武器页（未装备；背包不再承载武器）");
         }
     }
 }

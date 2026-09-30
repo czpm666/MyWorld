@@ -291,8 +291,31 @@ namespace MyWorld
 
             // 快照：方向在**起手这一刻**定死，离弦帧只负责拿去用
             pendingShot = weapon;
-            pendingShotDir = CurrentAimDirection();
             pendingShotOrigin = CastOrigin;
+
+            // T-075①（总控批准的 bug 修复）：**锁定分支必须用「枪口」`CastOrigin` 当起点**。
+            //
+            // `CurrentAimDirection()`（:181）的锁定分支是 `AimPoint - **transform.position**`（脚底），
+            // 而箭从 `CastOrigin`（比脚底高 `castHeight = 1.05`）射出 —— **方向与起点不同源**，
+            // 于是整条弹道是**平行的上移**（不是"越远偏得越多"：平行线间距不随距离变，**近距离也会打高**）。
+            //
+            // 实测（改前，T-079 §1 口径）：锁定一个 base y=0.044 的矮敌人时
+            //   `dir.y = +0.083098`（噪声底 ±0.02 之外，且 > 判据 A-4 的 +0.05 红线）；
+            //   到目标水平距离 14.04 m 处 y = 2.251，而 `AimPoint.y = 1.2441` → **恒定高 1.05 m**。
+            //
+            // ⛔ **只在弓的调用点修，绝不动 `CurrentAimDirection()` 本体** ——
+            //    它还被**抓钩**（`:160` `grapple.Fire(weapon, CurrentAimDirection())`）共用，
+            //    在共享函数里改起点会**连带打坏抓钩的瞄准**（那是另一条链，见 T-075③）。
+            // ⚠️ **鼠标分支与「角色朝向」分支保持原样**（总控约束 b）：
+            //    `PlayerAim.cs:60` 把鼠标方向显式置 `y=0` 是**另一件事**；
+            //    要不要让鼠标能上下瞄属**手感变更**，**未获批准，等用户**。
+            pendingShotDir = CurrentAimDirection();
+            if (lockOn != null && lockOn.IsLocked)
+            {
+                pendingShotDir = lockOn.AimPoint - pendingShotOrigin;
+                if (pendingShotDir.sqrMagnitude < 0.0001f) pendingShotDir = transform.forward;
+                pendingShotDir = pendingShotDir.normalized;
+            }
             pendingShotTimer = ArrowReleaseTimeout;
 
             mage?.PlayBowShot();              // 弓自己的 Trigger，绝不碰 Slash/ComboStep

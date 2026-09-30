@@ -24,6 +24,19 @@ namespace MyWorld
         [Tooltip("挂在手上的模型预制体。留空 = 空手")]
         public GameObject model;
 
+        /// <summary>
+        /// 武器页卡片上的图标（T-083）。文件名按 **`WeaponKind`** 命名（`Assets/UI/Icons/&lt;Kind&gt;.png`）。
+        ///
+        /// 🔴 **这个引用必须由生成器写**（`MyWorldBaker.AssignWeaponIcons`），**不要手拖** ——
+        /// `WeaponDefinition` 是**序列化进场景**的普通类，手拖的引用会随一次「重建世界内容」**静默丢失**
+        /// （与 `GameAudio` 的 5 个音效槽同一个坑，见 `README` 陷阱 15/16）。
+        ///
+        /// **留空 = UI 自动回退为该武器名首字**（法/剑/弓/抓/盾/魔，互不相同）→
+        /// 所以"没有图标"是**设计允许的状态**，不是错误。
+        /// ⚠️ **匹配键用 `kind` 而不是 `displayName`** —— 后者改一次中文名就会静默失配。
+        /// </summary>
+        public Sprite icon;
+
         [Header("通用")]
         public float damage = 24f;
         [Tooltip("两次使用之间的冷却(秒)")]

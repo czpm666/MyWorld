@@ -421,6 +421,15 @@ namespace MyWorld
             label.rectTransform.anchoredPosition = new Vector2(0f, y);
             label.rectTransform.sizeDelta = new Vector2(0f, 30f);
 
+            // ---- T-083 卡片几何（界面部指定的值；**这是本规格唯一动到既有几何的地方**）----
+            // 卡片 168×52 → **232×64**；水平步进 180 → **244**（= 232 + 间距 12）；
+            // 每行 3 张（3×232 + 2×12 = 720 ≤ 内容区 910 ✓）；超出换行。
+            const float CardW = 232f, CardH = 64f, CardGapX = 12f, CardGapY = 8f;
+            const float IconBox = 48f, IconPad = 8f;
+            const float TextLeft = 64f;                        // 8 内边距 + 48 图标 + 8 间距
+            const float TextRight = 12f;
+            const int PerRow = 3;
+
             int col = 0;
             for (int i = 0; i < loadout.Owned.Count; i++)
             {
@@ -431,10 +440,19 @@ namespace MyWorld
                 bool isEquipped = (slot == HandSlot.MainHand && loadout.MainHand == w)
                                   || (slot == HandSlot.OffHand && loadout.OffHand == w);
 
-                var b = MakeButton(parent, w.displayName + (isEquipped ? "  ●" : ""),
-                    new Vector2(0f, 1f), new Vector2(0f, 1f),
-                    new Vector2(col * 180f, y - 36f), new Vector2(168f, 52f),
-                    delegate
+                int r = col / PerRow, c = col % PerRow;
+                var cardPos = new Vector2(c * (CardW + CardGapX), y - 36f - r * (CardH + CardGapY));
+
+                // 卡片本体 = 可点面板（**不用 MakeButton**：它的文字是"居中且被 Stretch"的，
+                // 而 T-083 §2.2 要求**图标在左、文字左对齐** → 结构必须自己搭）
+                var rt = MakePanel(parent, "WeaponCard_" + w.displayName,
+                    new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                    cardPos, new Vector2(CardW, CardH),
+                    isEquipped ? new Color(0.24f, 0.42f, 0.30f, 1f) : new Color(0.17f, 0.18f, 0.22f, 1f));
+
+                var btn = rt.gameObject.AddComponent<Button>();
+                btn.targetGraphic = rt.GetComponent<Image>();
+                btn.onClick.AddListener(delegate
                     {
                         loadout.Equip(loadout.Owned[index]);
                         if (mount != null) mount.Refresh(loadout);
@@ -442,10 +460,48 @@ namespace MyWorld
                         Debug.Log("[My World] 装备 " + loadout.Owned[index].displayName);
                     });
 
-                // 已装备的高亮
-                var img = b.GetComponent<Image>();
-                if (img != null)
-                    img.color = isEquipped ? new Color(0.24f, 0.42f, 0.30f, 1f) : new Color(0.17f, 0.18f, 0.22f, 1f);
+                // ---- 图标底板（48×48，左侧、垂直居中；**底板归 UI 不归 PNG** —— T-083 §4.1）----
+                var plate = MakePanel(rt, "IconPlate",
+                    new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f),
+                    new Vector2(IconPad, 0f), new Vector2(IconBox, IconBox),
+                    new Color(0.10f, 0.11f, 0.14f, 1f));
+                var plateImg = plate.GetComponent<Image>();
+                if (plateImg != null) plateImg.raycastTarget = false;   // 别挡住卡片本体的点击
+
+                if (w.icon != null)
+                {
+                    // 有图标：铺满底板，**preserveAspect** 防拉伸（F8）
+                    var iconGo = new GameObject("Icon");
+                    var irt = iconGo.AddComponent<RectTransform>();
+                    irt.SetParent(plate, false);
+                    irt.anchorMin = Vector2.zero; irt.anchorMax = Vector2.one;
+                    irt.offsetMin = new Vector2(2f, 2f); irt.offsetMax = new Vector2(-2f, -2f);
+                    var ii = iconGo.AddComponent<Image>();
+                    ii.sprite = w.icon;
+                    ii.preserveAspect = true;      // F8：不被拉伸
+                    ii.raycastTarget = false;
+                }
+                else
+                {
+                    // 🔴 **回退：武器名首字**（法/剑/弓/抓/盾/魔，互不相同）。
+                    // 六件里 Gauntlet/Grapple 目前没有图标 → 这条路径**默认就会被执行**（F5 因此天然被覆盖）。
+                    // ⚠️ **不许留空白块**（会被读成"图标加载失败"），也不许因此改卡片尺寸 → 与有图者同框同尺寸。
+                    string first = string.IsNullOrEmpty(w.displayName) ? "?" : w.displayName.Substring(0, 1);
+                    var fb = MakeText(plate, first, 24, TextAnchor.MiddleCenter, new Color(0.80f, 0.84f, 0.90f));
+                    Stretch(fb.rectTransform, 0f);
+                    fb.raycastTarget = false;
+                }
+
+                // ---- 文字：**左对齐、单行**（T-083 §2.2 / §2.3）----
+                var t = MakeText(rt, w.displayName + (isEquipped ? "  ●" : ""), 22,
+                    TextAnchor.MiddleLeft, new Color(0.92f, 0.94f, 0.97f));
+                t.rectTransform.anchorMin = new Vector2(0f, 0.5f);
+                t.rectTransform.anchorMax = new Vector2(0f, 0.5f);
+                t.rectTransform.pivot = new Vector2(0f, 0.5f);
+                t.rectTransform.anchoredPosition = new Vector2(TextLeft, 0f);
+                t.rectTransform.sizeDelta = new Vector2(CardW - TextLeft - TextRight, 40f);
+                t.raycastTarget = false;
+                FitSingleLine(t, CardW - TextLeft - TextRight);
 
                 col++;
             }
@@ -461,7 +517,9 @@ namespace MyWorld
                 none.rectTransform.sizeDelta = new Vector2(0f, 30f);
             }
 
-            return y - 36f - 52f;
+            // 槽位段落步进：y − 88（= y−36−52）→ **y − 100（= y−36−64）**
+            // —— 卡片高度 52→64 的连带结果，界面部给定；**其余各量不动**。
+            return y - 36f - CardH;
         }
 
         // ---------------- 设置页 ----------------
@@ -748,6 +806,37 @@ namespace MyWorld
             var text = MakeText(rt, label, 22, TextAnchor.MiddleCenter, new Color(0.92f, 0.94f, 0.97f));
             Stretch(text.rectTransform, 8f);
             return btn;
+        }
+
+        /// <summary>
+        /// T-083 §2.3 的文字规则：① **不换行** → ② **降字号 22 → 20 → 18（下限 18）** →
+        /// ③ 仍超出则**尾部截断加 `…`**。必须始终满足：单行、不进图标区（左边界 = 调用方给的 64）、不超卡片右边。
+        ///
+        /// 实现说明：用 `Text.preferredWidth`（Unity 按当前字号算出的**单行**理想宽度）判断，
+        /// **不需要字体度量 API**，也不需要 `resizeTextForBestFit`（那样反而不好控下限）。
+        /// </summary>
+        private static void FitSingleLine(Text t, float maxWidth)
+        {
+            if (t == null) return;
+
+            t.horizontalOverflow = HorizontalWrapMode.Overflow;   // ① 不换行
+            t.verticalOverflow = VerticalWrapMode.Truncate;
+
+            int[] sizes = { 22, 20, 18 };
+            for (int i = 0; i < sizes.Length; i++)
+            {
+                t.fontSize = sizes[i];
+                if (t.preferredWidth <= maxWidth) return;         // ② 降字号够用
+            }
+
+            string s = t.text;                                    // ③ 截断
+            while (s.Length > 1)
+            {
+                s = s.Substring(0, s.Length - 1);
+                t.text = s + "…";
+                if (t.preferredWidth <= maxWidth) return;
+            }
+            t.text = "…";
         }
 
         private static void Stretch(RectTransform rt, float padding)

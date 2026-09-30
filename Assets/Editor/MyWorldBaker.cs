@@ -51,8 +51,69 @@ namespace MyWorld.EditorTools
             // T-077：**音效槽必须由生成器写**（理由见 AssignGameAudio 的注释）——
             // 顺序放在最后：此时 Player 已经重建完，拿到的就是新的 GameAudio 组件。
             AssignGameAudio();
+            // T-083：武器图标同理（**引用必须来自生成器写的序列化字段**，否则重建即丢）
+            AssignWeaponIcons();
 
             Debug.Log($"[My World] 烘焙完成：贴图 {texs} 张、材质资源 {mats} 个、后处理 Profile 1 个。");
+        }
+
+        // ---------------- 武器图标（T-083：生成器产出） ----------------
+
+        /// <summary>图标路径**按 `WeaponKind` 命名**（**不用 `displayName`**：改中文名会静默失配）。</summary>
+        private static string IconPath(WeaponKind kind)
+        {
+            return "Assets/UI/Icons/" + kind + ".png";
+        }
+
+        /// <summary>
+        /// 🔴 T-083：把武器图标**由生成器写进 `WeaponDefinition.icon`**。
+        ///
+        /// **为什么必须由生成器写**：`WeaponDefinition` 是**序列化进场景**的普通类 →
+        /// 引用若只在场景实例里，一次「重建世界内容」就会**新建组件、图标引用全丢**，
+        /// 而 UI 侧只是"退回首字"，**不会报错**（与 `GameAudio` 5 槽完全同一个坑）。
+        ///
+        /// **验收口径（界面部 T-083 F4 的补强版）**：判的不是"界面上还看得到图标"，
+        /// 而是"**重建前后，图标引用的来源（这个序列化字段）一致且非空**" ——
+        /// 否则用运行时 `Find`/硬编码路径拿到图标的实现也能骗过 F4，坑仍在。
+        /// </summary>
+        private static void AssignWeaponIcons()
+        {
+            var player = GameObject.Find("Player");
+            if (player == null) { Debug.LogWarning("[My World] 图标赋值：找不到 Player"); return; }
+
+            var loadout = player.GetComponent<WeaponLoadout>();
+            if (loadout == null) { Debug.LogWarning("[My World] 图标赋值：Player 上没有 WeaponLoadout"); return; }
+
+            var so = new SerializedObject(loadout);
+            var owned = so.FindProperty("owned");
+            if (owned == null || !owned.isArray)
+            {
+                Debug.LogWarning("[My World] 图标赋值：拿不到 `owned` 数组（字段名改了？）");
+                return;
+            }
+
+            int set = 0, notDelivered = 0;
+            for (int i = 0; i < owned.arraySize; i++)
+            {
+                var el = owned.GetArrayElementAtIndex(i);
+                var kindProp = el.FindPropertyRelative("kind");
+                var iconProp = el.FindPropertyRelative("icon");
+                if (kindProp == null || iconProp == null) continue;
+
+                var kind = (WeaponKind)kindProp.enumValueIndex;
+                var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(IconPath(kind));
+                if (sprite == null)
+                {
+                    notDelivered++;
+                    Debug.Log($"[My World] 图标：`{kind}` 没有交付图标（{IconPath(kind)}）"
+                              + " → **留空，UI 会自动回退为该武器名首字**（设计允许的状态）");
+                    continue;
+                }
+                iconProp.objectReferenceValue = sprite;
+                set++;
+            }
+            so.ApplyModifiedPropertiesWithoutUndo();
+            Debug.Log($"[My World] 武器图标由生成器赋值：**{set} 个已交付**；{notDelivered} 个未交付（留空 → UI 首字回退）");
         }
 
         // ---------------- 音效槽（T-077：生成器产出） ----------------

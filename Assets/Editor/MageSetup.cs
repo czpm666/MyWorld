@@ -79,6 +79,28 @@ namespace MyWorld.EditorTools
             ("Jump_Land",       false, new[] { "Jump_Land" },       "Jump_Land"),
             ("Jump_Full_Short", false, new[] { "Jump_Full_Short" }, "Jump_Full_Short"),
             ("Jump_Full_Long",  false, new[] { "Jump_Full_Long" },  "Jump_Full_Long"),
+            // ---- T-058 第二批：13 条（**只做提取，不碰表现层** —— 不加状态、不加参数）----
+            // ⚠️ `loop` 一栏的权威来源是 **vfx/T-069 实测闭合比**，不是命名推断（见 gap-spec §7 表）。
+            //    标「实测」的可信；标「未实测」的是**推断**，本批**不据此改行为**。
+            // ⚠️ 全部用裸全名 → 走"先全名精确匹配"那条路，不会被子串抢先。
+            //    `"Block"` 是 `"Blocking"`/`"Block_Hit"` 的子串，**靠的就是精确匹配这一层**兜住；
+            //    再加 `expectSource` 断言（错绑会 `LogError`，不会静默）。
+            ("Block",          false, new[] { "Block" },          "Block"),            // 实测：闭合比 76.93（单向）
+            ("Blocking",       true,  new[] { "Blocking" },       "Blocking"),         // 实测：保持（循环）
+            ("Block_Hit",      false, new[] { "Block_Hit" },      "Block_Hit"),        // 未实测
+            // 🔴 本条是本批最贵的一处：`-ing` 命名推断为"循环"是**错的**。
+            //    实测闭合比 **447.55**（回绕步长是普通帧的 447 倍）= 一条"进入瞄准位"的**过渡**。
+            //    若填 true → **每次回绕剧烈跳变**。→ 必须 false。
+            ("Ranged_Aiming",  false, new[] { "1H_Ranged_Aiming" },   "1H_Ranged_Aiming"),   // 实测 447.55 → 单向
+            ("Ranged_Shooting",true,  new[] { "1H_Ranged_Shooting" }, "1H_Ranged_Shooting"), // 实测：保持（循环）
+            ("Ranged_Reload",  false, new[] { "1H_Ranged_Reload" },   "1H_Ranged_Reload"),   // 未实测
+            ("Walk_Back",      true,  new[] { "Walking_Backwards" },  "Walking_Backwards"),  // 沿用 Walk 循环
+            ("Run_Strafe_L",   true,  new[] { "Running_Strafe_Left" }, "Running_Strafe_Left"),  // 沿用 Run 循环
+            ("Run_Strafe_R",   true,  new[] { "Running_Strafe_Right" },"Running_Strafe_Right"), // 沿用 Run 循环
+            ("Idle_Unarmed",   true,  new[] { "Unarmed_Idle" },   "Unarmed_Idle"),     // 实测：保持（循环）
+            ("Punch_A",        false, new[] { "Unarmed_Melee_Attack_Punch_A" }, "Unarmed_Melee_Attack_Punch_A"),
+            ("Punch_B",        false, new[] { "Unarmed_Melee_Attack_Punch_B" }, "Unarmed_Melee_Attack_Punch_B"),
+            ("Kick",           false, new[] { "Unarmed_Melee_Attack_Kick" },    "Unarmed_Melee_Attack_Kick"),
         };
 
         /// <summary>

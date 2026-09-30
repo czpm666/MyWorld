@@ -47,6 +47,15 @@ desktop.ini
 sysinfo.txt
 crashlytics-build.properties
 
+# ---- Unity 崩溃恢复场景（2026-09-30 实测出现，必须排除）----
+# 实证：`Assets/_Recovery/0.unity`（**646,421 B**，创建 2026-09-30 09:16:17）
+#   —— 编辑器异常退出时 Unity 会把当前场景另存到这里。
+# ⚠️ 它是**自动产物、不是工程内容**；`git add -A` 会把它连同一个 `.meta` 一起提交进去，
+#   在仓库里塞一份 646 KB 的重复场景，且**与 `Assets/Scenes/MyWorld.unity` 无关**。
+# ⚠️ 这条是**靠"git status 当探针"发现的** —— 没有报错、没有任何提示，它就这么出现了。
+/[Aa]ssets/_Recovery/
+/[Aa]ssets/_Recovery.meta
+
 # ---- Addressables / 流式资源 的运行时产物 ----
 /[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/*.bin*
 /[Aa]ssets/[Ss]treamingAssets/aa.*

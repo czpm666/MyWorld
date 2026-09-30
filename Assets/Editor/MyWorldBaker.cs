@@ -39,6 +39,7 @@ namespace MyWorld.EditorTools
             EnsureFolders();
 
             AssignCharacterPrefab(bootstrap);
+            AssignMapSize(bootstrap);
 
             bootstrap.ClearGenerated();
             bootstrap.BuildAll();
@@ -47,7 +48,79 @@ namespace MyWorld.EditorTools
             int mats = BakeMaterials();
             BakeVolumeProfile();
 
+            // T-077：**音效槽必须由生成器写**（理由见 AssignGameAudio 的注释）——
+            // 顺序放在最后：此时 Player 已经重建完，拿到的就是新的 GameAudio 组件。
+            AssignGameAudio();
+
             Debug.Log($"[My World] 烘焙完成：贴图 {texs} 张、材质资源 {mats} 个、后处理 Profile 1 个。");
+        }
+
+        // ---------------- 音效槽（T-077：生成器产出） ----------------
+
+        /// <summary>槽位字段名（顺序 = `GameAudio` 里的 5 个 SerializeField）。</summary>
+        private static readonly string[] AudioSlotFields =
+        {
+            "swingClip", "hitClip", "bowShotClip", "castClip", "hurtClip"
+        };
+
+        /// <summary>对应素材路径（工程内命名惯例 `sfx_<用途>_<源文件名>`）。</summary>
+        private static readonly string[] AudioSlotPaths =
+        {
+            "Assets/Audio/sfx_swing_swish-9.wav",
+            "Assets/Audio/sfx_hit_bfh1_hit_04.ogg",
+            "Assets/Audio/sfx_bow_Bow.wav",
+            "Assets/Audio/sfx_cast_spell_01.ogg",
+            "Assets/Audio/sfx_hurt_playerhit_0.mp3",
+        };
+
+        /// <summary>
+        /// 🔴 T-077：把 5 个音效槽**由生成器写入**。
+        ///
+        /// **为什么必须在这里（而不是手工在 Inspector 上挂）**：
+        /// 场景里的 `GameAudio` 是 `MyWorldBootstrap.BuildPlayer()` 里 `AddComponent` 出来的
+        /// → **一次"重建世界内容"就会新建组件、5 个槽全为 null**。
+        /// 而播放路径是 `clip != null` 才播（设计如此：空槽静默跳过）→
+        /// **已经验收过的音效会静默消失，且没有任何报错**。
+        ///
+        /// 实证（`docs/artifacts/T-077/snapshot_before.txt`，字段级快照）：
+        ///   `Player|GameAudio|swingClip|Assets/Audio/sfx_swing_swish-9.wav#...` （带 GUID）
+        ///   而 `Player|GameAudio|bowShotClip|<null>`、`|castClip|<null>`
+        /// → **那三个已装音效只活在场景实例里**，正是"重建即丢"的形状。
+        ///
+        /// ⭐ **这是本工程的一条通用模式，请照此办理**：
+        /// **凡是"挂在 prefab/场景上的引用"（音效槽、图标 sprite、武器 mount、controller…），
+        /// 只要那个宿主是生成器建出来的，赋值就必须由生成器写。**
+        /// </summary>
+        private static void AssignGameAudio()
+        {
+            var player = GameObject.Find("Player");
+            if (player == null) { Debug.LogWarning("[My World] 音效槽赋值：找不到 Player"); return; }
+
+            var ga = player.GetComponent<GameAudio>();
+            if (ga == null) { Debug.LogWarning("[My World] 音效槽赋值：Player 上没有 GameAudio"); return; }
+
+            var so = new SerializedObject(ga);
+            int ok = 0;
+            for (int i = 0; i < AudioSlotFields.Length; i++)
+            {
+                var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(AudioSlotPaths[i]);
+                if (clip == null)
+                {
+                    Debug.LogWarning($"[My World] 音效槽 '{AudioSlotFields[i]}' 的素材没找到：{AudioSlotPaths[i]}"
+                                     + "（该槽保持为空 —— 空槽是设计允许的）");
+                    continue;
+                }
+                var prop = so.FindProperty(AudioSlotFields[i]);
+                if (prop == null)
+                {
+                    Debug.LogWarning($"[My World] GameAudio 里没有字段 '{AudioSlotFields[i]}'（字段名改了？）");
+                    continue;
+                }
+                prop.objectReferenceValue = clip;
+                ok++;
+            }
+            so.ApplyModifiedPropertiesWithoutUndo();
+            Debug.Log($"[My World] 音效槽由生成器赋值：{ok}/{AudioSlotFields.Length} 个");
         }
 
         /// <summary>
@@ -82,6 +155,38 @@ namespace MyWorld.EditorTools
         {
             var prop = so.FindProperty(field);
             if (prop != null) prop.objectReferenceValue = value;
+        }
+
+        /// <summary>
+        /// 🔴 T-077 地图 B：把**地图尺寸与出生点**写进 bootstrap 的序列化字段。
+        ///
+        /// **为什么必须在这里写**（本次实测差点踩到的坑）：
+        /// `playAreaSize` / `groundSize` / `playerStart` 都是 `[SerializeField]`
+        /// → **场景文件里存着它们的值**。实测 `Assets/Scenes/MyWorld.unity`：
+        ///   `playAreaSize: 56` ／ `groundSize: 96` ／ `playerStart: {x: 0, y: 0.2, z: -12}`
+        /// → **只改 C# 的字段初始化器不会生效**：场景里的旧值会继续被拿去生成世界，
+        ///   而且**没有任何报错、没有任何提示**。（与"改数值必须重建世界"是同一类陷阱的反向形态。）
+        ///
+        /// → 与 `AssignCharacterPrefab` 同一类处理：**由烘焙器写序列化字段**，
+        ///   这样"代码里写的口径"与"场景实际用的值"不会再分叉。
+        /// </summary>
+        private static void AssignMapSize(MyWorldBootstrap bootstrap)
+        {
+            var so = new SerializedObject(bootstrap);
+            var pArea = so.FindProperty("playAreaSize");
+            var pGround = so.FindProperty("groundSize");
+            var pStart = so.FindProperty("playerStart");
+
+            // 口径 B（面积 ×3，用户裁定）：边长 ×√3 = 56 × 1.732142857 ≈ 96.99 → 取 97
+            if (pArea != null) pArea.floatValue = 97f;
+            // 必须是 `gridCellSize * 8 = 16` 的整数倍，否则地面格子边缘会截半格 → 144 = 16 × 9
+            if (pGround != null) pGround.floatValue = 144f;
+            // 出生点**跟着一起缩**（统一缩放才保住点位之间的相对关系，理由见 ContentScale 注释）
+            if (pStart != null) pStart.vector3Value = new Vector3(0f, 0.2f, -12f * 1.732142857f);
+
+            so.ApplyModifiedPropertiesWithoutUndo();
+            Debug.Log($"[My World] 地图尺寸由烘焙器写入：playAreaSize={pArea.floatValue}"
+                      + $" groundSize={pGround.floatValue} playerStart={pStart.vector3Value}");
         }
 
         // ---------------- 材质 ----------------

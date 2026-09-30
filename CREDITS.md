@@ -55,7 +55,10 @@ KayKit : Adventurers Character Pack (1.0)
 Sound effects
 -------------
 
-### JC Sounds — *Fantasy SFX Pack Vol. 1*  *(planned — asset not yet obtained)*
+### JC Sounds — *Fantasy SFX Pack Vol. 1*  *(**not used** — superseded 2026-09-30)*
+> The bow-shot slot was ultimately filled from a **CC0** pack (`artisticdude`, see the table
+> below) instead of this CC BY 4.0 pack, **so no CC BY attribution obligation applies to the
+> shipped build**. Kept here for the record: it was the planned source and was never obtained.
 * **License:** **CC BY 4.0** — <https://creativecommons.org/licenses/by/4.0/>
 * **Attribution: REQUIRED** (CC BY 4.0 obliges credit).
 * **Planned use:** the bow-release sound (slot reserved in `GameAudio.bowShotClip`, currently **empty**).
@@ -67,7 +70,7 @@ Sound effects
 
 ### CC0 sound packs — **in use** (attribution not required; listed anyway)
 
-Three sounds are shipped. All three are **CC0 1.0** → **no attribution obligation**, and the
+**Five** sounds are shipped. All five are **CC0 1.0** → **no attribution obligation**, and the
 bundled license of the KayKit pack likewise calls crediting *"not mandatory"*.
 **They are listed here anyway, for clarity** — so that anyone asking *"which assets require
 attribution?"* can tell the two groups apart at a glance.
@@ -77,18 +80,17 @@ attribution?"* can tell the two groups apart at a glance.
 | **Sword swing** | `Assets/Audio/sfx_swing_swish-9.wav` | Swishes Sound Pack | **artisticdude** | **CC0 1.0** |
 | **Hit (sword/arrow/spell)** | `Assets/Audio/sfx_hit_bfh1_hit_04.ogg` | 75 CC0 breaking / falling / hit sfx | **rubberduck** | **CC0 1.0** |
 | **Player hurt** | `Assets/Audio/sfx_hurt_playerhit_0.mp3` | Player Hit (damage) | **GreyFrogGames** | **CC0 1.0** |
+| **Bow shot** | `Assets/Audio/sfx_bow_Bow.wav` | battle sound effects (`Bow.wav`) | **artisticdude** | **CC0 1.0** |
+| **Spellcast** | `Assets/Audio/sfx_cast_spell_01.ogg` | 80 CC0 RPG SFX (`spell_01.ogg`) | **rubberduck** | **CC0 1.0** |
 
 * **License:** **CC0 1.0 (public domain dedication)** —
   <https://creativecommons.org/publicdomain/zero/1.0/>
 * **Source:** OpenGameArt.org direct links (no login). Full URLs and the selection
   rationale are recorded in `docs/artifacts/T-063/sfx-selection.md`.
 * **Attribution required?** **No.** Listed for clarity only.
-
-### Spellcast sound — **no asset yet**
-The spellcast slot (`GameAudio.castClip`) is **empty by design**. The originally planned
-CC0 pack ("80 CC0 RPG SFX" by *rubberduck*, CC0 1.0) is still transferring.
-**No substitute synthetic/placeholder sound was added** — an empty slot is clearly better
-than an unattributed one.
+* ⚠️ **All five slots are now filled** (2026-09-30). They are assigned by the **world generator**
+  (`MyWorldBaker.AssignGameAudio`) — **not** by hand in the Inspector — because the `GameAudio`
+  component is created by the generator and a world rebuild would otherwise silently null them.
 
 
 Notes

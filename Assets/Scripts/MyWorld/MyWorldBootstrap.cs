@@ -31,16 +31,48 @@ namespace MyWorld
 
         [Header("世界")]
         [Tooltip("围墙围出的可达区域边长")]
-        [SerializeField] private float playAreaSize = 56f;
+        // T-077 地图 B（用户裁定「面积×3」）：56 → 97（= 56 × √3 = 96.99，面积变 3 倍）
+        [SerializeField] private float playAreaSize = 97f;
         [Tooltip("地面边长。要比可达区域大一圈，否则走到边上镜头会露出地面外沿（相机不夹取，只能靠地面铺够大）")]
-        [SerializeField] private float groundSize = 96f;
+        // T-077：96 → **144**（= 16 × 9）。**必须取 16 的整数倍**，因为格子贴图的重复数是
+        // `groundSize / (gridCellSize * 8)`，非整数倍会让边缘**截半格**（可见瑕疵）。
+        // ⚠️ 我原先算的 137 **不是** 16 的倍数（137/16 = 8.5625）→ 已弃用，改 144。
+        [SerializeField] private float groundSize = 144f;
         [Tooltip("地面网格一格的边长")]
         [SerializeField] private float gridCellSize = 2f;
         [Tooltip("边界围墙高度，防止走出世界")]
         [SerializeField] private float boundaryHeight = 3f;
 
+        /// <summary>
+        /// 🔴 T-077 地图 B：**内容坐标的统一放大系数**。
+        ///
+        /// **为什么用"一个系数包住原始坐标"，而不是把 40 个坐标逐个改字面量**：
+        ///  ① **原始布局保持可读** —— 下面每个 `S(...)` 里的数字仍是"按 `playAreaSize = 56` 设计时的布局"，
+        ///     一眼能看出设计意图；逐个改字面量会**永久丢掉那个信息**。
+        ///  ② **一致性由构造保证** —— 全部走同一个系数，**不可能漏乘某一个数组**
+        ///     （漏乘是这一步最可能的错，且不会报错、只会"某个东西留在原地"）。
+        ///
+        /// ⚠️ **为什么"全部一起缩"（含出生点与木桩，不只缩房子和树）**：
+        /// 生成器里这些点位的注释写明它们是"**避开房子和树篱、保证有开阔的射击走廊**"调出来的 ——
+        /// 那是**相对关系**。**只缩一部分就会破坏这些相对关系**
+        /// （例如木桩将不再避让"缩放后"的房子）。统一缩放 = **相对关系一字不变**，
+        /// 这才是"把地图扩大"的自然含义（等比放大的副本）。
+        /// 代价：出生点到木桩的绝对距离从约 6.5 m 变成约 11.3 m —— 属"地图变大"的必然结果。
+        ///
+        /// **值 = 97 / 56 = 1.732142857**（**不是 1.73**：在 41 m 量级上取整会差到厘米级）。
+        /// </summary>
+        private const float ContentScale = 1.732142857f;
+
+        /// <summary>把"按 playAreaSize=56 设计的坐标"换算到当前地图尺度（**只缩 x/z，y 不动**）。</summary>
+        private static Vector3 S(float x, float y, float z)
+        {
+            return new Vector3(x * ContentScale, y, z * ContentScale);
+        }
+
         [Header("玩家")]
-        [SerializeField] private Vector3 playerStart = new Vector3(0f, 0.2f, -12f);
+        // T-077：出生点**跟着一起缩**（(0,-12) → (0,-20.78)）。理由见 `ContentScale` 的注释：
+        // 统一缩放才能保住"点位之间"的相对关系；只缩内容不缩出生点会让玩家"陷进"布局里。
+        [SerializeField] private Vector3 playerStart = new Vector3(0f, 0.2f, -12f * 1.732142857f);
         [SerializeField] private float playerHeight = 1.7f;
         [SerializeField] private float playerRadius = 0.34f;
         [Tooltip("法师角色预制体（KayKit）。换角色只要换这个引用")]
@@ -200,9 +232,9 @@ namespace MyWorld
 
             Vector3[] spots =
             {
-                new Vector3(-14f, 0f, -16f), new Vector3(14f, 0f, -16f),
-                new Vector3(0f, 0f, 20f), new Vector3(-18f, 0f, 8f),
-                new Vector3(18f, 0f, -18f), new Vector3(8f, 0f, 16f),
+                S(-14f, 0f, -16f), S(14f, 0f, -16f),
+                S(0f, 0f, 20f), S(-18f, 0f, 8f),
+                S(18f, 0f, -18f), S(8f, 0f, 16f),
             };
 
             var root = NewProp("Enemies", Vector3.zero);
@@ -241,8 +273,8 @@ namespace MyWorld
         {
             Vector3[] spots =
             {
-                new Vector3(-5.5f, 0f, -5.5f), new Vector3(-1.8f, 0f, -5.5f),
-                new Vector3(1.8f, 0f, -5.5f),  new Vector3(5.5f, 0f, -5.5f),
+                S(-5.5f, 0f, -5.5f), S(-1.8f, 0f, -5.5f),
+                S(1.8f, 0f, -5.5f),  S(5.5f, 0f, -5.5f),
             };
 
             var root = NewProp("Dummies", Vector3.zero);
@@ -309,21 +341,22 @@ namespace MyWorld
         private void BuildLandmarks()
         {
             // 一个小水塘，给俯视图加个色块对比。
-            var pond = NewProp("Pond", new Vector3(18f, 0f, 18f));
+            var pond = NewProp("Pond", S(18f, 0f, 18f));
             AddBox(pond, "Water", new Vector3(0f, 0.06f, 0f), new Vector3(8f, 0.12f, 8f), waterMat);
 
             // 一座矮台，用来确认角色确实站在地面上而不是浮空。
-            var plinth = NewProp("Plinth", new Vector3(-16f, 0f, -2f));
+            var plinth = NewProp("Plinth", S(-16f, 0f, -2f));
             AddBox(plinth, "Base", new Vector3(0f, 0.25f, 0f), new Vector3(5f, 0.5f, 5f), stoneMat);
             PlaceholderArt.MakeFadeable(plinth, 0.3f);
         }
 
         private void BuildHouses()
         {
-            BuildHouse(new Vector3(-10f, 0f, 6f), new Vector3(7f, 3.2f, 5.5f));
-            BuildHouse(new Vector3(9f, 0f, 8f), new Vector3(6f, 3.0f, 6f));
-            BuildHouse(new Vector3(-7f, 0f, -9f), new Vector3(5.5f, 2.8f, 4.5f));
-            BuildHouse(new Vector3(11f, 0f, -6f), new Vector3(5f, 3.4f, 5f));
+            // T-077：**只缩位置，不缩尺寸** —— 地图变大 = 把东西摊开，不是把房子放大 1.73 倍。
+            BuildHouse(S(-10f, 0f, 6f), new Vector3(7f, 3.2f, 5.5f));
+            BuildHouse(S(9f, 0f, 8f), new Vector3(6f, 3.0f, 6f));
+            BuildHouse(S(-7f, 0f, -9f), new Vector3(5.5f, 2.8f, 4.5f));
+            BuildHouse(S(11f, 0f, -6f), new Vector3(5f, 3.4f, 5f));
         }
 
         private void BuildHouse(Vector3 center, Vector3 size)
@@ -339,21 +372,21 @@ namespace MyWorld
         private void BuildHedges()
         {
             // 低矮树篱：高度刚好到角色腰，用来感受"能挡住"和"能绕过去"。
-            BuildFadeableBox("Hedge0", new Vector3(-4f, 0.45f, -3f), new Vector3(10f, 0.9f, 0.7f), hedgeMat, 0.28f);
-            BuildFadeableBox("Hedge1", new Vector3(1f, 0.45f, 1f), new Vector3(0.7f, 0.9f, 8f), hedgeMat, 0.28f);
-            BuildFadeableBox("Hedge2", new Vector3(4f, 0.45f, -11f), new Vector3(9f, 0.9f, 0.7f), hedgeMat, 0.28f);
-            BuildFadeableBox("Hedge3", new Vector3(-13f, 0.45f, 12f), new Vector3(0.7f, 0.9f, 7f), hedgeMat, 0.28f);
+            BuildFadeableBox("Hedge0", S(-4f, 0.45f, -3f), new Vector3(10f, 0.9f, 0.7f), hedgeMat, 0.28f);
+            BuildFadeableBox("Hedge1", S(1f, 0.45f, 1f), new Vector3(0.7f, 0.9f, 8f), hedgeMat, 0.28f);
+            BuildFadeableBox("Hedge2", S(4f, 0.45f, -11f), new Vector3(9f, 0.9f, 0.7f), hedgeMat, 0.28f);
+            BuildFadeableBox("Hedge3", S(-13f, 0.45f, 12f), new Vector3(0.7f, 0.9f, 7f), hedgeMat, 0.28f);
         }
 
         private void BuildTrees()
         {
             Vector3[] spots =
             {
-                new Vector3(-18f, 0f, -14f), new Vector3(-14f, 0f, 12f), new Vector3(-21f, 0f, 3f),
-                new Vector3(16f, 0f, 15f), new Vector3(20f, 0f, -13f), new Vector3(14f, 0f, 2f),
-                new Vector3(-3f, 0f, 16f), new Vector3(4f, 0f, 18f), new Vector3(-16f, 0f, 19f),
-                new Vector3(21f, 0f, 6f), new Vector3(2f, 0f, -18f), new Vector3(-11f, 0f, -17f),
-                new Vector3(-24f, 0f, -6f), new Vector3(24f, 0f, 12f),
+                S(-18f, 0f, -14f), S(-14f, 0f, 12f), S(-21f, 0f, 3f),
+                S(16f, 0f, 15f), S(20f, 0f, -13f), S(14f, 0f, 2f),
+                S(-3f, 0f, 16f), S(4f, 0f, 18f), S(-16f, 0f, 19f),
+                S(21f, 0f, 6f), S(2f, 0f, -18f), S(-11f, 0f, -17f),
+                S(-24f, 0f, -6f), S(24f, 0f, 12f),
             };
 
             var root = NewProp("Trees", Vector3.zero);
@@ -371,9 +404,9 @@ namespace MyWorld
         {
             Vector3[] spots =
             {
-                new Vector3(6f, 0f, -14f), new Vector3(-6f, 0f, 14f), new Vector3(17f, 0f, -3f),
-                new Vector3(-19f, 0f, -9f), new Vector3(13f, 0f, -17f), new Vector3(-1f, 0f, 9f),
-                new Vector3(23f, 0f, -2f), new Vector3(-9f, 0f, 20f),
+                S(6f, 0f, -14f), S(-6f, 0f, 14f), S(17f, 0f, -3f),
+                S(-19f, 0f, -9f), S(13f, 0f, -17f), S(-1f, 0f, 9f),
+                S(23f, 0f, -2f), S(-9f, 0f, 20f),
             };
 
             var root = NewProp("Rocks", Vector3.zero);

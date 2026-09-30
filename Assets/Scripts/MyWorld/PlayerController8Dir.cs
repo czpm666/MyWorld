@@ -56,6 +56,24 @@ namespace MyWorld
 
         private Vector3 planarVelocity;   // 水平速度
         private float verticalVelocity;
+
+        // ---------------- T-079 §⑥ 跳跃动画（接法二）----------------
+        /// <summary>角色身上的 Animator（**懒解析**；取不到也不报错 —— 占位胶囊阶段可能还没有）。</summary>
+        private Animator anim;
+        /// <summary>最近一次"在空中"的时刻。**卡死保护**用它算"已经落地多久了"。</summary>
+        private float airborneSince = -99f;
+
+        [Tooltip("T-079 §⑥ 卡死保护：**落地后**仍未回到 Idle 超过这个秒数，就强制回 Idle。"
+                 + "⚠️ **暂定值，待用户确认**（属表现层，不是战斗数值）")]
+        [SerializeField] private float jumpStuckRecoverSeconds = 0.5f;
+
+        // ⚠️ 下面三个字符串**必须与 `MageSetup` 的 `JumpTrigger` / `AirborneParam` /
+        //    状态名 `Idle` **逐字一致**。`MageSetup` 在 Editor 程序集、本类在运行时程序集，
+        //    **无法共享常量** → 只能靠这段注释互相指认。**改名时两处都要改**：
+        //    参数名不匹配**不会报错**，只会让跳跃**静默不动**（这类静默失败本项目吃过多次）。
+        private const string JumpTriggerParam = "Jump";
+        private const string AirborneParam = "Airborne";
+        private const string IdleStateName = "Idle";
         private float yaw;                // 当前朝向(度)
         private float yawTarget;          // 吸附到 8 方向后的目标朝向
         private float animSpeed;          // 喂给 Animator 的语义化速度
@@ -315,11 +333,41 @@ namespace MyWorld
             {
                 verticalVelocity = jumpSpeed;
                 lastGroundedTime = -99f;   // 一次按键只起跳一次
+                // T-079 §⑥：**起跳那一帧**触发跳跃动作。
+                // 这就是当初的"接法一"那一条 —— 但接法二（`MageSetup` 里那三条转换）
+                // 在此之上补了 `Jump_Start → Jump_Idle → Jump_Land → Idle` 的完整链，
+                // 所以这里只负责"按开关"，**衔接由控制器 + 下面的 `Airborne` 负责**。
+                if (anim != null) anim.SetTrigger(JumpTriggerParam);
             }
 
             // 重力
             if (cc.isGrounded && verticalVelocity < 0f) verticalVelocity = groundedStick;
             verticalVelocity += gravity * dt;
+
+            // ---- T-079 §⑥：把"是否离地"喂给动画层（接法二的**唯一数据通道**）----
+            if (anim == null) anim = GetComponentInChildren<Animator>();
+            if (anim != null)
+            {
+                bool air = IsAirborne;
+                anim.SetBool(AirborneParam, air);
+                if (air) airborneSince = Time.time;
+
+                // 🔴 **卡死保护**（为什么必须有）：
+                // `Jump_Idle` 是**循环**态，它**唯一**的出边是"`Airborne == false`"那条条件转移。
+                // 若那条转移因任何原因没触发（参数没喂上 / 被某个 AnyState 抢走），
+                // 角色会**永远停在滞空动作里，而且不报错** —— 正是 §3 R4 当初担心的形状。
+                // → 兜底：**持续不在空中**超过阈值而动画仍停在某个跳跃状态，就强制回 `Idle`。
+                else if (Time.time - airborneSince > jumpStuckRecoverSeconds)
+                {
+                    var st = anim.GetCurrentAnimatorStateInfo(0);
+                    if (st.IsName("Jump_Start") || st.IsName("Jump_Idle") || st.IsName("Jump_Land"))
+                    {
+                        anim.Play(IdleStateName, 0, 0f);
+                        airborneSince = Time.time;   // 复位，避免每帧重复强制
+                        Debug.LogWarning("[My World] 跳跃卡死保护触发：落地后仍未回 Idle，已强制回 Idle");
+                    }
+                }
+            }
 
             Vector3 motion = planarVelocity + Vector3.up * verticalVelocity;
             cc.Move(motion * dt);

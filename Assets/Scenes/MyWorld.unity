@@ -7118,6 +7118,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1395483235}
     m_Modifications:
+    - target: {fileID: 3287785150796005192, guid: b4fba06c48499f2458d3d1dcf35dc98b, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 273c2be36d0096a4d8f3f7490cfe51bb, type: 2}
     - target: {fileID: 7074743768320270404, guid: b4fba06c48499f2458d3d1dcf35dc98b, type: 3}
       propertyPath: m_Name
       value: Character
@@ -12510,6 +12514,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1191298714}
   - component: {fileID: 1191298713}
+  - component: {fileID: 1191298715}
   m_Layer: 0
   m_Name: Sun
   m_TagString: Untagged
@@ -12597,6 +12602,35 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1191298715
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1191298712}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
 --- !u!1 &1218266538
 GameObject:
   m_ObjectHideFlags: 0
@@ -15349,6 +15383,7 @@ MonoBehaviour:
   knockbackDecay: 55
   knockbackMinSpeed: 26
   knockbackStun: 0.35
+  jumpStuckRecoverSeconds: 0.5
 --- !u!143 &1395483247
 CharacterController:
   m_ObjectHideFlags: 0

@@ -127,6 +127,15 @@ namespace MyWorld.EditorTools
         /// </summary>
         private const string JumpTrigger = "Jump";
 
+        /// <summary>
+        /// T-079 §⑥（跳跃接法二）：**滞空布尔量**的名字。
+        /// 由 `PlayerController8Dir` **每帧**喂 `IsAirborne`（`:83`，`!cc.isGrounded`）。
+        ///
+        /// ⚠️ 它表达的是"**人是否离地**"，与 `Jump`(Trigger) 表达"按了跳"是**两件事**：
+        /// Trigger 负责**进**起跳，Bool 负责**走完**滞空与落地。
+        /// </summary>
+        private const string AirborneParam = "Airborne";
+
         /// <summary>连招用的四个剪辑，顺序就是出招顺序。**只表示剑的连招段位**。</summary>
         private static readonly string[] ComboClips = { "Attack_1", "Attack_2", "Attack_3", "Attack_4" };
 
@@ -678,8 +687,10 @@ namespace MyWorld.EditorTools
             //    * 其余 4 个状态可经 `Animator.Play(name)` 直接寻址（验收抽查用）
             // ⚠️ `BackToIdle` 只给**非循环单次**剪辑（§3 R4）；`Jump_Idle` 是循环，**不给**。
             ctrl.AddParameter(JumpTrigger, AnimatorControllerParameterType.Trigger);
+            // T-079 §⑥ 片 1（接法二）：滞空布尔量，由 `PlayerController8Dir` **每帧**喂
+            ctrl.AddParameter(AirborneParam, AnimatorControllerParameterType.Bool);
 
-            AnimatorState jumpStartState = null;
+            AnimatorState jumpStartState = null, jumpIdleState = null, jumpLandState = null;
             foreach (var js in JumpStates)
             {
                 clips.TryGetValue(js.name, out var jumpClip);
@@ -692,6 +703,8 @@ namespace MyWorld.EditorTools
                 var st = AddState(sm, js.name, jumpClip);
                 if (!js.loop) BackToIdle(st, idle);      // 非循环才回 Idle
                 if (js.name == "Jump_Start") jumpStartState = st;
+                else if (js.name == "Jump_Idle") jumpIdleState = st;
+                else if (js.name == "Jump_Land") jumpLandState = st;
             }
 
             if (jumpStartState != null)
@@ -703,6 +716,32 @@ namespace MyWorld.EditorTools
                 jt.AddCondition(AnimatorConditionMode.If, 0f, JumpTrigger);
                 jt.AddCondition(AnimatorConditionMode.IfNot, 0f, "Dead");
             }
+
+            // ================= T-079 §⑥ 片 1：**完整跳跃链（接法二）** =================
+            //   Jump_Start --(Airborne==true)--> Jump_Idle --(Airborne==false)--> Jump_Land --(既有 BackToIdle)--> Idle
+            //
+            // ⚠️ **`Jump_Idle` 是循环态，所以给它的是"通向 `Jump_Land` 的条件转移"，不是 `BackToIdle`** ——
+            //    §3 R4 禁的是"给循环态挂 `BackToIdle`"，不是禁"给它一条正经出边"。
+            // ⚠️ **落地回 Idle 必须经 `Jump_Land`**：`Jump_Idle` 的**唯一**出边就是下面这条，
+            //    所以"滞空结束"只能由 `Airborne` 由真变假来触发。
+            // ⚠️ **已知可见行为（本批按最小改动不动，待用户拍板）**：
+            //    `Slash`/`Hit`/`Attack` 的 AnyState 转移条件里**没有"是否在空中"** →
+            //    **空中挥剑会打断跳跃动作**（直接切进攻击状态）。这是**玩法设计**问题，不是 bug。
+            if (jumpStartState != null && jumpIdleState != null)
+            {
+                var tUp = jumpStartState.AddTransition(jumpIdleState);
+                tUp.hasExitTime = false;      // 不等起跳动作播完：离地就走
+                tUp.duration = 0.10f;
+                tUp.AddCondition(AnimatorConditionMode.If, 0f, AirborneParam);
+            }
+            if (jumpIdleState != null && jumpLandState != null)
+            {
+                var tDown = jumpIdleState.AddTransition(jumpLandState);
+                tDown.hasExitTime = false;
+                tDown.duration = 0.10f;
+                tDown.AddCondition(AnimatorConditionMode.IfNot, 0f, AirborneParam);
+            }
+            // `Jump_Land → Idle` 已在上面由 `BackToIdle(st, idle)` 建好（它是**非循环**态），此处**不重复建**。
 
             return ctrl;
         }

@@ -38,20 +38,56 @@ namespace MyWorld
         public static float SlashCenterForwardScale = 0.50f;
 
         /// <summary>
-        /// 弧面相对水平面的仰角（度）。0 = 纯水平，90 = 纯竖直。
-        /// 相机俯角 52°，纯竖直的斩击面在俯视下会被压成一条线（用户否决过线状效果），
-        /// 所以只做小幅仰起：让外缘露出来，同时保留"横扫"的读法。
+        /// 剑四段各自的**表现层几何与颜色**（T-011）。**这是四段差异的唯一真相源** ——
+        /// 原先四段几何完全相同、只靠 `finisher` 换一个近白色，所以"四段看起来一样"。
+        ///
+        /// 依据 `docs/artifacts/T-011/slash-vfx-spec.md` §1.1（四段靠**形状/朝向/尺寸/颜色/时机**区分）。
+        /// ⚠️ **区分手段里没有"更亮/发光"** —— 月牙走 `Sprites/Default` 顶点色，**结构上被夹取**
+        ///    （T-068 实测：增益 1.7 与 8.0 像素逐位相同），所以只能靠几何 + 颜色。
+        ///
+        /// ⚠️ **旧旋钮 `SlashPitchDegrees` / `SlashLift` 与两个旧色已删除**（T-011 前它们四段共用）。
+        ///    它们全工程只有本文件用（已核）→ 删除不留双真相源。
         /// </summary>
-        public static float SlashPitchDegrees = 20f;
+        private struct SlashSeg
+        {
+            public float pitch;        // 弧面仰角（度）：0=水平横弧，90=正面竖拱
+            public float roll;         // 绕前向轴滚（度）：只有第 3 段用（做出屏幕上真正的"斜"）
+            public float arc;          // 视觉弧角（度）
+            public float radiusScale;  // 视觉弧半径的额外倍率
+            public float lift;         // 弧带中点抬高的**起点**
+            public float liftDrift;    // 生命期内 lift 的**增量**（0 = 恒定）
+            public float lateralDrift; // 生命期内沿横轴 `right` 的横向位移（0 = 不位移）
+            public bool line;          // true = 走既有的 line 模式（第 4 段突刺，不是弧）
+            public Color color;
 
-        /// <summary>弧带中点高出判定中心的高度（米）。判定中心本身已是胸口高度，这里只小幅抬高。</summary>
-        public static float SlashLift = 0.25f;
+            public SlashSeg(float pitch, float roll, float arc, float radiusScale,
+                            float lift, float liftDrift, float lateralDrift, bool line, Color color)
+            {
+                this.pitch = pitch; this.roll = roll; this.arc = arc; this.radiusScale = radiusScale;
+                this.lift = lift; this.liftDrift = liftDrift; this.lateralDrift = lateralDrift;
+                this.line = line; this.color = color;
+            }
+        }
 
-        /// <summary>挥砍月牙的颜色：偏白的冷色，和敌人的橙/品红拉开区分。（原 PlayerCombat.SlashColor）</summary>
-        public static readonly Color SwordSlashColor = new Color(0.86f, 0.95f, 1f, 1f);
+        /// <summary>
+        /// 突刺（第 4 段）的线长倍率。规格 §1.1："长度 ×1.45（四段最长）" ——
+        /// 弧段半径最大只有 `hitRange × SlashRadiusScale(0.85) × 1.00`，所以 1.45 让它明显最长。
+        /// </summary>
+        private const float StabLengthScale = 1.45f;
 
-        /// <summary>突刺（连招最后一段）的颜色，更亮更暖，让收招看得出来。（原 PlayerCombat.FinisherColor）</summary>
-        public static readonly Color SwordFinisherColor = new Color(1f, 0.94f, 0.72f, 1f);
+        /// <summary>
+        /// 四段几何 + 颜色。**顺序 = 连招段位 1..4**（横劈 / 下劈 / 斜劈 / 突刺）。
+        /// 颜色是 LDR（≤1.0）且**饱和度 0.40–0.65**：旧两色看着都像白光，根因是**饱和度只有 0.14/0.28**
+        /// （**不是色相** —— 旧两色色相本来就相差 154.3°）。
+        /// 规格 F4 判据：四色**色相两两 ≥25°** 且**饱和度 ≥0.40**（最小一对 1↔2 = 27.6°）。
+        /// </summary>
+        private static readonly SlashSeg[] SwordSegments =
+        {
+            new SlashSeg( 8f,   0f, 130f, 1.00f, 0.25f,  0.00f, 0f,    false, new Color(0.60f, 0.95f, 1.00f)), // 1 横劈 冰青
+            new SlashSeg(82f,   0f,  70f, 0.80f, 0.55f, -0.70f, 0f,    false, new Color(0.35f, 0.62f, 1.00f)), // 2 下劈 蓝（下坠）
+            new SlashSeg(45f, -40f,  95f, 0.92f, 0.45f, -0.40f, 0.35f, false, new Color(0.78f, 0.55f, 1.00f)), // 3 斜劈 紫（斜移）
+            new SlashSeg( 0f,   0f,   0f, 0.00f, 0.25f,  0.00f, 0f,    true,  new Color(1.00f, 0.82f, 0.45f)), // 4 突刺 金（直线）
+        };
 
         // 三层：内层细亮边 / 中层是"带"的主体 / 外层再收一道边。
         // 半径要拉开、线宽要窄 —— 线宽一旦接近或超过半径间距，三层就叠成一团实心扇面。
@@ -64,17 +100,31 @@ namespace MyWorld
         private static readonly float[] SwordLayerWidth = { 0.40f, 0.54f, 0.30f };
         private static readonly float[] SwordLayerAlpha = { 0.50f, 1.00f, 0.38f };
 
+        /// <summary>刀尖拖尾的发射时长（T-012，秒）。规格 §2.3："挥砍开始 → 开始后 0.30s"，
+        /// 覆盖 0.20s 事件前后。**这是表现层常量，不是玩法数值。**</summary>
+        public const float SlashTrailEmitSeconds = 0.30f;
+
         /// <summary>
-        /// 玩家剑的挥砍刀光。**这是玩家挥砍唯一的视觉入口**，
+        /// 取某一段刀光的颜色（段位 1..4，超范围夹紧）。**给拖尾用** ——
+        /// 规格 §2.3 要求拖尾"与当段刀光同色"，所以颜色只能有一个来源（本表）。
+        /// </summary>
+        public static Color SwordSegmentColor(int segment)
+        {
+            int seg = Mathf.Clamp(segment, 1, SwordSegments.Length);
+            return SwordSegments[seg - 1].color;
+        }
+
+        /// <summary>
+        /// 玩家的剑的挥砍刀光。**这是玩家挥砍唯一的视觉入口**，
         /// 由 `PlayerCombat.OnSlashImpact()` 在动画命中帧调用。
         /// </summary>
         /// <param name="center">判定中心（已是胸口高度）</param>
         /// <param name="forward">出手朝向</param>
         /// <param name="hitRange">判定近战半径。只用来换算视觉尺寸，判定本身仍在 PlayerCombat</param>
         /// <param name="hitHalfAngleDegrees">判定半张角。只用来换算视觉弧角</param>
-        /// <param name="finisher">是否连招最后一段（突刺），决定颜色</param>
+        /// <param name="segment">连招段位 **1..4**（T-011：四段几何/颜色各不相同；超范围会被夹到 1..4）</param>
         public static void SwordSlash(Vector3 center, Vector3 forward, float hitRange,
-                                      float hitHalfAngleDegrees, bool finisher)
+                                      float hitHalfAngleDegrees, int segment)
         {
             Vector3 f = Flatten(forward);
 
@@ -82,26 +132,44 @@ namespace MyWorld
             float d = hitRange * SlashCenterForwardScale;
             Vector3 origin = center + new Vector3(f.x * d, 0f, f.z * d);
 
+            int seg = Mathf.Clamp(segment, 1, SwordSegments.Length);
+            SlashSeg S = SwordSegments[seg - 1];
+
             var go = new GameObject("Vfx_SwordSlash");
             go.transform.position = origin;
 
+            var v = go.AddComponent<CrescentSlash>();
+
+            // ---- 第 4 段：突刺 ----
+            // 复用**既有的 line 模式**（规格 §1.1："不是弧，是直线"），不新增模式。
+            if (S.line)
+            {
+                v.InitLine(origin, f, hitRange * StabLengthScale, S.color);
+                return;
+            }
+
+            // ---- 第 1..3 段：弧 ----
             var style = new CrescentStyle();
             style.radiusMul = SwordRadiusMul;
             style.widths = SwordLayerWidth;
             style.alphas = SwordLayerAlpha;
-            style.pitchDegrees = SlashPitchDegrees;
-            style.lift = SlashLift;
+            style.pitchDegrees = S.pitch;
+            style.rollDegrees = S.roll;          // T-011 新增（只有第 3 段非 0）
+            style.lift = S.lift;
+            style.liftDrift = S.liftDrift;       // 下坠/上抬
+            style.lateralDrift = S.lateralDrift; // 斜移
             style.capVertices = 1;
 
-            var v = go.AddComponent<CrescentSlash>();
+            // ⚠️ **视觉半径/弧角与判定并不一一对应，这一条必须写在明处**（T-051 的教训：
+            //    不要在注释里声称"视觉不撒谎"而实际存在系数）：
+            //    * 半径：视觉 = 判定 × `SlashRadiusScale(0.85)` × **本段的 `radiusScale`（1.00/0.80/0.92）**
+            //    * 弧角：第 1 段 = 判定弧角（×2）；**第 2/3 段故意收窄（70°/95°）** 用于形状区分
+            //    → 即**第 2、3 段的视觉范围小于实际判定范围**，这是 T-011 为"四段可区分"**有意付出的代价**。
+            //    依据：规格 §1.1 明确要求弧角 130/70/95。**不是疏漏，是取舍，故写在这里。**
             v.InitStyled(origin, f,
-                hitRange * SlashRadiusScale,     // 视觉弧半径
-                // ⚠️ T-051 订正：原注释写"视觉弧角 = 判定弧角，**视觉不撒谎**" —— **只对角度成立，对半径不成立。**
-                // 角度这一项确实一致（判定半张角 ×2）；但**半径另有 `SlashRadiusScale = 0.85` 系数**
-                // （本文件 :32），所以视觉弧半径 = 判定半径 × 0.85 —— **弧带内缘 < 判定半径、外缘 > 判定半径**，
-                // 两者并不重合。写"不撒谎"会让后来的人以为视觉与判定对齐，从而**不去核这件事**。
-                hitHalfAngleDegrees * 2f,        // 视觉弧角 = 判定弧角（角度一致；半径见上一行）
-                finisher ? SwordFinisherColor : SwordSlashColor,
+                hitRange * SlashRadiusScale * S.radiusScale,
+                S.arc,
+                S.color,
                 style);
         }
 
@@ -166,6 +234,15 @@ namespace MyWorld
         public float pitchDegrees;
         /// <summary>弧带中点抬高（米）。</summary>
         public float lift;
+        /// <summary>T-011 新增：绕**前向轴**滚（度）。0 = 不滚。
+        /// 不加它，第 3 段只能是"pitch=45° 的斜拱"，在屏幕上仍是一条**弦为横**的弧，
+        /// 与第 2 段的竖拱区分度不足（规格 §1.3）。</summary>
+        public float rollDegrees;
+        /// <summary>T-011 新增：生命期内 `lift` 的**增量**（弧带从 `lift` 线性移到 `lift + liftDrift`）。
+        /// ⚠️ 用**增量**而不是"终点值"：终点值默认 0 会把没设置它的调用方的 `lift` 一起拉到 0（静默改变行为）。</summary>
+        public float liftDrift;
+        /// <summary>T-011 新增：生命期末沿横轴 `right` 的横向位移（米）。0 = 不位移。</summary>
+        public float lateralDrift;
         /// <summary>端点圆角段数。</summary>
         public int capVertices;
     }
@@ -364,6 +441,16 @@ namespace MyWorld
             float p = style.pitchDegrees * Mathf.Deg2Rad;
             axis = new Vector3(f.x * Mathf.Cos(p), Mathf.Sin(p), f.z * Mathf.Cos(p)).normalized;
 
+            // T-011：绕**前向轴**再滚一个角，把 `right` 与 `axis` 一起转。
+            // 目的：做出屏幕上真正的"斜"（规格 §1.3）。roll = 0 时下面这段等价于什么都不做，
+            // 所以**既有调用方（敌人冲刺斩等）行为一字不变**。
+            if (Mathf.Abs(style.rollDegrees) > 0.0001f)
+            {
+                var rollRot = Quaternion.AngleAxis(style.rollDegrees, f);
+                right = rollRot * right;
+                axis = rollRot * axis;
+            }
+
             Build();
         }
 
@@ -452,10 +539,14 @@ namespace MyWorld
 
             float fade = 1f - t;
 
+            // T-011：生命期内的"时机"维度（下坠 / 斜移）。二者默认 0 → 既有行为不变。
+            float liftNow = style.lift + style.liftDrift * t;
+            float driftNow = style.lateralDrift * t;
+
             if (lineMode)
             {
                 if (line == null) return;
-                Vector3 up = Vector3.up * style.lift;
+                Vector3 up = Vector3.up * liftNow;
                 Vector3 a = origin - axis * (lineLength * 0.15f);
                 Vector3 b = origin + axis * lineLength;
                 line.SetPosition(0, a + up);
@@ -486,8 +577,8 @@ namespace MyWorld
                         axis.x * Mathf.Cos(a) + right.x * Mathf.Sin(a),
                         axis.y * Mathf.Cos(a) + right.y * Mathf.Sin(a),
                         axis.z * Mathf.Cos(a) + right.z * Mathf.Sin(a));
-                    Vector3 p = origin + dir * radius;
-                    lr.SetPosition(s, new Vector3(p.x, p.y + style.lift - rise, p.z));
+                    Vector3 p = origin + dir * radius + right * driftNow;
+                    lr.SetPosition(s, new Vector3(p.x, p.y + liftNow - rise, p.z));
                 }
 
                 lr.widthMultiplier = style.widths[i] * Mathf.Lerp(0.5f, 1f, fade) * spread;

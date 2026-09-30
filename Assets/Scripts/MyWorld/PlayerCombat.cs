@@ -494,7 +494,15 @@ namespace MyWorld
             // 挥砍刀光：一段有厚度的弧带，形状／朝向／层宽／颜色全部在 SkillVfx 里。
             // 这里只把**判定**用的半径和半张角原样递过去，视觉参数一概不写在本文件。
             // ⚠️ 判定条件、范围、伤害、击退都不在这里动。
-            SkillVfx.SwordSlash(center, transform.forward, weapon.meleeRange, weapon.meleeHalfAngle, finisher);
+            // T-011：把**段位**传下去（1..4）→ 四段的形状/朝向/尺寸/颜色由 SkillVfx 的分段表决定。
+            //   用的是 `step`（命中帧回调里已快照的段位），不是当前 `comboStep` —— 后者可能已经变了。
+            SkillVfx.SwordSlash(center, transform.forward, weapon.meleeRange, weapon.meleeHalfAngle, step + 1);
+
+            // T-012：刀尖拖尾。颜色 = **当段刀光的颜色**（规格 §2.3：同色以强化该段的颜色维度）。
+            // ⚠️ 发射门控在 `WeaponMount` 内部（0.30s 后自动停）—— 这样"平时没有拖尾"（判据 F7）
+            //    不依赖调用方每帧调用。
+            if (mount != null)
+                mount.EmitSlashTrail(SkillVfx.SwordSegmentColor(step + 1), SkillVfx.SlashTrailEmitSeconds);
         }
 
         // ---------------- 掉武器 / 拾取 ----------------

@@ -180,6 +180,45 @@ namespace MyWorld.EditorTools
         private const string StrafeDirParam = "StrafeDir";
 
         /// <summary>
+        /// T-079 §⑨ 片 4（空手组）：**空手组的独立状态清单**（顺序即 `AddState` 顺序）。
+        ///
+        /// ⚠️ **不放进 `ComboClips`** —— 理由与 `JumpStates` / `BlockStates` 完全相同：那会给剑
+        /// **凭空造出连招段位**，而且**不报错**。
+        ///
+        /// ⚠️ 状态名取 `Wanted[]` 的**首列**（`Idle_Unarmed` / `Punch_A` / `Punch_B` / `Kick`），
+        ///    **不是** `expectSource`（源名是 `Unarmed_Idle` / `Unarmed_Melee_Attack_Punch_A/B` /
+        ///    `Unarmed_Melee_Attack_Kick`）。**这四条首列与源名全不同**（陷阱 21）——
+        ///    拿源名当状态名 = **状态永远进不去、且不报错**。
+        ///
+        /// ⚠️ 只有 `Idle_Unarmed` 是**循环**（待机保持）→ **不给 `BackToIdle`**（§3 R4）；
+        ///    三条出拳是**单次**，出边是 exit-time 回 `Idle_Unarmed`（见 `BuildAnimator`），
+        ///    **绝不给 `Idle`** —— 缴械状态下挨完一拳应当回**空手待机**，而不是回持械待机。
+        /// </summary>
+        private static readonly (string name, bool loop)[] UnarmedStates =
+        {
+            ("Idle_Unarmed", true),    // 循环：不给 BackToIdle
+            ("Punch_A",      false),
+            ("Punch_B",      false),
+            ("Kick",         false),
+        };
+
+        /// <summary>
+        /// T-079 §⑨ 片 4：**空手**布尔量的名字（Bool）。由 `PlayerMage.Update` **每帧**喂
+        /// `PlayerCombat.IsUnarmed`（= `loadout.MainHand == null`，唯一缴械路径
+        /// `WeaponLoadout.DropMainHand()` ← 敌人盾击 `KnockOffMainHand`）。
+        ///
+        /// ⚠️ 它表达的是"**主手空着**"（**电平**，缴械期间一直为真），**不是"按了左键"** ——
+        ///    按左键出拳走 `PlayerMage.PlayUnarmedAttack()` 的 `Animator.Play` 直接寻址，
+        ///    **不进 AnyState 竞争**（陷阱 22：同帧多个 Trigger 谁赢未定义）。
+        /// ⚠️ **所以入口边不能写 AnyState**（与片 2 的 `IsBlocking` 同一形状）：电平 + AnyState
+        ///    = 在 `Idle_Unarmed` 里每帧被重新拽入 → 抖动。这里写成 `Idle →(Unarmed) Idle_Unarmed`。
+        /// ⚠️ **必须与运行时侧逐字一致**：`PlayerMage.cs` 的 `UnarmedHash` 用的就是这个字符串。
+        ///    两侧各写一份（Editor 程序集 ↔ 运行时程序集不能互相引用）；
+        ///    **名字不匹配不会报错，只会让空手待机静默不动**（陷阱 20 / 21）。
+        /// </summary>
+        private const string UnarmedParam = "Unarmed";
+
+        /// <summary>
         /// T-079 §⑦ 片 2：格挡组的**独立状态清单**（顺序即 `AddState` 顺序）。
         ///
         /// ⚠️ **不放进 `ComboClips`** —— 理由与 `JumpStates` 完全相同：那会给剑**凭空造出连招段位**，
@@ -957,6 +996,71 @@ namespace MyWorld.EditorTools
                 tIdle.duration = 0.12f;
                 tIdle.AddCondition(AnimatorConditionMode.Equals, 0f, StrafeDirParam);
                 tIdle.AddCondition(AnimatorConditionMode.Less, 0.15f, "Speed");
+            }
+
+            // ================= T-079 §⑨ 片 4：**空手组** =================
+            //   状态：`Idle_Unarmed`(循环待机) / `Punch_A` / `Punch_B` / `Kick`(三条单次出拳)
+            //   参数：只有 `Unarmed`(Bool)，由 `PlayerMage.Update` 每帧喂 `PlayerCombat.IsUnarmed`
+            //        （= `loadout.MainHand == null`，唯一缴械路径 `WeaponLoadout.DropMainHand`）。
+            //
+            //   ⚠️ **入口边为什么不是 AnyState**：`Unarmed` 是**电平**（缴械期间一直为真），
+            //      与片 2 的 `IsBlocking` **同一形状** —— AnyState 会让 `Idle_Unarmed` 每帧被拽回
+            //      （片 2 实测过 `Block`↔`Blocking` 抖动）。这里只有 `Idle → Idle_Unarmed` 一条入口。
+            //
+            //   ⚠️ **三条出拳没有"进入边"**：由 `PlayerMage.PlayUnarmedAttack()` 用
+            //      `Animator.Play(状态名)` 直接寻址 —— 0 帧延迟、确定，且**不与既有
+            //      `Hit`/`Slash`/`BowShot` 抢 AnyState**（同帧多条 AnyState 同时成立时谁赢，
+            //      本项目既未定义也未控制 → 出拳可能永远播不出来且不报错，见陷阱 22）。
+            //      **出边仍在控制器里**（exit time 回 `Idle_Unarmed`）→ 结构上不可能卡在出拳里。
+            //
+            //   ⚠️ `Idle_Unarmed` 是**循环态 → 不给 `BackToIdle`**（§3 R4）。它的出边正好两条：
+            //      ① `Unarmed` 由真变假 → `Idle`（**装回武器就退回持械待机**，I1 反向臂的结构保证）；
+            //      ② 复用**既有** `Speed` 阈值 → `Walk`(>0.15) / `Run`(>0.75)（缴械后走动仍走既有
+            //         locomotion —— **空手没有走路剪辑**，本片只接"待机 + 出拳"）。
+            ctrl.AddParameter(UnarmedParam, AnimatorControllerParameterType.Bool);
+
+            AnimatorState idleUnarmedSt = null, punchASt = null, punchBSt = null, kickSt = null;
+            foreach (var us in UnarmedStates)
+            {
+                clips.TryGetValue(us.name, out var unarmedClip);
+                if (unarmedClip == null)
+                {
+                    Debug.LogError($"[My World] controller 里没有 {us.name} 剪辑，该空手状态被跳过。");
+                    continue;
+                }
+
+                var st = AddState(sm, us.name, unarmedClip);
+                if (us.name == "Idle_Unarmed") idleUnarmedSt = st;
+                else if (us.name == "Punch_A") punchASt = st;
+                else if (us.name == "Punch_B") punchBSt = st;
+                else if (us.name == "Kick") kickSt = st;
+            }
+
+            if (idleUnarmedSt != null)
+            {
+                // 入口：**只从 `Idle`**（与片 2 的 `AddBlockEntrance` 同形）
+                var tUnarmedIn = idle.AddTransition(idleUnarmedSt);
+                tUnarmedIn.hasExitTime = false;
+                tUnarmedIn.duration = 0.12f;
+                tUnarmedIn.AddCondition(AnimatorConditionMode.If, 0f, UnarmedParam);
+
+                // 装回武器 → 回 Idle（**离开空手待机的唯一"非移动"通路**）
+                var tUnarmedOut = idleUnarmedSt.AddTransition(idle);
+                tUnarmedOut.hasExitTime = false;
+                tUnarmedOut.duration = 0.12f;
+                tUnarmedOut.AddCondition(AnimatorConditionMode.IfNot, 0f, UnarmedParam);
+
+                // 缴械后走/跑：**逐字复用既有 `Speed` 阈值**（与 `Idle` 自己的两条边同参）
+                FloatTransition(idleUnarmedSt, walk, AnimatorConditionMode.Greater, 0.15f);
+                FloatTransition(idleUnarmedSt, run, AnimatorConditionMode.Greater, 0.75f);
+
+                // 三条出拳：单次，播到 92% 回**空手待机**（`BackToIdle` 的同参形态，只是目的地不是 Idle）
+                var unarmedPunches = new[] { punchASt, punchBSt, kickSt };
+                for (int p = 0; p < unarmedPunches.Length; p++)
+                {
+                    if (unarmedPunches[p] == null) continue;
+                    BackToIdle(unarmedPunches[p], idleUnarmedSt);
+                }
             }
 
             return ctrl;

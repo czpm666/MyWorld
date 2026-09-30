@@ -37,6 +37,28 @@ namespace MyWorld
         /// <summary>T-079 §⑦ 片 2：格挡受击状态名（`Animator.Play` 用的是**状态名**）。</summary>
         private const string BlockHitStateName = "Block_Hit";
 
+        // ================= T-079 §⑨ 片 4：空手组 =================
+        // ⚠️ 下面**一个参数名 + 四个状态名**都必须与 `MageSetup`（Editor 程序集）**逐字一致** ——
+        //    两个程序集不能互相引用，只能各写一份；**名字不匹配不会报错，只会静默不动**（陷阱 20 / 21）。
+        //    * 参数：`MageSetup.UnarmedParam` = `"Unarmed"`（Bool，电平 = "主手空着"）
+        //    * 状态：`MageSetup.Wanted[]` 的**首列** = `MageSetup.UnarmedStates` 的名字
+        //      （**不是** `expectSource`：这四条**首列与源名全不同**
+        //       —— `Idle_Unarmed`←`Unarmed_Idle`、`Punch_A/B`←`Unarmed_Melee_Attack_Punch_A/B`、
+        //          `Kick`←`Unarmed_Melee_Attack_Kick`）
+
+        /// <summary>T-079 §⑨ 片 4：空手保持态的参数名（Bool）。由本类 `Update` 每帧喂 `PlayerCombat.IsUnarmed`。</summary>
+        private static readonly int UnarmedHash = Animator.StringToHash("Unarmed");
+
+        /// <summary>
+        /// T-079 §⑨ 片 4：三条空手出拳的**状态名**（`Animator.Play` 直接寻址用；顺序即循环顺序）。
+        /// ⚠️ 出拳**不新增 Trigger 参数**：同帧若既有 `Hit`/`Slash`/`BowShot` 也成立，
+        /// 谁赢取决于 AnyState 求值顺序（本项目未定义、未控制）→ 直接 `Play` 才是确定的。
+        /// </summary>
+        private static readonly string[] UnarmedAttackStateNames = { "Punch_A", "Punch_B", "Kick" };
+
+        /// <summary>下一次空手出拳播第几条（0=拳A → 1=拳B → 2=踢，循环）。</summary>
+        private int unarmedPunchIndex;
+
         /// <summary>一套连招有几段。要和 MageSetup 里 ComboClips 的长度一致。</summary>
         public const int ComboLength = 4;
 
@@ -65,7 +87,34 @@ namespace MyWorld
                 // 烘焙场景里 Awake 的时序不可靠（同 PlayerHealth.Start 的兜底），拿不到就再取一次
                 if (combat == null) combat = GetComponent<PlayerCombat>();
                 animator.SetBool(IsBlockingHash, combat != null && combat.IsBlocking);
+
+                // T-079 §⑨ 片 4：**空手保持态**。与 `IsBlocking` 逐字同形（每帧喂一个"此刻是不是"的电平量）。
+                // ⚠️ 这里的搬运是**唯一**决定"能不能进 Idle_Unarmed"的地方：
+                //    它真 → 控制器里 `Idle → Idle_Unarmed` 那条边才会成立（反向 = 装回武器就退回 Idle）。
+                animator.SetBool(UnarmedHash, combat != null && combat.IsUnarmed);
             }
+        }
+
+        /// <summary>
+        /// T-079 §⑨ 片 4：播**空手出拳**（`Punch_A` → `Punch_B` → `Kick` 循环，单次动作）。
+        ///
+        /// **谁调、什么时候调**：`PlayerCombat.UnarmedPunch`（`Use()` 的 `weapon == null` 那一支，
+        /// 或 `case WeaponKind.Unarmed`）—— 也就是**左键**、且**主手确实空着**、且**冷却已过**时。
+        /// 本方法**不判伤害**：空手不落伤害、不生成弹道（§⑨ I4）。
+        ///
+        /// ⚠️ **为什么用 `Animator.Play(状态名)` 而不是新增 Trigger 参数**：
+        /// ① 同帧若 `Hit`（挨打）/`Slash`（挥剑）/`BowShot` 也成立，多条 AnyState 同时满足 →
+        ///    **谁赢取决于 AnyState 的求值顺序（本项目既未定义也未控制）** → 出拳可能**永远播不出来且不报错**；
+        /// ② 直接寻址是 0 帧延迟、确定的，且**不需要新增第二个参数**。
+        /// ⚠️ 出边仍在控制器里（三条 exit-time 回 `Idle_Unarmed`）→ **不会卡在出拳动作里**。
+        /// ⚠️ 用**状态名**寻址 —— 必须与 `MageSetup.UnarmedStates` 逐字一致（见上面的注释）。
+        /// </summary>
+        public void PlayUnarmedAttack()
+        {
+            if (animator == null) return;
+            string stateName = UnarmedAttackStateNames[unarmedPunchIndex];
+            unarmedPunchIndex = (unarmedPunchIndex + 1) % UnarmedAttackStateNames.Length;
+            animator.Play(stateName, 0, 0f);
         }
 
         /// <summary>播放施法动作。实际的伤害/弹道由 PlayerCombat 负责。</summary>

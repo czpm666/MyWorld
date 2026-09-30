@@ -47,6 +47,16 @@ namespace MyWorld
         /// <summary>是否正处于"出手转向鼠标"的窗口内（PlayerAim 靠它决定要不要接管朝向）。</summary>
         public bool AimingAtMouse => aimTurnTimer > 0f;
 
+        /// <summary>
+        /// T-079 §⑨ 片 4（空手组）：**主手是不是空的**（= 被缴械）。
+        /// 唯一缴械路径是 `WeaponLoadout.DropMainHand()`（敌人盾击 `KnockOffMainHand`）。
+        ///
+        /// ⚠️ **写成派生属性、不缓存**：`Update` 里有两条 early-return（缺引用 / 僵直），
+        ///    若在这里缓存赋值，那几帧就会留下**陈旧值**（静默）→ 空手待机会闪回持械待机。
+        /// ⚠️ `PlayerMage.Update` 每帧把它搬给 Animator 的 `Unarmed` 参数（与 `IsBlocking` 同一个地方）。
+        /// </summary>
+        public bool IsUnarmed => loadout != null && loadout.MainHand == null;
+
         // 挥砍刀光的颜色与形状参数已迁到 `SkillVfx`（T-010）：
         // 参数长在判定文件里，每次调刀光都要动这里，容易误伤判定。本文件不再持有视觉参数。
 
@@ -137,11 +147,25 @@ namespace MyWorld
             }
         }
 
-        /// <summary>使用一件武器。空手/冷却中会直接忽略。</summary>
+        /// <summary>使用一件武器。**被缴械（主手空着）时走空手出拳**；其余空手/冷却中直接忽略。</summary>
         public void Use(WeaponDefinition weapon)
         {
             EnsureRefs();
-            if (weapon == null) return;
+
+            // ================= T-079 §⑨ 片 4：**空手出拳必须在这里明写** =================
+            // 🔴 为什么非加这一支不可：`Update` 里左键走的是 `Use(loadout.MainHand)`，
+            //    而**缴械后那个实参就是 `null`** → 原先这一行直接 `return`（下一行），
+            //    **"空手能出拳"永远不会发生，而且不报错**。
+            // ⚠️ **不能只判 `weapon == null`**：`Update` 的右键那条也调 `Use(loadout.OffHand)`，
+            //    副手为空时同样是 `null` —— 那在**持械时是既有行为 = 什么都不做**，
+            //    不该被本片变成出拳（§⑨ I2：已装备任何武器时行为一字不变）。
+            //    → **再钉一条"主手确实空着"**，于是两支互不干扰。
+            // 🔴 本支**不落任何伤害、不生成任何弹道**（§⑨ I4）—— 见 `UnarmedPunch`。
+            if (weapon == null)
+            {
+                if (loadout != null && loadout.MainHand == null) UnarmedPunch(loadout.Unarmed);
+                return;
+            }
 
             switch (weapon.kind)
             {
@@ -206,7 +230,34 @@ namespace MyWorld
                     // 盾的主动技能是盾击；平时右键是"举盾格挡"（见 Update）
                     if (cooldown <= 0f) ShieldBash(weapon);
                     break;
+
+                case WeaponKind.Unarmed:
+                    // T-079 §⑨ 片 4：空手载体**若被直接喂进来**（`Use(loadout.Unarmed)`），语义与
+                    // 上面的 `weapon == null` 支**完全一致**（同一个 `UnarmedPunch`）。
+                    // ⚠️ 加这一支是为了"没有任何 `kind` 会落进无分支" —— 缺 case 时 switch 会**静默什么都不做**
+                    //    （与"空手永不生效"是同一种静默失败）。
+                    UnarmedPunch(weapon);
+                    break;
             }
+        }
+
+        /// <summary>
+        /// T-079 §⑨ 片 4：**空手出拳** —— 只有「动作 + 冷却」，**不造成伤害、不生成弹道**。
+        ///
+        /// 🔴 **为什么故意不接伤害**（判据 §⑨ I4 的明文要求）：要真的打出 `damage = 8f`，
+        /// 就必须先定"打哪、多远、多大角度、判定发生在哪一帧"—— 那些是**玩法数值、属用户领域**。
+        /// 本片是接线，**不该由我们发明命中几何**。
+        /// ⚠️ 所以 `8f` 目前**只是空手载体上的一个暂定数据**（§⑨ I3 要求它"来源单一"），
+        /// **没有任何代码读它**；要启用它 = 先定命中几何 + 改 I4。
+        ///
+        /// 表现侧：`PlayerMage.PlayUnarmedAttack()` → `Animator.Play(状态名)` 直接寻址
+        /// （0 帧延迟、确定性，**不与既有 `Hit`/`Slash`/`BowShot` 抢 AnyState** —— 见陷阱 22）。
+        /// </summary>
+        private void UnarmedPunch(WeaponDefinition empty)
+        {
+            if (empty == null || cooldown > 0f) return;
+            cooldown = empty.cooldown;      // 0.45f（暂定值；单一来源 = WeaponLoadout.unarmed，由生成器写）
+            if (mage != null) mage.PlayUnarmedAttack();
         }
 
         // ---------------- 法术 ----------------

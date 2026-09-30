@@ -578,6 +578,20 @@ namespace MyWorld
                 castSpeedMultiplier = 1.5f, castDamageMultiplier = 0.3f,
             };
 
+            // ---- T-079 §⑨ 片 4：空手载体（**与上面 6 件同一处构造表，但它是第 7 份、不是第 7 件武器**）----
+            // 🔴 下面 `damage = 8f` / `cooldown = 0.45f` 是**暂定值，待用户确认**（判据 §⑨ I3 的**单一来源**
+            //    就是这一处；改数只改这里）。**运行时不接任何伤害路径** —— 空手出拳只有"动作 + 冷却"，
+            //    因为要真打出 8 点就必须先定"打哪/多远/多大角度/判定在哪一帧"，那些是**玩法数值、属用户领域**。
+            // ⚠️ **不进 `owned`**（所以武器页仍是 6 张卡、空手也永远不可装备）；
+            //    只由 `SetUnarmed` 写进 `WeaponLoadout.unarmed` 这个序列化字段（陷阱 15/16）。
+            // ⚠️ `model = null` → `WeaponMount.Replace` 的守卫（`slot == null || weapon == null || weapon.model == null`）
+            //    会直接返回 null，**不会实例化空模型**（本片有实测证据）。
+            var unarmed = new WeaponDefinition
+            {
+                displayName = "空手", kind = WeaponKind.Unarmed, slot = HandSlot.MainHand,
+                model = null, damage = 8f, cooldown = 0.45f,   // 暂定值，待用户确认
+            };
+
             loadout.RegisterOwned(staff);
             loadout.RegisterOwned(sword);
             loadout.RegisterOwned(bow);
@@ -586,6 +600,7 @@ namespace MyWorld
             loadout.RegisterOwned(gauntlet);
 
             loadout.SetEquipped(staff, grapple);
+            loadout.SetUnarmed(unarmed);   // ⚠️ 不是 RegisterOwned —— 空手不占拥有列表、不占槽位
         }
 
         /// <summary>

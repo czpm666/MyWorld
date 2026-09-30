@@ -26,6 +26,27 @@ namespace MyWorld
         [SerializeField] private WeaponDefinition offHand;
         [SerializeField] private HandSlot activeHand = HandSlot.MainHand;
 
+        /// <summary>
+        /// T-079 §⑨ 片 4（空手组）：**空手载体** —— `MainHand == null`（被缴械）时用的那份定义
+        /// （`displayName = "空手"`、`damage = 8f`、`cooldown = 0.45f`，**两个数都是暂定值、待用户确认**）。
+        ///
+        /// 🔴 **它不是一件武器**：**不进 `owned`**（`owned` 是武器页卡片的唯一来源 → 塞进去会多出
+        /// 第 7 张卡、而且"空手"会变成一件**可装备的真武器**）。所以它**单独一个字段**，
+        /// 只被 `PlayerCombat` 用来取冷却与（将来的）命中数据。
+        ///
+        /// ⚠️ **这个字段必须由生成器写**（`MyWorldBootstrap.BuildLoadout` → `SetUnarmed`）：
+        /// 它是 `[SerializeField]`，值存在**场景**里 —— 只改代码初始化器**不生效且不报错**
+        /// （陷阱 15/16，`GameAudio` 的 5 个槽同一个坑）。
+        /// </summary>
+        [SerializeField] private WeaponDefinition unarmed;
+
+        /// <summary>
+        /// 空手载体（见字段注释）。**运行时的取值链**（一条，可复核）：
+        /// `PlayerCombat.Use(loadout.MainHand)` 收到 `null` → `PlayerCombat.UnarmedPunch(loadout.Unarmed)`
+        /// → 本属性 → 场景里由 `BuildLoadout` 写下的那份 `WeaponDefinition`。
+        /// </summary>
+        public WeaponDefinition Unarmed => unarmed;
+
         // 这两个列表必须序列化：烘焙场景重载时要从场景文件恢复。
         // 非序列化的 List 字段重载后就是空的（武器池会变成 0 把）。
         [SerializeField] private List<WeaponDefinition> backpack = new List<WeaponDefinition>();
@@ -132,6 +153,17 @@ namespace MyWorld
         {
             mainHand = main;
             offHand = off;
+        }
+
+        /// <summary>
+        /// T-079 §⑨ 片 4：由生成器（`MyWorldBootstrap.BuildLoadout`）写下空手载体。
+        /// ⚠️ **`SetEquipped` 是"装到槽上"，本方法不是** —— 空手**不占主手槽**：
+        /// "空手"这个状态**就是 `mainHand == null` 本身**（判据 §⑨ I1 的触发条件）。
+        /// 若把它写进 `mainHand`，`MainHand == null` 永远不成立 → **整个空手组静默永不生效**。
+        /// </summary>
+        public void SetUnarmed(WeaponDefinition definition)
+        {
+            unarmed = definition;
         }
 
         /// <summary>

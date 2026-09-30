@@ -4,7 +4,23 @@ namespace MyWorld
 {
     public enum HandSlot { MainHand, OffHand }
 
-    public enum WeaponKind { Staff, Sword, Bow, Grapple, Shield, Gauntlet }
+    /// <summary>
+    /// 武器种类。
+    ///
+    /// 🔴 **只能往末尾追加：不许插在中间、不许改名、不许删成员。**
+    /// `WeaponDefinition.kind` 是**序列化进场景**的（`WeaponLoadout` 上那 6 件 + 空手载体），
+    /// 枚举按 **int** 存 —— 在中间插一个成员会让**既有每一件的 `kind` 静默错位**
+    /// （`Staff==0 … Gauntlet==5` 是**存下来的数值**，不是"名字对得上就行"）。
+    /// 症状：**一声不响**，只是武器行为/图标整体串位（图标文件名就是按 `kind` 来的）。
+    ///
+    /// ⚠️ `Unarmed`（T-079 §⑨ 片 4）**追加在最后** = 值 **6**。它**不是一件武器**：
+    /// 它是"主手空着（被缴械）"时的**空手载体**，只活在 `WeaponLoadout.unarmed` 字段里，
+    /// **不进 `owned`、不进武器页、不可装备**（否则武器页会多出第 7 张卡 → T-083 的"6 张卡"当场失效）。
+    /// **为什么不复用 `Gauntlet`**：图标按 `kind` 查（`Assets/UI/Icons/&lt;Kind&gt;.png`）
+    /// → 复用会让"空手"显示**护手图标**；且 `WeaponLoadout.HasGauntlet` 判 `offHand.kind == Gauntlet`，
+    /// 两义共用一个成员迟早出事。
+    /// </summary>
+    public enum WeaponKind { Staff, Sword, Bow, Grapple, Shield, Gauntlet, Unarmed }
 
     /// <summary>
     /// 一件武器的全部参数。做成可序列化的普通类而不是 ScriptableObject：

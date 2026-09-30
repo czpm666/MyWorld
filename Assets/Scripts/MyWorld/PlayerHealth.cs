@@ -135,6 +135,10 @@ namespace MyWorld
             GameAudio.PlayHurt();   // ⑤ 受击音（T-063）—— 真正吃到伤害时才响（上面两道门都已放行）
 
             // 举盾格挡：只挡正面来的伤害，按盾的倍率减伤
+            // T-079 §⑦ 片 2：`blocked` **只在下面 80° 角检内部、真的减伤那一刻**置 true ——
+            // 它是"**这次真被挡住了**"（事实），而 `combat.IsBlocking` 只是"**盾举着**"（意图）。
+            // 侧后方挨打时这个变量保持 false → 走普通受击表现，不播 `Block_Hit`（G3 的反向判据）。
+            bool blocked = false;
             if (combat == null) combat = GetComponent<PlayerCombat>();
             if (combat != null && combat.IsBlocking)
             {
@@ -146,6 +150,7 @@ namespace MyWorld
                     var shield = loadout != null ? loadout.OffHand : null;
                     float mult = shield != null ? shield.blockDamageMultiplier : 0.25f;
                     amount *= mult;
+                    blocked = true;   // ★ 就在这一行置位：与减伤同层，不早不晚
                     ArcaneBurst.Spawn(transform.position + Vector3.up * 1.0f, Vector3.up, 0.7f,
                         new Color(0.8f, 0.85f, 0.95f));
                 }
@@ -154,7 +159,11 @@ namespace MyWorld
             health = Mathf.Max(0f, health - amount);
             invulnerable = invulnerableTime;
             movement?.ApplyStun(hitStun);   // 僵直，让击退位移真的能打出来
-            mage?.PlayHit();
+            // T-079 §⑦ G2：**表现跟随事实** —— 真挡住 → 格挡受击；没挡住 → 普通受击。
+            // 两支互斥（不是"两个都播、让 Animator 挑"）：同帧两个 Trigger 谁赢取决于 AnyState 顺序，
+            // 那是不确定的，而且会让 `Block_Hit` 静默地永远播不出来。
+            if (blocked) mage?.PlayBlockHit();
+            else mage?.PlayHit();
             HealthChanged?.Invoke(health, maxHealth);
 
             if (health <= 0f)

@@ -27,16 +27,28 @@ namespace MyWorld
         /// <summary>弓的**独立**触发器（T-050）。见 PlayBowShot 的说明。</summary>
         private static readonly int BowShotHash = Animator.StringToHash("BowShot");
 
+        // ⚠️ 下面两个字符串**必须与 `MageSetup`（Editor 程序集）逐字一致** —— 两个程序集
+        //    **不能互相引用**，只能各写一份；**名字不匹配不会报错，只会静默不动**（陷阱 20 / 21）。
+        //    * 参数：`MageSetup.IsBlockingParam`（`MageSetup.cs`）
+        //    * 状态：`MageSetup.Wanted[]` 的**首列**（**不是** `expectSource`！两者有 20/29 条不同名）
+        /// <summary>T-079 §⑦ 片 2：格挡保持态的参数名（Bool）。</summary>
+        private static readonly int IsBlockingHash = Animator.StringToHash("IsBlocking");
+
+        /// <summary>T-079 §⑦ 片 2：格挡受击状态名（`Animator.Play` 用的是**状态名**）。</summary>
+        private const string BlockHitStateName = "Block_Hit";
+
         /// <summary>一套连招有几段。要和 MageSetup 里 ComboClips 的长度一致。</summary>
         public const int ComboLength = 4;
 
         private Animator animator;
         private PlayerController8Dir move;
+        private PlayerCombat combat;
 
         private void Awake()
         {
             animator = GetComponentInChildren<Animator>();
             move = GetComponent<PlayerController8Dir>();
+            combat = GetComponent<PlayerCombat>();
         }
 
         private void Update()
@@ -44,6 +56,16 @@ namespace MyWorld
             // 只负责把移动速度喂给 Animator；攻击/施法由 PlayerCombat 驱动
             if (animator != null && move != null)
                 animator.SetFloat(SpeedHash, move.AnimSpeed);
+
+            // T-079 §⑦ 片 2：格挡保持态。**每帧喂**（与 `Speed` 同一个地方、同一种语义：
+            // "此刻是不是这个状态"）。`PlayerCombat.IsBlocking` 在它自己的 `Update` 里逐帧赋值为
+            // `shieldUp`（`PlayerCombat.cs:120-121`），本方法只做搬运，**不自己判定举盾**。
+            if (animator != null)
+            {
+                // 烘焙场景里 Awake 的时序不可靠（同 PlayerHealth.Start 的兜底），拿不到就再取一次
+                if (combat == null) combat = GetComponent<PlayerCombat>();
+                animator.SetBool(IsBlockingHash, combat != null && combat.IsBlocking);
+            }
         }
 
         /// <summary>播放施法动作。实际的伤害/弹道由 PlayerCombat 负责。</summary>
@@ -96,6 +118,28 @@ namespace MyWorld
         public void PlayHit()
         {
             if (animator != null) animator.SetTrigger(HitHash);
+        }
+
+        /// <summary>
+        /// T-079 §⑦ 片 2：播**格挡受击**（`Block_Hit`）。
+        ///
+        /// **谁调、什么时候调**：`PlayerHealth.TakeDamage` 在**真正减伤那一刻**调它 ——
+        /// 落点在 80° 角检**内部**、与 `amount *= mult`（`PlayerHealth.cs:144-151`）**同一层**。
+        /// **不是**"举着盾"那层（`:139`，那里只问有没有举盾、不看攻击来自哪个方向），
+        /// **更不是**按键那一刻。**表现跟随事实，不跟随意图。**
+        /// 侧后方挨打（角度 > 80°）**不该**播它 —— 由"调用点只在角检里"这一条保证（不是靠这里判方向）。
+        ///
+        /// ⚠️ **为什么用 `Animator.Play(状态名, 0, 0)`，而不是新增一个 Trigger 参数**：
+        /// ① 新增 Trigger = **再新增一个参数**，而本片的预期新增只有 `IsBlocking` + 三个状态；
+        /// ② `PlayHit()` 与本节在同一帧、同一方法里（`TakeDamage`）都会被调用到，
+        ///    两个 Trigger 同帧成立时谁赢取决于 AnyState 的判定顺序 → **不确定**；
+        ///    拆成**互斥两支**（挡住 → 本方法；没挡住 → `PlayHit`）+ 直接 `Play` 才是确定的。
+        /// ③ 出边仍在控制器里（`Block_Hit` 的两条 exit time 出边）→ **不会卡在 `Block_Hit` 里**。
+        /// ⚠️ 用**状态名**寻址 —— 必须与 `MageSetup.Wanted[]` 的**首列**逐字一致（见上面的注释）。
+        /// </summary>
+        public void PlayBlockHit()
+        {
+            if (animator != null) animator.Play(BlockHitStateName, 0, 0f);
         }
 
         /// <summary>死亡动作（留着给后面的战斗系统用）。</summary>

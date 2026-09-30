@@ -136,6 +136,35 @@ namespace MyWorld.EditorTools
         /// </summary>
         private const string AirborneParam = "Airborne";
 
+        /// <summary>
+        /// T-079 §⑦ 片 2（格挡组）：**格挡保持态**的布尔量名字。
+        /// 由 `PlayerMage.Update` **每帧**喂 `PlayerCombat.IsBlocking`
+        /// （`PlayerCombat.cs:120-121`：`bool shieldUp = off != null && off.kind == WeaponKind.Shield && input.OffHandHeld; IsBlocking = shieldUp;`）。
+        ///
+        /// ⚠️ 它表达的是"**盾举着**"，**不表示"这次挡住了"**（`PlayerCombat.cs:397` 的注释同义）。
+        /// "这次真挡住"的判定是 `PlayerHealth.cs:144` 的 **80° 角检**（减伤在 `:148`）。
+        /// → 所以**不能**拿它去播 `Block_Hit`：那会变成"只要举着盾就播"，**侧后方挨打也会播**。
+        ///
+        /// ⚠️ **必须与运行时侧逐字一致**：`PlayerMage.cs` 的 `IsBlockingHash` 用的就是这个字符串。
+        /// 两侧各写一份（Editor 程序集 ↔ 运行时程序集不能互相引用）；
+        /// **名字不匹配不会报错，只会让格挡动作静默不动**（陷阱 20 / 21）。
+        /// </summary>
+        private const string IsBlockingParam = "IsBlocking";
+
+        /// <summary>
+        /// T-079 §⑦ 片 2：格挡组的**独立状态清单**（顺序即 `AddState` 顺序）。
+        ///
+        /// ⚠️ **不放进 `ComboClips`** —— 理由与 `JumpStates` 完全相同：那会给剑**凭空造出连招段位**，
+        /// 而且**不报错**。
+        ///
+        /// ⚠️ **这里刻意不带 `loop` 一栏**（与 `JumpStates` 的写法不同）：三条状态的出边**各不相同** ——
+        /// `Blocking` 是循环（**不给 `BackToIdle`**，只给"`IsBlocking` 由真变假 → Idle"的条件边）；
+        /// `Block` / `Block_Hit` 是单次，但**`Block_Hit` 绝不能拿 `BackToIdle`** ——
+        /// 那会让"举着盾挨完一下"直接回 `Idle`，而不是回**保持态**（表现为"挡了一下就放下盾"）。
+        /// → 出边**逐条显式写**在 `BuildAnimator` 里，**不让一个 `loop` 布尔去代劳**。
+        /// </summary>
+        private static readonly string[] BlockStates = { "Block", "Blocking", "Block_Hit" };
+
         /// <summary>连招用的四个剪辑，顺序就是出招顺序。**只表示剑的连招段位**。</summary>
         private static readonly string[] ComboClips = { "Attack_1", "Attack_2", "Attack_3", "Attack_4" };
 
@@ -743,7 +772,109 @@ namespace MyWorld.EditorTools
             }
             // `Jump_Land → Idle` 已在上面由 `BackToIdle(st, idle)` 建好（它是**非循环**态），此处**不重复建**。
 
+            // ================= T-079 §⑦ 片 2：**格挡组** =================
+            //   状态：`Block`(单次起手) / `Blocking`(循环保持) / `Block_Hit`(单次受击)
+            //   参数：只有 `IsBlocking`(Bool)，由 `PlayerMage.Update` 每帧喂 `PlayerCombat.IsBlocking`
+            //        （`PlayerCombat.cs:120-121` 在 `Update` 里逐帧写 `IsBlocking = shieldUp`）。
+            //
+            // ⚠️ **为什么入口边写成"从 Idle/Walk/Run 出发"，而不是 `AnyState` + `IsBlocking`**：
+            //    `IsBlocking` 是**电平**（举着盾就一直为真），**不是边沿**。
+            //    若写成 AnyState→Block（或 →Blocking），则在 `Blocking` 里**每帧条件都成立** →
+            //    会被立刻拽回 `Block` → **`Block`↔`Blocking` 抖动** —— 而 **G1 明文把抖动判红**。
+            //    改成"从常态出发"后：`Block`→`Blocking` 只在起手播到 exit time 时走一次，
+            //    且 `Blocking` / `Block_Hit` 里**没有任何转移会把它们拽走** → 不抖动。
+            //    （代价：从 `Cast`/`Hit`/`Attack*`/`BowShot`/`Jump_*` 里按举盾不会**立刻**进 Block，
+            //      要等那些状态自己回 `Idle` 再进 —— 这是**刻意**的，见"表现跟随事实"那条纪律。）
+            //
+            // ⚠️ **`Blocking` 是循环态 → 不给 `BackToIdle`**（§3 R4：`BackToIdle` 只给非循环单次）；
+            //    它的出边是**条件边**（`IsBlocking` 由真变假 → `Idle`），这条正是"收盾退出"。
+            //
+            // ⚠️ **`Block_Hit` 的进入边不在控制器里**，由代码 `Animator.Play("Block_Hit")`
+            //    （`PlayerMage.PlayBlockHit`）直接寻址；调用点在 `PlayerHealth.TakeDamage` 的
+            //    **80° 角检内部、与 `amount *= mult` 同层**（真减伤那一刻），**不是**"举着盾"那层。
+            //    出边仍在控制器里（两条 exit time）→ **不会卡在 `Block_Hit` 里**。
+
+            ctrl.AddParameter(IsBlockingParam, AnimatorControllerParameterType.Bool);
+
+            AnimatorState blockState = null, blockingState = null, blockHitState = null;
+            foreach (var bs in BlockStates)
+            {
+                clips.TryGetValue(bs, out var blockClip);
+                if (blockClip == null)
+                {
+                    Debug.LogError($"[My World] controller 里没有 {bs} 剪辑，该格挡状态被跳过。");
+                    continue;
+                }
+
+                var st = AddState(sm, bs, blockClip);
+                if (bs == "Block") blockState = st;
+                else if (bs == "Blocking") blockingState = st;
+                else if (bs == "Block_Hit") blockHitState = st;
+            }
+
+            if (blockState != null && blockingState != null)
+            {
+                // 起手（单次）→ 保持（循环）：等起手播到 85% 再切，免得动作被截断
+                var tHold = blockState.AddTransition(blockingState);
+                tHold.hasExitTime = true;
+                tHold.exitTime = 0.85f;
+                tHold.duration = 0.10f;
+                tHold.AddCondition(AnimatorConditionMode.If, 0f, IsBlockingParam);
+
+                // 举盾途中松手 → 直接回 Idle（否则要等起手播完、再经 Blocking 绕一圈才回）
+                var tAbort = blockState.AddTransition(idle);
+                tAbort.hasExitTime = false;
+                tAbort.duration = 0.12f;
+                tAbort.AddCondition(AnimatorConditionMode.IfNot, 0f, IsBlockingParam);
+
+                // 入口：三个常态 → Block（条件边；只在"还没举盾"的常态下成立）
+                AddBlockEntrance(idle, blockState);
+                AddBlockEntrance(walk, blockState);
+                AddBlockEntrance(run, blockState);
+            }
+
+            if (blockingState != null)
+            {
+                // 收盾 → Idle：**这是离开 `Blocking` 的唯一通路**（G1 的"收盾后不得停在 Blocking"）
+                var tLower = blockingState.AddTransition(idle);
+                tLower.hasExitTime = false;
+                tLower.duration = 0.12f;
+                tLower.AddCondition(AnimatorConditionMode.IfNot, 0f, IsBlockingParam);
+            }
+
+            if (blockHitState != null)
+            {
+                // 两条出边**都带 exit time** → 无论此刻是否还举着盾，`Block_Hit` 播到 90% 必定离开它（不卡死）。
+                // ⚠️ `Block_Hit` **刻意不接 `BackToIdle`**：举着盾挨完一下应当回**保持态**，而不是放下盾回 Idle。
+                if (blockingState != null)
+                {
+                    var tBack = blockHitState.AddTransition(blockingState);
+                    tBack.hasExitTime = true;
+                    tBack.exitTime = 0.90f;
+                    tBack.duration = 0.10f;
+                    tBack.AddCondition(AnimatorConditionMode.If, 0f, IsBlockingParam);
+                }
+
+                var tOut = blockHitState.AddTransition(idle);
+                tOut.hasExitTime = true;
+                tOut.exitTime = 0.90f;
+                tOut.duration = 0.12f;
+                tOut.AddCondition(AnimatorConditionMode.IfNot, 0f, IsBlockingParam);
+            }
+
             return ctrl;
+        }
+
+        /// <summary>
+        /// T-079 §⑦ 片 2：格挡入口边（`Idle`/`Walk`/`Run` → `Block`）。
+        /// **只有这三个常态**是入口 —— 见 `BuildAnimator` 里"为什么不用 AnyState"的那段说明。
+        /// </summary>
+        private static void AddBlockEntrance(AnimatorState from, AnimatorState block)
+        {
+            var t = from.AddTransition(block);
+            t.hasExitTime = false;
+            t.duration = 0.10f;
+            t.AddCondition(AnimatorConditionMode.If, 0f, IsBlockingParam);
         }
 
         private static AnimatorState AddState(AnimatorStateMachine sm, string name, AnimationClip clip)

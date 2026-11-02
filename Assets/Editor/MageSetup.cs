@@ -101,6 +101,15 @@ namespace MyWorld.EditorTools
             ("Punch_A",        false, new[] { "Unarmed_Melee_Attack_Punch_A" }, "Unarmed_Melee_Attack_Punch_A"),
             ("Punch_B",        false, new[] { "Unarmed_Melee_Attack_Punch_B" }, "Unarmed_Melee_Attack_Punch_B"),
             ("Kick",           false, new[] { "Unarmed_Melee_Attack_Kick" },    "Unarmed_Melee_Attack_Kick"),
+            // ---- T-091 批次 1：翻滚闪避 4 方向（此前**完全缺失**）----
+            // ⚠️ 四条都是 0.4 s 的单向翻滚，方向由剪辑自带位移表达。
+            //    但 prefab 上 `applyRootMotion=false` → 根位移被 Unity 丢弃，
+            //    所以**播动画本身不会让人移动**，必须由 `PlayerController8Dir` 在翻滚窗口内推进位移，
+            //    否则观感就是「原地打个滚」。
+            ("Dodge_Forward",  false, new[] { "Dodge_Forward" },  "Dodge_Forward"),
+            ("Dodge_Backward", false, new[] { "Dodge_Backward" }, "Dodge_Backward"),
+            ("Dodge_Left",     false, new[] { "Dodge_Left" },     "Dodge_Left"),
+            ("Dodge_Right",    false, new[] { "Dodge_Right" },    "Dodge_Right"),
         };
 
         /// <summary>
@@ -235,6 +244,38 @@ namespace MyWorld.EditorTools
         /// <summary>连招用的四个剪辑，顺序就是出招顺序。**只表示剑的连招段位**。</summary>
         private static readonly string[] ComboClips = { "Attack_1", "Attack_2", "Attack_3", "Attack_4" };
 
+        // ---- T-091 批次 1：翻滚闪避 ----
+        /// <summary>翻滚触发（边沿）。`PlayerMage.PlayDodge` 与 `DodgeDir` 一起写。</summary>
+        private const string DodgeTrigger = "Dodge";
+        /// <summary>翻滚方向 0=前 1=后 2=左 3=右，下标与 <see cref="DodgeClips"/> 一致。</summary>
+        private const string DodgeDirParam = "DodgeDir";
+        /// <summary>
+        /// 翻滚状态名，**下标即 `DodgeDir` 取值**。
+        ///
+        /// ⚠️ 与剑的连招（`Slash` + `ComboStep`）同形：`DodgeDir` 只会等于其中一个值，
+        /// 命中的 `AnyState` 边唯一 → 不会踩「同帧多条 AnyState 同时成立、谁赢未定义」（陷阱 22）。
+        /// </summary>
+        private static readonly string[] DodgeClips = { "Dodge_Forward", "Dodge_Backward", "Dodge_Left", "Dodge_Right" };
+
+        /// <summary>
+        /// 动画层扩展：需要生成的**左手镜像剪辑**（目标名, 源剪辑, 裁剪起点秒, 裁剪终点秒）。
+        ///
+        /// 为什么需要镜像：护手装在**副手（左手）**、盾也在副手，而原生 `Punch_A` / `Punch_B`
+        /// 是**右手**动作 —— 直接播会左右手错位（"护手用右手打拳"）。
+        ///
+        /// 窗口依据（实测 `Punch_A` 手骨前向位移）：出拳窗口≈0.37–0.55s、峰值在 0.55s。
+        ///   * 拳击取 0.28–0.61（0.33s）：起手 = 最大后拉，命中≈0.13s、峰值≈0.27s；
+        ///     护手有效冷却只有 0.233s（副手护手使施法加快）→ 动作必须短，才能连打不粘。
+        ///   * 盾击取 0.35–0.85（0.50s）：后拉→前顶更重，读起来是"推盾"而不是"打拳"。
+        /// ⚠️ 时间轴只影响**动作**，伤害/冷却/判定距离全在 `PlayerCombat`，一处没动。
+        /// </summary>
+        private static readonly (string name, string source, float from, float to)[] MirroredClips =
+        {
+            (MyWorld.WeaponAnimMap.StateGauntletPunchA, "Punch_A", 0.28f, 0.61f),
+            (MyWorld.WeaponAnimMap.StateGauntletPunchB, "Punch_B", 0.28f, 0.61f),
+            (MyWorld.WeaponAnimMap.StateShieldBash,    "Punch_A", 0.35f, 0.85f),
+        };
+
         /// <summary>每段攻击的命中帧上要打的动画事件名。AnimEventRelay 上有同名方法。</summary>
         private const string SlashImpactEvent = "OnSlashImpact";
 
@@ -287,6 +328,8 @@ namespace MyWorld.EditorTools
             ConfigureImporter();
             BuildTextureAndMaterial();
             var clips = ExtractClips();
+            // 动画层扩展：护手拳击 / 盾击的左手镜像剪辑（必须在 BuildAnimator 之前 —— 控制器要引用它们）
+            BuildMirroredClips(clips);
             var ctrl = BuildAnimator(clips);
             BuildPrefab(ctrl);
             AssetDatabase.SaveAssets();
@@ -464,6 +507,146 @@ namespace MyWorld.EditorTools
                 this.eventName = eventName;
                 this.eventNearEnd = eventNearEnd;
             }
+        }
+
+        // ---------------- 左手镜像剪辑（护手拳击 / 盾击） ----------------
+
+        /// <summary>
+        /// 从右手动作生成**左手镜像**剪辑（见 <see cref="MirroredClips"/>），写进 `Clips/` 并塞回
+        /// <paramref name="clips"/>，供 `BuildAnimator` 接成状态。
+        ///
+        /// 镜像规则（**在 Editor 里逐骨数值验证过，不是猜的**）：
+        ///   * 局部旋转四元数：`(x, y, z, w) → (x, -y, -z, w)`（= 绕局部 X 轴 180° 共轭）；
+        ///   * 局部位置：`x → -x`，y / z 不变；
+        ///   * 骨路左右互换：路径逐段把 `.l` ↔ `.r` 互换（只在模型里确实存在对应骨时才换）；
+        ///   * **中心骨（hips / spine / chest / head 等）也做符号取反** —— 它们是手臂的父级，
+        ///     漏掉就变成"手臂镜像了、躯干没镜像"，手的位置全错（实测误差 0.72m，探针 4 踩过）。
+        /// 验证结果：18 对左右骨静止姿态误差 0.04°，整段 `Punch_A` 镜像后手骨轨迹误差 2.3cm。
+        /// </summary>
+        private static void BuildMirroredClips(Dictionary<string, AnimationClip> clips)
+        {
+            var model = AssetDatabase.LoadAssetAtPath<GameObject>(FbxPath);
+            if (model == null)
+            {
+                Debug.LogError($"[My World] 找不到 {FbxPath}，镜像动作生成被跳过。");
+                return;
+            }
+
+            // 模型里完整存在的 Transform 路径（用来判断 .l/.r 有没有配对骨；中心骨没有配对）
+            var paths = new HashSet<string>();
+            foreach (var t in model.GetComponentsInChildren<Transform>(true))
+                paths.Add(RelativePath(model.transform, t));
+
+            for (int i = 0; i < MirroredClips.Length; i++)
+            {
+                var spec = MirroredClips[i];
+                if (!clips.TryGetValue(spec.source, out var src) || src == null)
+                {
+                    Debug.LogError($"[My World] 没有源剪辑 {spec.source}，镜像剪辑 {spec.name} 被跳过。");
+                    continue;
+                }
+                try
+                {
+                    GenerateMirroredClip(clips, spec, src, paths);
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"[My World] 生成镜像剪辑 {spec.name} 失败：{e}");
+                }
+            }
+        }
+
+        private static void GenerateMirroredClip(
+            Dictionary<string, AnimationClip> clips,
+            (string name, string source, float from, float to) spec,
+            AnimationClip src,
+            HashSet<string> paths)
+        {
+            float fps = src.frameRate > 0f ? src.frameRate : 30f;
+            int fromFrame = Mathf.RoundToInt(spec.from * fps);
+            int toFrame = Mathf.RoundToInt(spec.to * fps);
+            int count = Mathf.Max(2, toFrame - fromFrame + 1);
+
+            var clip = new AnimationClip { name = spec.name, frameRate = fps };
+            var settings = AnimationUtility.GetAnimationClipSettings(src);
+            settings.loopTime = false;     // 单次动作：播完由控制器出边接回 locomotion
+            AnimationUtility.SetAnimationClipSettings(clip, settings);
+
+            var bindings = AnimationUtility.GetCurveBindings(src);
+            int written = 0;
+            for (int i = 0; i < bindings.Length; i++)
+            {
+                var b = bindings[i];
+                var curve = AnimationUtility.GetEditorCurve(src, b);
+                if (curve == null || curve.length == 0) continue;
+
+                // 逐分量镜像：rotation 的 y/z 取反、位置 x 取反；其余（含中心骨）保持原值
+                bool negate = b.propertyName == "m_LocalRotation.y"
+                              || b.propertyName == "m_LocalRotation.z"
+                              || b.propertyName == "m_LocalPosition.x";
+
+                // 先按原关键帧做镜像，再按帧重采样到固定窗口（与 TrimClip 同一套路）
+                var mirrored = new AnimationCurve();
+                for (int k = 0; k < curve.length; k++)
+                {
+                    var key = curve[k];
+                    mirrored.AddKey(key.time, negate ? -key.value : key.value);
+                    var moved = mirrored[mirrored.length - 1];
+                    moved.inTangent = negate ? -key.inTangent : key.inTangent;
+                    moved.outTangent = negate ? -key.outTangent : key.outTangent;
+                    mirrored.MoveKey(mirrored.length - 1, moved);
+                }
+
+                var keys = new Keyframe[count];
+                for (int k = 0; k < count; k++)
+                    keys[k] = new Keyframe(k / fps, mirrored.Evaluate((fromFrame + k) / fps));
+                var rebuilt = new AnimationCurve(keys);
+                for (int k = 0; k < count; k++) rebuilt.SmoothTangents(k, 0f);
+
+                var dstBinding = new EditorCurveBinding
+                {
+                    path = MirrorPath(b.path, paths),
+                    propertyName = b.propertyName,
+                    type = typeof(Transform),
+                };
+                AnimationUtility.SetEditorCurve(clip, dstBinding, rebuilt);
+                written++;
+            }
+
+            string path = ClipDir + "/" + spec.name + ".anim";
+            AssetDatabase.DeleteAsset(path);
+            AssetDatabase.CreateAsset(clip, path);
+            var saved = AssetDatabase.LoadAssetAtPath<AnimationClip>(path) ?? clip;
+            clips[spec.name] = saved;
+            EditorUtility.SetDirty(saved);
+            Debug.Log($"[My World] 镜像剪辑 {spec.name} ← {spec.source}（{fromFrame}..{toFrame} 帧，"
+                      + $"{saved.length:F3}s，{written} 条曲线，左手）");
+        }
+
+        /// <summary>模型里的相对路径（root 自己是空串；不含 root 名字，与动画曲线 path 同形）。</summary>
+        private static string RelativePath(Transform root, Transform t)
+        {
+            if (t == root) return string.Empty;
+            var segs = new List<string>();
+            for (var cur = t; cur != null && cur != root; cur = cur.parent) segs.Add(cur.name);
+            segs.Reverse();
+            return string.Join("/", segs);
+        }
+
+        /// <summary>逐段把 `.l` ↔ `.r` 互换；只有模型里真存在这条路径时才换，否则回退原路径。</summary>
+        private static string MirrorPath(string path, HashSet<string> paths)
+        {
+            if (string.IsNullOrEmpty(path)) return path;
+            var segs = path.Split('/');
+            for (int i = 0; i < segs.Length; i++)
+            {
+                if (segs[i].EndsWith(".l"))
+                    segs[i] = segs[i].Substring(0, segs[i].Length - 2) + ".r";
+                else if (segs[i].EndsWith(".r"))
+                    segs[i] = segs[i].Substring(0, segs[i].Length - 2) + ".l";
+            }
+            string swapped = string.Join("/", segs);
+            return paths.Contains(swapped) ? swapped : path;
         }
 
         private static readonly ImpactSpec[] ImpactSpecs =
@@ -745,7 +928,11 @@ namespace MyWorld.EditorTools
                 BackToIdle(state, idle);
             }
 
+            // 动画层强化：移动中施法/受击，播完**直接接回 Walk/Run**，不先硬刹回 Idle 再起步
+            //（先加带条件的边、后加 Idle 的无条件边 —— Unity 按转移表顺序取第一条满足的）。
+            AddMoveExit(cast, walk, run);
             BackToIdle(cast, idle);
+            AddMoveExit(hit, walk, run);
             BackToIdle(hit, idle);
 
             // ---- T-050 弓：自己的 Trigger + 状态 ----
@@ -771,6 +958,8 @@ namespace MyWorld.EditorTools
                 bt.canTransitionToSelf = true;
                 bt.AddCondition(AnimatorConditionMode.If, 0f, BowShotTrigger);
                 bt.AddCondition(AnimatorConditionMode.IfNot, 0f, "Dead");
+                // 动画层强化：跑/走着射完，直接回 Walk/Run（先加带条件边，再加 Idle 边）
+                AddMoveExit(bowState, walk, run);
                 // ⚠️ 必须自己接回 Idle：否则会**卡在放箭姿势里**再也不回待机（且不报错）
                 BackToIdle(bowState, idle);
             }
@@ -797,6 +986,10 @@ namespace MyWorld.EditorTools
                 }
 
                 var st = AddState(sm, js.name, jumpClip);
+                // 动画层强化（落地缓冲）：跑着/走着落地时**直接回到 Run/Walk**，
+                // 而不是先播完回落 Idle 再起步（那一下"顿"就是滑步感的来源）。
+                // ⚠️ 必须写在 BackToIdle 之前：先加带条件的边，后加 Idle 无条件边。
+                if (js.name == "Jump_Land") AddMoveExit(st, walk, run);
                 if (!js.loop) BackToIdle(st, idle);      // 非循环才回 Idle
                 if (js.name == "Jump_Start") jumpStartState = st;
                 else if (js.name == "Jump_Idle") jumpIdleState = st;
@@ -998,6 +1191,48 @@ namespace MyWorld.EditorTools
                 tIdle.AddCondition(AnimatorConditionMode.Less, 0.15f, "Speed");
             }
 
+            // ================= T-091 批次 1：**翻滚闪避组** =================
+            //   状态：Dodge_Forward / Dodge_Backward / Dodge_Left / Dodge_Right（四条单次 0.4 s）
+            //   参数：`Dodge`(Trigger) + `DodgeDir`(Int 0..3)，由 `PlayerMage.PlayDodge(dir)` 一起写。
+            //
+            //   ⚠️ 为什么用 Trigger + Int 而不是四条独立 Trigger：
+            //      与剑的四段连招同形（`Slash` + `ComboStep`）—— `DodgeDir` 只会等于其中一个值，
+            //      命中的 AnyState 边**唯一**，不会踩陷阱 22。
+            //
+            //   ⚠️ 为什么这里敢用 AnyState，而格挡/空手不敢：
+            //      `IsBlocking` / `Unarmed` 是**电平**（一直为真 → 每帧把状态机拽回去抖动）；
+            //      `Dodge` 是**边沿**（Trigger 被消费后即失效）→ 只在按下那一帧成立一次。
+            //
+            //   ⚠️ 根位移：prefab 上 `applyRootMotion=false`，剪辑自带位移被丢弃 →
+            //      **必须由 gameplay 层同步推进位移**（`PlayerController8Dir` 的翻滚窗口），
+            //      否则观感是「原地打个滚」。
+            ctrl.AddParameter(DodgeTrigger, AnimatorControllerParameterType.Trigger);
+            ctrl.AddParameter(DodgeDirParam, AnimatorControllerParameterType.Int);
+
+            for (int i = 0; i < DodgeClips.Length; i++)
+            {
+                clips.TryGetValue(DodgeClips[i], out var dodgeClip);
+                if (dodgeClip == null)
+                {
+                    Debug.LogError($"[My World] controller 里没有 {DodgeClips[i]} 剪辑，该翻滚方向被跳过。");
+                    continue;
+                }
+
+                var dodgeState = AddState(sm, DodgeClips[i], dodgeClip);
+
+                var dt = sm.AddAnyStateTransition(dodgeState);
+                dt.hasExitTime = false;
+                dt.duration = 0.06f;           // 翻滚起手要比连招更快（0.07 → 0.06）
+                dt.canTransitionToSelf = true; // 落地立刻再滚要能重新起手
+                dt.AddCondition(AnimatorConditionMode.If, 0f, DodgeTrigger);
+                dt.AddCondition(AnimatorConditionMode.Equals, i, DodgeDirParam);
+                dt.AddCondition(AnimatorConditionMode.IfNot, 0f, "Dead");
+
+                // 出边：移动中滚完直接回 Walk/Run（先加带条件的边，再加 Idle 边 —— 顺序要紧）
+                AddMoveExit(dodgeState, walk, run);
+                BackToIdle(dodgeState, idle);
+            }
+
             // ================= T-079 §⑨ 片 4：**空手组** =================
             //   状态：`Idle_Unarmed`(循环待机) / `Punch_A` / `Punch_B` / `Kick`(三条单次出拳)
             //   参数：只有 `Unarmed`(Bool)，由 `PlayerMage.Update` 每帧喂 `PlayerCombat.IsUnarmed`
@@ -1063,6 +1298,24 @@ namespace MyWorld.EditorTools
                 }
             }
 
+            // ================= 动画层扩展：**护手拳击 / 盾击**（左手镜像动作） =================
+            // 用户诉求：护手 = 拳击、盾 = 盾击。
+            // 真源：原生 `Punch_A` / `Punch_B` 是**右手**动作，而护手/盾都装在副手（左手）——
+            //   所以由 `BuildMirroredClips` 用已验证的镜像规则生成左手剪辑，这里只负责接进控制器。
+            // ⚠️ 入口**不建边**：`PlayerMage.PlayWeaponAttack` → `Animator.Play(状态名)` 直接寻址
+            //   （理由与空手出拳同：同帧多条 AnyState 同时成立时谁赢未定义，见陷阱 22）。
+            // ⚠️ 出边在控制器里：92% 回 Idle；**若此刻在移动则直接回 Walk/Run**（不硬刹回待机再起步）。
+            var gauntletPunchA = TryAddMirroredState(sm, clips, MyWorld.WeaponAnimMap.StateGauntletPunchA);
+            var gauntletPunchB = TryAddMirroredState(sm, clips, MyWorld.WeaponAnimMap.StateGauntletPunchB);
+            var shieldBash = TryAddMirroredState(sm, clips, MyWorld.WeaponAnimMap.StateShieldBash);
+            var mirroredStates = new[] { gauntletPunchA, gauntletPunchB, shieldBash };
+            for (int i = 0; i < mirroredStates.Length; i++)
+            {
+                if (mirroredStates[i] == null) continue;
+                AddMoveExit(mirroredStates[i], walk, run);
+                BackToIdle(mirroredStates[i], idle);
+            }
+
             return ctrl;
         }
 
@@ -1084,6 +1337,41 @@ namespace MyWorld.EditorTools
             s.motion = clip;
             s.writeDefaultValues = false;
             return s;
+        }
+
+        /// <summary>把 `BuildMirroredClips` 生成的剪辑接成状态；缺剪辑只报错、不抛。</summary>
+        private static AnimatorState TryAddMirroredState(
+            AnimatorStateMachine sm, Dictionary<string, AnimationClip> clips, string stateName)
+        {
+            if (!clips.TryGetValue(stateName, out var clip) || clip == null)
+            {
+                Debug.LogError($"[My World] controller 里没有 {stateName} 剪辑，该状态被跳过（先修 BuildMirroredClips）。");
+                return null;
+            }
+            return AddState(sm, stateName, clip);
+        }
+
+        /// <summary>
+        /// 一次性动作播完后**按移动速度直接回 Walk/Run**，而不是先硬刹回 Idle 再起步。
+        /// 这是本轮"跳跃落地缓冲 / 受击恢复"的强化：只在**移动中**才走这两条边，
+        /// 站定（Speed &lt; 0.15）时仍由随后的 <see cref="BackToIdle"/> 回 Idle。
+        ///
+        /// ⚠️ 必须在 `BackToIdle` **之前**调用：Unity 按转移表顺序取第一条条件满足的边，
+        ///    先加的带条件边优先于后加的无条件边；顺序反了就永远走 Idle。
+        /// </summary>
+        private static void AddMoveExit(AnimatorState from, AnimatorState walk, AnimatorState run)
+        {
+            var tRun = from.AddTransition(run);
+            tRun.hasExitTime = true;
+            tRun.exitTime = 0.92f;
+            tRun.duration = 0.12f;
+            tRun.AddCondition(AnimatorConditionMode.Greater, 0.75f, "Speed");
+
+            var tWalk = from.AddTransition(walk);
+            tWalk.hasExitTime = true;
+            tWalk.exitTime = 0.92f;
+            tWalk.duration = 0.12f;
+            tWalk.AddCondition(AnimatorConditionMode.Greater, 0.15f, "Speed");
         }
 
         private static void FloatTransition(AnimatorState from, AnimatorState to, AnimatorConditionMode mode, float v)

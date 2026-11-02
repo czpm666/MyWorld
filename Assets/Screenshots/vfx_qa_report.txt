@@ -1,0 +1,42 @@
+VFX QA report (Play mode, Time.timeScale=0.25 during captures)
+unity=6000.3.0b1  scene=RoaTown
+clipCount=26  playerHealth=100/100
+textPoolCapacity=24  transientsAliveNow=0  transientsCreatedTotal=4
+target=TEMP DUMMY [VfxQaTarget] —— 场景里没有活着的敌人；命中点/方向仍走真实路径，但 Enemy 自身的闪色/僵直/血花未被覆盖
+
+sample,kind,grade,damage,minTimeScale,peakShake(m),maxParticles,maxRings,maxTexts,transientsPeak,hpDistToCenter,hpSideDot,dirDot
+melee_light(probe-replicated path),Melee,Light,9.0,0.100,0.140,199,1,1,1,0.400,1.000,1.000
+melee_heavy(probe-replicated path),Melee,Heavy,26.0,0.060,0.300,220,3,2,2,0.400,1.000,1.000
+melee_crit(probe-replicated path),Melee,Crit,40.0,0.035,0.460,233,4,3,2,0.400,1.000,1.000
+spell_crit,Spell,Crit,40.0,0.035,0.460,247,6,4,1,0.394,1.000,1.000
+arrow_crit,Arrow,Crit,40.0,0.035,0.460,247,5,5,0,0.400,1.000,1.000
+block,Block,Heavy,26.0,0.060,0.300,250,6,6,1,0.350,1.000,1.000
+player_hurt,None,Crit,0.0,0.035,0.460,237,6,6,1,-1.000,-2.000,-2.000
+recycle_x30,None,Light,0.0,0.035,0.460,502,40,24,1,-1.000,-2.000,-2.000
+
+     （旧的假命中点是 `敌人.position + up*0.85`，它的 hpSideDot 恒为 0、hpDistToCenter 只有高度分量）
+
+截图体检（mean=平均亮度 std=对比度；全灰图的 std ≈ 0）
+  vfx_melee_light.png  mean=0.497 std=0.129 bytes=527163
+  vfx_melee_heavy.png  mean=0.496 std=0.129 bytes=529418
+  vfx_melee_crit.png  mean=0.498 std=0.130 bytes=534840
+  vfx_spell_crit.png  mean=0.500 std=0.131 bytes=541836
+  vfx_arrow_crit.png  mean=0.495 std=0.126 bytes=522488
+  vfx_block.png  mean=0.495 std=0.127 bytes=526242
+  vfx_player_hurt.png  mean=0.499 std=0.129 bytes=546347
+
+=== VERDICT ===
+PASS  特效会回收（一次性物体 1.6s 后回落到 0）   [TransientsAlive=0]
+PASS  粒子/飘字有上限（30 连击不扩容）   [maxTexts=24 capacity=24]
+PASS  飘字池真的在复用（第二次起复用旧物体）   [reusedTotal=36]
+PASS  30 连击不产生场景物体净增长（阈值 ≤ 8）   [delta=-35]
+PASS  ① 四类命中各有特效记录（近战/法术/箭矢/格挡）   [melee=True spell=True arrow=True block=True]
+PASS  ② 位置用真实碰撞点（在朝攻击者那一侧，不是身体中轴）   [hpSideDot=1.000 hpDistToCenter=0.400]
+PASS  ③ 方向沿攻击方向 / 弹道方向（点积 > 0.99；近战=攻击方向、格挡=来向、法术/箭矢=弹道）   [melee=1.000 spell=1.000 arrow=1.000]
+PASS  ④ 顿帧随伤害分级（轻 > 重 > 暴 的 timeScale，且最重一档压到 ≤0.07）   [light=0.100 heavy=0.060 crit=0.035]
+PASS  ⑤ 震屏随伤害分级（轻 < 重 < 暴 的峰值幅度）   [light=0.140 heavy=0.300 crit=0.460]
+PASS  ⑥ 伤害飘字（近战/法术/格挡 BLOCK/玩家受击 都有）   [melee=1 spell=4 block=6 hurt=6]
+PASS  ⑦ 粒子量随伤害分级（轻 < 重 < 暴）   [light=199 heavy=220 crit=233]
+PASS  ⑧ 有音效（程序化音效库已加载）   [clipCount=26]
+PASS  ⑨ 截图非空白（每张都有对比度；RenderTexture 直渲，不依赖 Game View 焦点）   [shots=7 flat=0 recorded=7]
+OVERALL: PASS (0 fail)

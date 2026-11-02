@@ -17,13 +17,19 @@ namespace MyWorld
     [DisallowMultipleComponent]
     public class PlayerMage : MonoBehaviour
     {
-        private static readonly int SpeedHash = Animator.StringToHash("Speed");
+        // ⚠️ `Speed` 参数**不在本类写**（原来写，本轮改掉）：唯一写入者是 `PlayerController8Dir`。
+        //    两处写同一个参数不会报错，但**谁后写谁赢**，而脚本执行顺序不保证；
+        //    一旦本类先跑，动画就慢一帧才拿到速度 —— 起步那一帧正好看得见。
+        //    本类只写"状态类"参数：`IsBlocking` / `Unarmed`（都是"此刻是不是这个状态"的电平量）。
         private static readonly int AttackHash = Animator.StringToHash("Attack");
         private static readonly int SlashHash = Animator.StringToHash("Slash");
         private static readonly int ComboHash = Animator.StringToHash("ComboStep");
         private static readonly int HitHash = Animator.StringToHash("Hit");
         private static readonly int DeadHash = Animator.StringToHash("Dead");
-
+        /// <summary>T-091 批次 1：翻滚触发器（边沿）。必须与 `MageSetup.DodgeTrigger` 逐字一致。</summary>
+        private static readonly int DodgeHash = Animator.StringToHash("Dodge");
+        /// <summary>T-091 批次 1：翻滚方向 0=前 1=后 2=左 3=右（Int）。见 <see cref="PlayDodge"/>。</summary>
+        private static readonly int DodgeDirHash = Animator.StringToHash("DodgeDir");
         /// <summary>弓的**独立**触发器（T-050）。见 PlayBowShot 的说明。</summary>
         private static readonly int BowShotHash = Animator.StringToHash("BowShot");
 
@@ -59,25 +65,46 @@ namespace MyWorld
         /// <summary>下一次空手出拳播第几条（0=拳A → 1=拳B → 2=踢，循环）。</summary>
         private int unarmedPunchIndex;
 
+        /// <summary>下一次护手拳击播哪一只（0=GauntletPunch_A → 1=GauntletPunch_B，交替）。</summary>
+        private int gauntletPunchIndex;
+
+        // ================= 动画层扩展：护手拳击 / 盾击（左手镜像动作） =================
+        // ⚠️ 三个状态名必须与 `MageSetup.cs` 生成的状态**逐字一致**（它直接引用 `WeaponAnimMap` 的常量，
+        //    单一来源）。没重跑安装器时状态不存在 → `Animator.Play` 会刷警告，这里挡一次、只警告一次。
+        private static readonly int GauntletPunchAHash = Animator.StringToHash(WeaponAnimMap.StateGauntletPunchA);
+        private static readonly int GauntletPunchBHash = Animator.StringToHash(WeaponAnimMap.StateGauntletPunchB);
+        private static readonly int ShieldBashHash = Animator.StringToHash(WeaponAnimMap.StateShieldBash);
+
+        // ---- 降级动作（镜像状态不存在时用；哈希的单一来源同样在 `WeaponAnimMap`）----
+        // 🔴 **为什么必须有降级**：本工程当前的 `MageAnimator.controller` 里**没有**
+        //    `GauntletPunch_A/B` / `ShieldBash` 三个状态（生成器加过代码，但没重跑）。
+        //    原实现在这里直接 `return` → **按键完全没有动作**。而"手部左右错位"和"按键没反应"
+        //    对玩家的手感差别是**天壤之别**：前者是个小瑕疵，后者是"操作坏了"。
+        //    所以宁可播右手拳，也不能什么都不播。
+        private static readonly int FallbackGauntletAHash = Animator.StringToHash(WeaponAnimMap.FallbackGauntletPunchA);
+        private static readonly int FallbackGauntletBHash = Animator.StringToHash(WeaponAnimMap.FallbackGauntletPunchB);
+        private static readonly int FallbackShieldBashHash = Animator.StringToHash(WeaponAnimMap.FallbackShieldBash);
+
+        /// <summary>镜像状态缺失时只警告一次（避免每帧刷屏）。</summary>
+        private static bool warnedMissingMirrorStates;
+
         /// <summary>一套连招有几段。要和 MageSetup 里 ComboClips 的长度一致。</summary>
         public const int ComboLength = 4;
 
         private Animator animator;
-        private PlayerController8Dir move;
         private PlayerCombat combat;
 
         private void Awake()
         {
             animator = GetComponentInChildren<Animator>();
-            move = GetComponent<PlayerController8Dir>();
             combat = GetComponent<PlayerCombat>();
         }
 
         private void Update()
         {
-            // 只负责把移动速度喂给 Animator；攻击/施法由 PlayerCombat 驱动
-            if (animator != null && move != null)
-                animator.SetFloat(SpeedHash, move.AnimSpeed);
+            // ⚠️ 这里原来把 `move.AnimSpeed` 写进 `Speed` 参数，本轮**移除** —— 见文件头那段说明：
+            //    `Speed` 的唯一写入者是 `PlayerController8Dir`（它同时还要按速度算播放倍率）。
+            // 攻击/施法由 PlayerCombat 驱动。
 
             // T-079 §⑦ 片 2：格挡保持态。**每帧喂**（与 `Speed` 同一个地方、同一种语义：
             // "此刻是不是这个状态"）。`PlayerCombat.IsBlocking` 在它自己的 `Update` 里逐帧赋值为
@@ -115,6 +142,87 @@ namespace MyWorld
             string stateName = UnarmedAttackStateNames[unarmedPunchIndex];
             unarmedPunchIndex = (unarmedPunchIndex + 1) % UnarmedAttackStateNames.Length;
             animator.Play(stateName, 0, 0f);
+        }
+
+        /// <summary>
+        /// **武器 → 攻击动画的统一入口**。`PlayerCombat` 只把"用哪件武器"告诉这里，
+        /// 播什么动作由 <see cref="WeaponAnimMap"/> 决定（动画层唯一映射点）。
+        ///
+        /// 映射（对应用户诉求）：
+        ///   法杖 = 施法（Cast）、剑 = 四段连招（Attack1..4）、弓 = 射击（BowShot）、
+        ///   护手 = 左手拳击（GauntletPunch_A/B）、盾 = 左手盾击（Shield_Bash）、空手 = 拳/踢循环。
+        ///
+        /// ⚠️ 本方法**只负责动画**：伤害 / 冷却 / 判定距离 / 弹道全在 `PlayerCombat` 里，一处没动。
+        /// ⚠️ 护手 / 盾击走 `Animator.Play(状态名)` 直接寻址，理由与空手出拳完全相同：
+        ///    同帧多条 AnyState 同时成立时谁赢未定义（陷阱 22），直接寻址才是确定的。
+        /// </summary>
+        /// <param name="kind">这次出手用的武器类型（主手或副手，由 <c>PlayerCombat.Use</c> 决定）。</param>
+        /// <param name="comboStep">剑连招段位（0..3），其它武器忽略。</param>
+        public void PlayWeaponAttack(WeaponKind kind, int comboStep = 0)
+        {
+            switch (WeaponAnimMap.AttackOf(kind))
+            {
+                case AttackAnimKind.Cast: PlayCast(); break;
+                case AttackAnimKind.SwordCombo: PlayAttack(comboStep); break;
+                case AttackAnimKind.BowShot: PlayBowShot(); break;
+                case AttackAnimKind.Punch: PlayGauntletPunch(); break;
+                case AttackAnimKind.ShieldBash: PlayShieldBash(); break;
+                case AttackAnimKind.UnarmedCombo: PlayUnarmedAttack(); break;
+                default: break;   // 抓钩等：没有动作
+            }
+        }
+
+        /// <summary>
+        /// 护手拳击：左手镜像的 `Punch_A` / `Punch_B` 交替播。
+        /// （原生 `Punch_A/B` 是**右手**动作，装在副手——左手的护手直接播会左右手错位。）
+        /// </summary>
+        public void PlayGauntletPunch()
+        {
+            if (animator == null) return;
+            bool left = (gauntletPunchIndex++ & 1) == 0;
+            int hash = left ? GauntletPunchAHash : GauntletPunchBHash;
+            if (HasMirrorState(hash, "护手拳击"))
+            {
+                animator.Play(hash, 0, 0f);
+                return;
+            }
+
+            // 降级：左右手对不上 ≠ 没动作。右手原生拳击至少"打得出去"。
+            animator.Play(left ? FallbackGauntletAHash : FallbackGauntletBHash, 0, 0f);
+        }
+
+        /// <summary>
+        /// 盾击：左手镜像的短窗口推击（原来是误播剑的横劈 `Attack1`，和盾毫无关系）。
+        /// 镜像状态不存在时降级到 `Punch_A`（向前短促推击，观感是现有剪辑里最接近盾撞的一条）。
+        /// </summary>
+        public void PlayShieldBash()
+        {
+            if (animator == null) return;
+            if (HasMirrorState(ShieldBashHash, "盾击"))
+            {
+                animator.Play(ShieldBashHash, 0, 0f);
+                return;
+            }
+
+            animator.Play(FallbackShieldBashHash, 0, 0f);
+        }
+
+        /// <summary>
+        /// 控制器里是否真有这个镜像状态。没跑过「安装法师角色」时状态不存在，
+        /// `Animator.Play` 会每帧刷警告 —— 这里挡一次并**只警告一次**。
+        /// ⚠️ 警告文本要说清"已经降级"：否则日志看上去像"没事"，而真正的修复动作（重跑安装器）就没人做了。
+        /// </summary>
+        private bool HasMirrorState(int stateHash, string what)
+        {
+            if (animator.HasState(0, stateHash)) return true;
+            if (!warnedMissingMirrorStates)
+            {
+                warnedMissingMirrorStates = true;
+                Debug.LogWarning($"[My World] 控制器里没有「{what}」状态（装的是旧控制器）——"
+                                 + "已降级到原生右手动作，观感会左右手错位。"
+                                 + "修复：重跑「Tools/My World/安装法师角色」重新生成 AnimatorController。");
+            }
+            return false;
         }
 
         /// <summary>播放施法动作。实际的伤害/弹道由 PlayerCombat 负责。</summary>
@@ -195,6 +303,35 @@ namespace MyWorld
         public void PlayDeath()
         {
             if (animator != null) animator.SetBool(DeadHash, true);
+        }
+
+        // ================= T-091 批次 1：翻滚闪避 =================
+        /// <summary>翻滚方向枚举值，**必须与 `MageSetup.DodgeClips` 的下标一致**。</summary>
+        public enum DodgeDirection
+        {
+            Forward = 0,
+            Backward = 1,
+            Left = 2,
+            Right = 3,
+        }
+
+        /// <summary>
+        /// 播一次翻滚（四个方向共用 `Dodge` 触发器 + `DodgeDir` 整数）。
+        ///
+        /// **谁调**：`PlayerController8Dir` 的翻滚窗口起手那一刻（它同时负责位移推进）。
+        ///
+        /// ⚠️ **`Dodge` 是 Trigger（边沿）而不是 Bool（电平）**：翻滚是一次性动作，播完就该失效；
+        ///    写成 Bool 的话，只要按住键就会每帧满足 AnyState 条件把状态机拽回去（格挡/空手
+        ///    那两条电平参数踩过这个坑，见 `MageSetup` 里"为什么入口边不用 AnyState"的说明）。
+        ///
+        /// ⚠️ **本方法只起手，不产生位移**。prefab 上 `applyRootMotion=false`，剪辑自带的根位移
+        ///    被 Unity 丢弃 —— 位移由调用方在同一翻滚窗口内推进，否则观感是「原地打个滚」。
+        /// </summary>
+        public void PlayDodge(DodgeDirection dir)
+        {
+            if (animator == null) return;
+            animator.SetInteger(DodgeDirHash, (int)dir);
+            animator.SetTrigger(DodgeHash);
         }
     }
 }

@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5050ca8bc994c646955d32a36f2efd8, type: 3}
+  m_Name: AnimFeelSettings
+  m_EditorClassIdentifier: Assembly-CSharp::MyWorld.AnimFeelSettings
+  walkClipSpeed: 0.85
+  runClipSpeed: 3.6
+  strafeClipSpeed: 3.55
+  backClipSpeed: 0.85
+  minPlayback: 0.35
+  maxPlayback: 2.7
+  playbackLerp: 45
+  speedParamFullSpeed: 2.2
+  comboPlayback0: 1.2
+  comboPlayback1: 1.05
+  comboPlayback2: 0.95
+  comboPlayback3: 0.8
+  castPlayback: 1.15
+  bowShotPlayback: 1
+  unarmedPlayback: 1.6
+  hitPlayback: 1.15
+  accelKick: 0.35
+  turnSpeedPenalty: 0.18

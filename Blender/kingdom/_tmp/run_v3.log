@@ -1,0 +1,25 @@
+[capital] house budget = 100000  hd = True
+E:\My World\Blender\kingdom\capital.py:160: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  mat.use_nodes = True
+[capital] hd layout: 235 blocks / 7 sub-blocks / 1399 plots (houses 831, shops 560) in 1.2 s
+Traceback (most recent call last):
+  File "E:\My World\Blender\kingdom\capital.py", line 1629, in <module>
+    main(sys.argv)
+    ~~~~^^^^^^^^^^
+  File "E:\My World\Blender\kingdom\capital.py", line 1591, in main
+    groups = build(stage)
+  File "E:\My World\Blender\kingdom\capital.py", line 1389, in build
+    groups["ground"] = build_ground()
+                       ~~~~~~~~~~~~^^
+  File "E:\My World\Blender\kingdom\capital.py", line 369, in build_ground
+    return ground_hd()
+  File "E:\My World\Blender\kingdom\capital.py", line 1260, in ground_hd
+    town = _built_blocks(hd_pick(), res)
+                         ~~~~~~~^^
+  File "E:\My World\Blender\kingdom\capital.py", line 1229, in hd_pick
+    inner = [p for p in pl if p["source"] != "shop" and p.get("ring", 0) > 0]
+                                                        ^^^^^^^^^^^^^^^^^^^^
+TypeError: '>' not supported between instances of 'str' and 'int'
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

@@ -1,0 +1,1976 @@
+{
+ "units": "meters",
+ "blender_axes": "Z-up",
+ "pieces": [
+  {
+   "prefab": "house_a",
+   "pos": [
+    16.927,
+    17.139,
+    0.0
+   ],
+   "rot_z": 135.8,
+   "name": "A_out_house_a_2"
+  },
+  {
+   "prefab": "house_b",
+   "pos": [
+    -17.79,
+    16.237,
+    0.0
+   ],
+   "rot_z": 227.9,
+   "name": "A_out_house_b_6"
+  },
+  {
+   "prefab": "house_c",
+   "pos": [
+    -15.846,
+    -18.129,
+    0.0
+   ],
+   "rot_z": 318.1,
+   "name": "A_out_house_c_10"
+  },
+  {
+   "prefab": "house_d",
+   "pos": [
+    11.06,
+    -21.465,
+    0.0
+   ],
+   "rot_z": 26.0,
+   "name": "A_out_house_d_13"
+  },
+  {
+   "prefab": "house_e",
+   "pos": [
+    18.564,
+    -15.567,
+    0.0
+   ],
+   "rot_z": 50.3,
+   "name": "A_out_house_e_14"
+  },
+  {
+   "prefab": "house_f",
+   "pos": [
+    35.635,
+    18.495,
+    0.0
+   ],
+   "rot_z": 118.7,
+   "name": "B_out_house_f_2"
+  },
+  {
+   "prefab": "house_a",
+   "pos": [
+    30.001,
+    26.407,
+    0.0
+   ],
+   "rot_z": 129.7,
+   "name": "B_out_house_a_3"
+  },
+  {
+   "prefab": "house_b",
+   "pos": [
+    23.125,
+    32.73,
+    0.0
+   ],
+   "rot_z": 145.2,
+   "name": "B_out_house_b_4"
+  },
+  {
+   "prefab": "house_c",
+   "pos": [
+    -22.219,
+    33.292,
+    0.0
+   ],
+   "rot_z": 212.4,
+   "name": "B_out_house_c_9"
+  },
+  {
+   "prefab": "house_d",
+   "pos": [
+    -29.449,
+    27.144,
+    0.0
+   ],
+   "rot_z": 226.5,
+   "name": "B_out_house_d_10"
+  },
+  {
+   "prefab": "house_e",
+   "pos": [
+    -35.186,
+    19.341,
+    0.0
+   ],
+   "rot_z": 242.5,
+   "name": "B_out_house_e_11"
+  },
+  {
+   "prefab": "house_f",
+   "pos": [
+    -30.889,
+    -25.566,
+    0.0
+   ],
+   "rot_z": 310.4,
+   "name": "B_out_house_f_16"
+  },
+  {
+   "prefab": "house_a",
+   "pos": [
+    -23.89,
+    -32.107,
+    0.0
+   ],
+   "rot_z": 322.7,
+   "name": "B_out_house_a_17"
+  },
+  {
+   "prefab": "house_b",
+   "pos": [
+    21.297,
+    -33.881,
+    0.0
+   ],
+   "rot_z": 33.0,
+   "name": "B_out_house_b_22"
+  },
+  {
+   "prefab": "house_c",
+   "pos": [
+    28.868,
+    -27.975,
+    0.0
+   ],
+   "rot_z": 47.0,
+   "name": "B_out_house_c_23"
+  },
+  {
+   "prefab": "house_d",
+   "pos": [
+    34.477,
+    -20.153,
+    0.0
+   ],
+   "rot_z": 59.5,
+   "name": "B_out_house_d_24"
+  },
+  {
+   "prefab": "barrel",
+   "pos": [
+    18.327,
+    9.072,
+    0.0
+   ],
+   "rot_z": 35.3,
+   "name": "A_out_furn_1"
+  },
+  {
+   "prefab": "barrel_cluster",
+   "pos": [
+    12.236,
+    16.047,
+    0.0
+   ],
+   "rot_z": 226.8,
+   "name": "A_out_furn_2"
+  },
+  {
+   "prefab": "crate",
+   "pos": [
+    -5.412,
+    19.721,
+    0.0
+   ],
+   "rot_z": 108.7,
+   "name": "A_out_furn_4"
+  },
+  {
+   "prefab": "crate_stack",
+   "pos": [
+    -13.42,
+    15.071,
+    0.0
+   ],
+   "rot_z": 255.2,
+   "name": "A_out_furn_5"
+  },
+  {
+   "prefab": "sack",
+   "pos": [
+    -18.963,
+    7.655,
+    0.0
+   ],
+   "rot_z": 293.5,
+   "name": "A_out_furn_6"
+  },
+  {
+   "prefab": "cart",
+   "pos": [
+    -17.285,
+    -10.259,
+    0.0
+   ],
+   "rot_z": 300.7,
+   "name": "A_out_furn_8"
+  },
+  {
+   "prefab": "barrel",
+   "pos": [
+    -11.129,
+    -17.156,
+    0.0
+   ],
+   "rot_z": 118.1,
+   "name": "A_out_furn_9"
+  },
+  {
+   "prefab": "barrel_cluster",
+   "pos": [
+    6.803,
+    -18.999,
+    0.0
+   ],
+   "rot_z": 94.3,
+   "name": "A_out_furn_11"
+  },
+  {
+   "prefab": "crate",
+   "pos": [
+    14.72,
+    -14.196,
+    0.0
+   ],
+   "rot_z": 219.6,
+   "name": "A_out_furn_12"
+  },
+  {
+   "prefab": "crate_stack",
+   "pos": [
+    28.324,
+    9.327,
+    0.0
+   ],
+   "rot_z": 91.0,
+   "name": "B_in_furn_1"
+  },
+  {
+   "prefab": "sack",
+   "pos": [
+    23.769,
+    17.557,
+    0.0
+   ],
+   "rot_z": 268.8,
+   "name": "B_in_furn_2"
+  },
+  {
+   "prefab": "cart",
+   "pos": [
+    17.287,
+    24.396,
+    0.0
+   ],
+   "rot_z": 144.7,
+   "name": "B_in_furn_3"
+  },
+  {
+   "prefab": "barrel",
+   "pos": [
+    8.687,
+    28.244,
+    0.0
+   ],
+   "rot_z": 116.5,
+   "name": "B_in_furn_4"
+  },
+  {
+   "prefab": "barrel_cluster",
+   "pos": [
+    -9.884,
+    28.134,
+    0.0
+   ],
+   "rot_z": 202.1,
+   "name": "B_in_furn_6"
+  },
+  {
+   "prefab": "crate",
+   "pos": [
+    -18.023,
+    23.418,
+    0.0
+   ],
+   "rot_z": 307.7,
+   "name": "B_in_furn_7"
+  },
+  {
+   "prefab": "crate_stack",
+   "pos": [
+    -24.666,
+    16.758,
+    0.0
+   ],
+   "rot_z": 346.8,
+   "name": "B_in_furn_8"
+  },
+  {
+   "prefab": "sack",
+   "pos": [
+    -28.41,
+    8.128,
+    0.0
+   ],
+   "rot_z": 253.1,
+   "name": "B_in_furn_9"
+  },
+  {
+   "prefab": "cart",
+   "pos": [
+    -28.009,
+    -10.465,
+    0.0
+   ],
+   "rot_z": 290.5,
+   "name": "B_in_furn_11"
+  },
+  {
+   "prefab": "barrel",
+   "pos": [
+    -23.058,
+    -18.481,
+    0.0
+   ],
+   "rot_z": 53.7,
+   "name": "B_in_furn_12"
+  },
+  {
+   "prefab": "barrel_cluster",
+   "pos": [
+    -16.268,
+    -24.992,
+    0.0
+   ],
+   "rot_z": 341.2,
+   "name": "B_in_furn_13"
+  },
+  {
+   "prefab": "crate",
+   "pos": [
+    10.886,
+    -27.472,
+    0.0
+   ],
+   "rot_z": 187.7,
+   "name": "B_in_furn_16"
+  },
+  {
+   "prefab": "crate_stack",
+   "pos": [
+    19.105,
+    -22.896,
+    0.0
+   ],
+   "rot_z": 154.0,
+   "name": "B_in_furn_17"
+  },
+  {
+   "prefab": "sack",
+   "pos": [
+    25.079,
+    -15.629,
+    0.0
+   ],
+   "rot_z": 109.1,
+   "name": "B_in_furn_18"
+  },
+  {
+   "prefab": "cart",
+   "pos": [
+    31.404,
+    17.805,
+    0.0
+   ],
+   "rot_z": 119.6,
+   "name": "B_out_furn_2"
+  },
+  {
+   "prefab": "barrel",
+   "pos": [
+    26.075,
+    25.47,
+    0.0
+   ],
+   "rot_z": 338.2,
+   "name": "B_out_furn_3"
+  },
+  {
+   "prefab": "barrel_cluster",
+   "pos": [
+    18.578,
+    31.046,
+    0.0
+   ],
+   "rot_z": 207.9,
+   "name": "B_out_furn_4"
+  },
+  {
+   "prefab": "crate",
+   "pos": [
+    10.121,
+    35.017,
+    0.0
+   ],
+   "rot_z": 95.2,
+   "name": "B_out_furn_5"
+  },
+  {
+   "prefab": "crate_stack",
+   "pos": [
+    -17.101,
+    31.883,
+    0.0
+   ],
+   "rot_z": 127.7,
+   "name": "B_out_furn_8"
+  },
+  {
+   "prefab": "sack",
+   "pos": [
+    -24.851,
+    26.665,
+    0.0
+   ],
+   "rot_z": 24.3,
+   "name": "B_out_furn_9"
+  },
+  {
+   "prefab": "cart",
+   "pos": [
+    -30.534,
+    19.259,
+    0.0
+   ],
+   "rot_z": 237.8,
+   "name": "B_out_furn_10"
+  },
+  {
+   "prefab": "barrel",
+   "pos": [
+    -34.77,
+    10.94,
+    0.0
+   ],
+   "rot_z": 128.3,
+   "name": "B_out_furn_11"
+  },
+  {
+   "prefab": "barrel_cluster",
+   "pos": [
+    -32.276,
+    -16.348,
+    0.0
+   ],
+   "rot_z": 42.9,
+   "name": "B_out_furn_14"
+  },
+  {
+   "prefab": "crate",
+   "pos": [
+    -27.241,
+    -24.218,
+    0.0
+   ],
+   "rot_z": 292.7,
+   "name": "B_out_furn_15"
+  },
+  {
+   "prefab": "crate_stack",
+   "pos": [
+    -20.014,
+    -30.14,
+    0.0
+   ],
+   "rot_z": 359.4,
+   "name": "B_out_furn_16"
+  },
+  {
+   "prefab": "sack",
+   "pos": [
+    -11.753,
+    -34.503,
+    0.0
+   ],
+   "rot_z": 344.0,
+   "name": "B_out_furn_17"
+  },
+  {
+   "prefab": "cart",
+   "pos": [
+    15.551,
+    -32.579,
+    0.0
+   ],
+   "rot_z": 25.5,
+   "name": "B_out_furn_20"
+  },
+  {
+   "prefab": "barrel",
+   "pos": [
+    23.572,
+    -27.802,
+    0.0
+   ],
+   "rot_z": 79.5,
+   "name": "B_out_furn_21"
+  },
+  {
+   "prefab": "barrel_cluster",
+   "pos": [
+    29.662,
+    -20.716,
+    0.0
+   ],
+   "rot_z": 307.6,
+   "name": "B_out_furn_22"
+  },
+  {
+   "prefab": "crate",
+   "pos": [
+    34.218,
+    -12.559,
+    0.0
+   ],
+   "rot_z": 75.6,
+   "name": "B_out_furn_23"
+  },
+  {
+   "prefab": "market_stall",
+   "pos": [
+    6.364,
+    6.364,
+    0.0
+   ],
+   "rot_z": 135.0,
+   "name": "plaza_stall_0"
+  },
+  {
+   "prefab": "market_stall",
+   "pos": [
+    -6.364,
+    6.364,
+    0.0
+   ],
+   "rot_z": 225.0,
+   "name": "plaza_stall_1"
+  },
+  {
+   "prefab": "market_stall",
+   "pos": [
+    -6.364,
+    -6.364,
+    0.0
+   ],
+   "rot_z": 315.0,
+   "name": "plaza_stall_2"
+  },
+  {
+   "prefab": "market_stall",
+   "pos": [
+    6.364,
+    -6.364,
+    0.0
+   ],
+   "rot_z": 45.0,
+   "name": "plaza_stall_3"
+  },
+  {
+   "prefab": "well",
+   "pos": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_z": 0.0,
+   "name": "plaza_well"
+  },
+  {
+   "prefab": "barrel",
+   "pos": [
+    5.177,
+    -9.957,
+    0.0
+   ],
+   "rot_z": 257.9,
+   "name": "plaza_barrel_0"
+  },
+  {
+   "prefab": "barrel",
+   "pos": [
+    5.187,
+    -0.318,
+    0.0
+   ],
+   "rot_z": 165.9,
+   "name": "plaza_barrel_1"
+  },
+  {
+   "prefab": "barrel",
+   "pos": [
+    -3.654,
+    -0.209,
+    0.0
+   ],
+   "rot_z": 171.0,
+   "name": "plaza_barrel_2"
+  },
+  {
+   "prefab": "barrel",
+   "pos": [
+    -3.384,
+    -3.822,
+    0.0
+   ],
+   "rot_z": 232.4,
+   "name": "plaza_barrel_3"
+  },
+  {
+   "prefab": "barrel",
+   "pos": [
+    8.914,
+    8.581,
+    0.0
+   ],
+   "rot_z": 324.2,
+   "name": "plaza_barrel_4"
+  },
+  {
+   "prefab": "barrel",
+   "pos": [
+    7.263,
+    1.415,
+    0.0
+   ],
+   "rot_z": 240.0,
+   "name": "plaza_barrel_5"
+  },
+  {
+   "prefab": "barrel",
+   "pos": [
+    1.325,
+    -9.343,
+    0.0
+   ],
+   "rot_z": 21.8,
+   "name": "plaza_barrel_6"
+  },
+  {
+   "prefab": "crate",
+   "pos": [
+    -11.877,
+    -2.279,
+    0.0
+   ],
+   "rot_z": 97.5,
+   "name": "plaza_crate_0"
+  },
+  {
+   "prefab": "crate",
+   "pos": [
+    3.466,
+    7.701,
+    0.0
+   ],
+   "rot_z": 207.4,
+   "name": "plaza_crate_1"
+  },
+  {
+   "prefab": "crate",
+   "pos": [
+    -6.699,
+    9.565,
+    0.0
+   ],
+   "rot_z": 229.9,
+   "name": "plaza_crate_2"
+  },
+  {
+   "prefab": "crate",
+   "pos": [
+    2.989,
+    2.264,
+    0.0
+   ],
+   "rot_z": 190.9,
+   "name": "plaza_crate_3"
+  },
+  {
+   "prefab": "crate",
+   "pos": [
+    2.157,
+    6.143,
+    0.0
+   ],
+   "rot_z": 48.0,
+   "name": "plaza_crate_4"
+  },
+  {
+   "prefab": "crate",
+   "pos": [
+    0.947,
+    12.37,
+    0.0
+   ],
+   "rot_z": 232.3,
+   "name": "plaza_crate_5"
+  },
+  {
+   "prefab": "crate",
+   "pos": [
+    -0.834,
+    3.694,
+    0.0
+   ],
+   "rot_z": 41.3,
+   "name": "plaza_crate_6"
+  },
+  {
+   "prefab": "sack",
+   "pos": [
+    -11.261,
+    3.181,
+    0.0
+   ],
+   "rot_z": 178.5,
+   "name": "plaza_sack_0"
+  },
+  {
+   "prefab": "sack",
+   "pos": [
+    9.102,
+    2.399,
+    0.0
+   ],
+   "rot_z": 154.1,
+   "name": "plaza_sack_1"
+  },
+  {
+   "prefab": "sack",
+   "pos": [
+    -2.347,
+    -5.828,
+    0.0
+   ],
+   "rot_z": 248.9,
+   "name": "plaza_sack_2"
+  },
+  {
+   "prefab": "sack",
+   "pos": [
+    -2.281,
+    6.422,
+    0.0
+   ],
+   "rot_z": 255.6,
+   "name": "plaza_sack_3"
+  },
+  {
+   "prefab": "sack",
+   "pos": [
+    8.788,
+    -4.528,
+    0.0
+   ],
+   "rot_z": 334.6,
+   "name": "plaza_sack_4"
+  },
+  {
+   "prefab": "sack",
+   "pos": [
+    -4.945,
+    11.283,
+    0.0
+   ],
+   "rot_z": 286.9,
+   "name": "plaza_sack_5"
+  },
+  {
+   "prefab": "sack",
+   "pos": [
+    7.012,
+    9.257,
+    0.0
+   ],
+   "rot_z": 240.3,
+   "name": "plaza_sack_6"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -43.713,
+    20.204,
+    0.0
+   ],
+   "rot_z": 7.1,
+   "name": "orchard_tree_0"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -13.228,
+    -44.722,
+    0.0
+   ],
+   "rot_z": 126.6,
+   "name": "orchard_tree_1"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    40.09,
+    -24.549,
+    0.0
+   ],
+   "rot_z": 188.9,
+   "name": "orchard_tree_2"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -43.23,
+    18.085,
+    0.0
+   ],
+   "rot_z": 244.5,
+   "name": "orchard_tree_3"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    13.927,
+    45.862,
+    0.0
+   ],
+   "rot_z": 353.5,
+   "name": "orchard_tree_4"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -44.529,
+    16.989,
+    0.0
+   ],
+   "rot_z": 141.3,
+   "name": "orchard_tree_5"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -40.616,
+    -23.505,
+    0.0
+   ],
+   "rot_z": 196.9,
+   "name": "orchard_tree_6"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    34.434,
+    -32.801,
+    0.0
+   ],
+   "rot_z": 152.1,
+   "name": "orchard_tree_7"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -23.276,
+    -40.8,
+    0.0
+   ],
+   "rot_z": 127.6,
+   "name": "orchard_tree_8"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -36.728,
+    29.535,
+    0.0
+   ],
+   "rot_z": 236.7,
+   "name": "orchard_tree_9"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -21.671,
+    -42.466,
+    0.0
+   ],
+   "rot_z": 329.8,
+   "name": "orchard_tree_10"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -17.3,
+    -44.747,
+    0.0
+   ],
+   "rot_z": 61.9,
+   "name": "orchard_tree_11"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    42.755,
+    19.067,
+    0.0
+   ],
+   "rot_z": 120.9,
+   "name": "orchard_tree_12"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    20.495,
+    42.174,
+    0.0
+   ],
+   "rot_z": 194.9,
+   "name": "orchard_tree_13"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -19.321,
+    43.696,
+    0.0
+   ],
+   "rot_z": 74.0,
+   "name": "orchard_tree_14"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -43.018,
+    -21.444,
+    0.0
+   ],
+   "rot_z": 274.7,
+   "name": "orchard_tree_15"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    40.365,
+    23.215,
+    0.0
+   ],
+   "rot_z": 197.4,
+   "name": "orchard_tree_16"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    18.506,
+    -44.265,
+    0.0
+   ],
+   "rot_z": 197.4,
+   "name": "orchard_tree_17"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    21.682,
+    -42.652,
+    0.0
+   ],
+   "rot_z": 262.0,
+   "name": "orchard_tree_18"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -15.487,
+    44.048,
+    0.0
+   ],
+   "rot_z": 257.3,
+   "name": "orchard_tree_19"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -34.948,
+    31.782,
+    0.0
+   ],
+   "rot_z": 96.9,
+   "name": "orchard_tree_20"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    23.14,
+    -41.581,
+    0.0
+   ],
+   "rot_z": 346.9,
+   "name": "orchard_tree_21"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    32.334,
+    35.096,
+    0.0
+   ],
+   "rot_z": 278.7,
+   "name": "orchard_tree_22"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    39.589,
+    -26.284,
+    0.0
+   ],
+   "rot_z": 275.7,
+   "name": "orchard_tree_23"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -27.396,
+    37.643,
+    0.0
+   ],
+   "rot_z": 219.1,
+   "name": "orchard_tree_24"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    44.605,
+    -13.483,
+    0.0
+   ],
+   "rot_z": 24.7,
+   "name": "orchard_tree_25"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    26.863,
+    -38.394,
+    0.0
+   ],
+   "rot_z": 319.0,
+   "name": "orchard_tree_26"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -30.278,
+    36.099,
+    0.0
+   ],
+   "rot_z": 243.2,
+   "name": "orchard_tree_27"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -44.4,
+    14.829,
+    0.0
+   ],
+   "rot_z": 214.3,
+   "name": "orchard_tree_28"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -29.106,
+    -37.598,
+    0.0
+   ],
+   "rot_z": 210.1,
+   "name": "orchard_tree_29"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    43.526,
+    16.608,
+    0.0
+   ],
+   "rot_z": 25.1,
+   "name": "orchard_tree_30"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -16.69,
+    45.12,
+    0.0
+   ],
+   "rot_z": 5.2,
+   "name": "orchard_tree_31"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    41.886,
+    23.82,
+    0.0
+   ],
+   "rot_z": 127.5,
+   "name": "orchard_tree_32"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -39.408,
+    26.786,
+    0.0
+   ],
+   "rot_z": 191.6,
+   "name": "orchard_tree_33"
+  },
+  {
+   "prefab": "bush",
+   "pos": [
+    -20.485,
+    42.035,
+    0.0
+   ],
+   "rot_z": 303.2,
+   "name": "orchard_bush_0"
+  },
+  {
+   "prefab": "bush",
+   "pos": [
+    -33.795,
+    33.779,
+    0.0
+   ],
+   "rot_z": 12.3,
+   "name": "orchard_bush_1"
+  },
+  {
+   "prefab": "bush",
+   "pos": [
+    39.662,
+    -25.574,
+    0.0
+   ],
+   "rot_z": 88.2,
+   "name": "orchard_bush_2"
+  },
+  {
+   "prefab": "bush",
+   "pos": [
+    -36.805,
+    30.05,
+    0.0
+   ],
+   "rot_z": 214.9,
+   "name": "orchard_bush_3"
+  },
+  {
+   "prefab": "bush",
+   "pos": [
+    18.478,
+    43.91,
+    0.0
+   ],
+   "rot_z": 165.5,
+   "name": "orchard_bush_4"
+  },
+  {
+   "prefab": "bush",
+   "pos": [
+    -13.812,
+    44.409,
+    0.0
+   ],
+   "rot_z": 170.0,
+   "name": "orchard_bush_5"
+  },
+  {
+   "prefab": "bush",
+   "pos": [
+    -39.85,
+    -24.855,
+    0.0
+   ],
+   "rot_z": 145.9,
+   "name": "orchard_bush_6"
+  },
+  {
+   "prefab": "bush",
+   "pos": [
+    45.334,
+    -14.543,
+    0.0
+   ],
+   "rot_z": 251.9,
+   "name": "orchard_bush_7"
+  },
+  {
+   "prefab": "bush",
+   "pos": [
+    -45.204,
+    15.178,
+    0.0
+   ],
+   "rot_z": 340.4,
+   "name": "orchard_bush_8"
+  },
+  {
+   "prefab": "bush",
+   "pos": [
+    -28.712,
+    37.826,
+    0.0
+   ],
+   "rot_z": 342.2,
+   "name": "orchard_bush_9"
+  },
+  {
+   "prefab": "bush",
+   "pos": [
+    -44.533,
+    -17.981,
+    0.0
+   ],
+   "rot_z": 312.8,
+   "name": "orchard_bush_10"
+  },
+  {
+   "prefab": "bush",
+   "pos": [
+    21.644,
+    41.461,
+    0.0
+   ],
+   "rot_z": 260.5,
+   "name": "orchard_bush_11"
+  },
+  {
+   "prefab": "bush",
+   "pos": [
+    -28.739,
+    -36.847,
+    0.0
+   ],
+   "rot_z": 152.6,
+   "name": "orchard_bush_12"
+  },
+  {
+   "prefab": "bush",
+   "pos": [
+    42.753,
+    -19.505,
+    0.0
+   ],
+   "rot_z": 221.9,
+   "name": "orchard_bush_13"
+  },
+  {
+   "prefab": "bush",
+   "pos": [
+    37.693,
+    29.848,
+    0.0
+   ],
+   "rot_z": 1.4,
+   "name": "orchard_bush_14"
+  },
+  {
+   "prefab": "bush",
+   "pos": [
+    44.443,
+    16.871,
+    0.0
+   ],
+   "rot_z": 163.0,
+   "name": "orchard_bush_15"
+  },
+  {
+   "prefab": "bush",
+   "pos": [
+    -17.416,
+    -43.667,
+    0.0
+   ],
+   "rot_z": 305.1,
+   "name": "orchard_bush_16"
+  },
+  {
+   "prefab": "bush",
+   "pos": [
+    35.604,
+    -32.208,
+    0.0
+   ],
+   "rot_z": 0.4,
+   "name": "orchard_bush_17"
+  },
+  {
+   "prefab": "bush",
+   "pos": [
+    -15.635,
+    44.181,
+    0.0
+   ],
+   "rot_z": 253.6,
+   "name": "orchard_bush_18"
+  },
+  {
+   "prefab": "bush",
+   "pos": [
+    -31.436,
+    34.487,
+    0.0
+   ],
+   "rot_z": 61.1,
+   "name": "orchard_bush_19"
+  },
+  {
+   "prefab": "bush",
+   "pos": [
+    -40.049,
+    26.163,
+    0.0
+   ],
+   "rot_z": 44.3,
+   "name": "orchard_bush_20"
+  },
+  {
+   "prefab": "bush",
+   "pos": [
+    -40.926,
+    22.776,
+    0.0
+   ],
+   "rot_z": 123.8,
+   "name": "orchard_bush_21"
+  },
+  {
+   "prefab": "bush",
+   "pos": [
+    37.713,
+    -28.984,
+    0.0
+   ],
+   "rot_z": 141.6,
+   "name": "orchard_bush_22"
+  },
+  {
+   "prefab": "bush",
+   "pos": [
+    24.249,
+    -40.803,
+    0.0
+   ],
+   "rot_z": 219.1,
+   "name": "orchard_bush_23"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -55.679,
+    29.97,
+    0.0
+   ],
+   "rot_z": 294.0,
+   "name": "forest_tree_0"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    17.158,
+    64.654,
+    0.0
+   ],
+   "rot_z": 351.5,
+   "name": "forest_tree_1"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    12.173,
+    65.865,
+    0.0
+   ],
+   "rot_z": 345.6,
+   "name": "forest_tree_2"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -19.844,
+    70.559,
+    0.0
+   ],
+   "rot_z": 185.9,
+   "name": "forest_tree_3"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -28.463,
+    58.196,
+    0.0
+   ],
+   "rot_z": 96.4,
+   "name": "forest_tree_4"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    31.731,
+    -64.884,
+    0.0
+   ],
+   "rot_z": 144.9,
+   "name": "forest_tree_5"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -51.624,
+    35.96,
+    0.0
+   ],
+   "rot_z": 269.1,
+   "name": "forest_tree_6"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -57.832,
+    -28.238,
+    0.0
+   ],
+   "rot_z": 308.9,
+   "name": "forest_tree_7"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -66.768,
+    6.142,
+    0.0
+   ],
+   "rot_z": 227.8,
+   "name": "forest_tree_8"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    32.041,
+    53.456,
+    0.0
+   ],
+   "rot_z": 243.0,
+   "name": "forest_tree_9"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -19.034,
+    -60.435,
+    0.0
+   ],
+   "rot_z": 178.5,
+   "name": "forest_tree_10"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -17.307,
+    62.29,
+    0.0
+   ],
+   "rot_z": 92.4,
+   "name": "forest_tree_11"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    47.111,
+    50.724,
+    0.0
+   ],
+   "rot_z": 286.3,
+   "name": "forest_tree_12"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    4.152,
+    -66.836,
+    0.0
+   ],
+   "rot_z": 190.8,
+   "name": "forest_tree_13"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    53.785,
+    -36.464,
+    0.0
+   ],
+   "rot_z": 11.0,
+   "name": "forest_tree_14"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -64.135,
+    5.702,
+    0.0
+   ],
+   "rot_z": 122.0,
+   "name": "forest_tree_15"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -2.509,
+    63.546,
+    0.0
+   ],
+   "rot_z": 294.1,
+   "name": "forest_tree_16"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -68.848,
+    4.164,
+    0.0
+   ],
+   "rot_z": 283.4,
+   "name": "forest_tree_17"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    0.82,
+    73.194,
+    0.0
+   ],
+   "rot_z": 27.2,
+   "name": "forest_tree_18"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    62.368,
+    -24.709,
+    0.0
+   ],
+   "rot_z": 292.4,
+   "name": "forest_tree_19"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -65.668,
+    -6.402,
+    0.0
+   ],
+   "rot_z": 198.3,
+   "name": "forest_tree_20"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -9.126,
+    72.525,
+    0.0
+   ],
+   "rot_z": 264.4,
+   "name": "forest_tree_21"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -15.857,
+    71.575,
+    0.0
+   ],
+   "rot_z": 181.3,
+   "name": "forest_tree_22"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -61.234,
+    40.996,
+    0.0
+   ],
+   "rot_z": 170.5,
+   "name": "forest_tree_23"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    51.517,
+    -38.315,
+    0.0
+   ],
+   "rot_z": 156.0,
+   "name": "forest_tree_24"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    30.323,
+    -61.871,
+    0.0
+   ],
+   "rot_z": 36.0,
+   "name": "forest_tree_25"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -66.083,
+    -16.304,
+    0.0
+   ],
+   "rot_z": 218.3,
+   "name": "forest_tree_26"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    57.615,
+    -33.617,
+    0.0
+   ],
+   "rot_z": 21.1,
+   "name": "forest_tree_27"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    25.634,
+    69.214,
+    0.0
+   ],
+   "rot_z": 187.9,
+   "name": "forest_tree_28"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    4.59,
+    -66.478,
+    0.0
+   ],
+   "rot_z": 262.3,
+   "name": "forest_tree_29"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -34.4,
+    -55.094,
+    0.0
+   ],
+   "rot_z": 193.7,
+   "name": "forest_tree_30"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    49.258,
+    53.65,
+    0.0
+   ],
+   "rot_z": 275.8,
+   "name": "forest_tree_31"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    40.956,
+    -48.998,
+    0.0
+   ],
+   "rot_z": 73.8,
+   "name": "forest_tree_32"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -2.525,
+    66.186,
+    0.0
+   ],
+   "rot_z": 280.8,
+   "name": "forest_tree_33"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -1.254,
+    72.68,
+    0.0
+   ],
+   "rot_z": 43.0,
+   "name": "forest_tree_34"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -70.417,
+    -19.932,
+    0.0
+   ],
+   "rot_z": 97.6,
+   "name": "forest_tree_35"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -72.399,
+    14.737,
+    0.0
+   ],
+   "rot_z": 87.3,
+   "name": "forest_tree_36"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    37.023,
+    -60.871,
+    0.0
+   ],
+   "rot_z": 234.3,
+   "name": "forest_tree_37"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -10.581,
+    -62.773,
+    0.0
+   ],
+   "rot_z": 352.6,
+   "name": "forest_tree_38"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    35.661,
+    -52.36,
+    0.0
+   ],
+   "rot_z": 142.1,
+   "name": "forest_tree_39"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    50.028,
+    41.182,
+    0.0
+   ],
+   "rot_z": 68.1,
+   "name": "forest_tree_40"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -32.156,
+    62.788,
+    0.0
+   ],
+   "rot_z": 178.6,
+   "name": "forest_tree_41"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -60.812,
+    31.012,
+    0.0
+   ],
+   "rot_z": 278.8,
+   "name": "forest_tree_42"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -22.865,
+    -62.071,
+    0.0
+   ],
+   "rot_z": 27.3,
+   "name": "forest_tree_43"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    10.774,
+    -73.08,
+    0.0
+   ],
+   "rot_z": 247.1,
+   "name": "forest_tree_44"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    57.907,
+    28.721,
+    0.0
+   ],
+   "rot_z": 295.7,
+   "name": "forest_tree_45"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -67.189,
+    -0.716,
+    0.0
+   ],
+   "rot_z": 127.9,
+   "name": "forest_tree_46"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -71.294,
+    -5.082,
+    0.0
+   ],
+   "rot_z": 286.8,
+   "name": "forest_tree_47"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    60.949,
+    35.803,
+    0.0
+   ],
+   "rot_z": 278.7,
+   "name": "forest_tree_48"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    61.042,
+    27.056,
+    0.0
+   ],
+   "rot_z": 144.9,
+   "name": "forest_tree_49"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    66.252,
+    10.245,
+    0.0
+   ],
+   "rot_z": 311.9,
+   "name": "forest_tree_50"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -32.461,
+    -54.498,
+    0.0
+   ],
+   "rot_z": 117.5,
+   "name": "forest_tree_51"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -18.931,
+    -59.371,
+    0.0
+   ],
+   "rot_z": 38.0,
+   "name": "forest_tree_52"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    65.022,
+    -5.643,
+    0.0
+   ],
+   "rot_z": 262.5,
+   "name": "forest_tree_53"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -46.078,
+    49.165,
+    0.0
+   ],
+   "rot_z": 349.1,
+   "name": "forest_tree_54"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    30.586,
+    -56.576,
+    0.0
+   ],
+   "rot_z": 8.2,
+   "name": "forest_tree_55"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    -59.352,
+    33.326,
+    0.0
+   ],
+   "rot_z": 197.4,
+   "name": "forest_tree_56"
+  },
+  {
+   "prefab": "tree",
+   "pos": [
+    44.819,
+    -52.367,
+    0.0
+   ],
+   "rot_z": 202.3,
+   "name": "forest_tree_57"
+  }
+ ]
+}

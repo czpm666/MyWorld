@@ -8,6 +8,24 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/MyWorld.unity
     guid: a08e71a9fdb9b9c48b2c67063cc00faf
+  - enabled: 1
+    path: Assets/Scenes/RoaTown.unity
+    guid: 51bd983aa31d16b49bba4e52f2bc6d7d
+  - enabled: 1
+    path: Assets/Scenes/BuenaVillage.unity
+    guid: 9d6a919a2ff457f4a80012fd1dd81543
+  - enabled: 1
+    path: Assets/Scenes/RanoaAcademy.unity
+    guid: 3fa3d27241f902d4896cce5b2b35c071
+  - enabled: 1
+    path: Assets/Scenes/BlenderKitTown.unity
+    guid: 649b36449da0cb64a9920954d6ca07b6
+  - enabled: 1
+    path: Assets/Scenes/KingdomWorld.unity
+    guid: 012a4fa232093b942bc8a8b258a38040
+  - enabled: 1
+    path: Assets/Scenes/AsuraCapital.unity
+    guid: e280f0c9faab09f4f8f9bb14b0031758
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

@@ -1,0 +1,598 @@
+{
+ "grid": "24x14",
+ "shots": [
+  {
+   "name": "diag_plaza_old",
+   "kind": "landmark",
+   "pos": [
+    13.62,
+    32.56,
+    12.0
+   ],
+   "look": [
+    13.62,
+    136.16,
+    6.0
+   ],
+   "lens": 35.0,
+   "fov": null,
+   "verdict": "FAIL",
+   "bad": [
+    "camera is boxed in (5/6 axis rays hit)",
+    "ceiling 4.7 m above the camera (plaster)",
+    "ground/street 0% (min 5%)",
+    "facade 5% (min 10%)"
+   ],
+   "warn": [
+    "one object (mh_rf_core) is 83% of everything hit"
+   ],
+   "buckets": {
+    "sky": 0.0,
+    "ground": 0.0,
+    "roof": 0.2857,
+    "facade": 0.0536,
+    "other": 0.6607
+   },
+   "detail": {
+    "prop": 0.6607,
+    "roof": 0.2857,
+    "facade": 0.0536
+   },
+   "near3": 0.0,
+   "hit_d_med": 9.75,
+   "hit_d_min": 4.99,
+   "hit_z_med": 11.42,
+   "objects": 9,
+   "top_objects": [
+    [
+     "mh_rf_core",
+     0.827
+    ],
+    [
+     "mh_cfl1",
+     0.048
+    ],
+    [
+     "mh_ch1_sh",
+     0.039
+    ],
+    [
+     "mh_bb8_top",
+     0.021
+    ]
+   ],
+   "top1_share": 0.827,
+   "nearest": {
+    "obj": "mh_cfl1",
+    "mat": "mkt_lead",
+    "d": 4.99,
+    "z": 12.43,
+    "cls": "prop"
+   },
+   "solid": {
+    "up_hit": true,
+    "ceiling": 4.66,
+    "ceiling_mat": "plaster",
+    "ground": 2.71,
+    "ground_mat": "plaster",
+    "enclosed": true,
+    "axis": {
+     "+x": 6.52,
+     "-x": 33.76,
+     "+y": 9.19,
+     "-y": 6.33,
+     "+z": 4.66,
+     "-z": 2.71
+    }
+   },
+   "stand": null,
+   "los": null,
+   "materials": {
+    "plaster": 278,
+    "mkt_timber_dark": 24,
+    "mkt_lead": 16,
+    "mkt_stone_pale": 13,
+    "mkt_stone_sand": 5
+   }
+  },
+  {
+   "name": "diag_game_pick1",
+   "kind": "game",
+   "pos": [
+    -204.0,
+    -42.93,
+    27.79
+   ],
+   "look": [
+    -204.0,
+    -20.5,
+    1.0
+   ],
+   "lens": null,
+   "fov": 30.0,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.0,
+    "ground": 0.2827,
+    "roof": 0.3452,
+    "facade": 0.2708,
+    "other": 0.1012
+   },
+   "detail": {
+    "roof": 0.3452,
+    "ground": 0.2827,
+    "facade": 0.2708,
+    "prop": 0.1012
+   },
+   "near3": 0.0,
+   "hit_d_med": 29.85,
+   "hit_d_min": 16.25,
+   "hit_z_med": 6.67,
+   "objects": 11,
+   "top_objects": [
+    [
+     "city_blk135",
+     0.601
+    ],
+    [
+     "streets_bed",
+     0.214
+    ],
+    [
+     "city_blk124",
+     0.054
+    ],
+    [
+     "city_blk438",
+     0.039
+    ]
+   ],
+   "top1_share": 0.601,
+   "nearest": {
+    "obj": "city_blk135",
+    "mat": "hu_roof_hd_tile_terra6_086",
+    "d": 16.25,
+    "z": 13.21,
+    "cls": "roof"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 27.75,
+    "ground_mat": "cobble",
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 27.75
+    }
+   },
+   "stand": null,
+   "los": null,
+   "materials": {
+    "cobble": 72,
+    "hu_roof_hd_tile_terra3_086": 51,
+    "hu_stone": 32,
+    "timber_dark": 29,
+    "hu_roof_hd_tile_terra3_112": 28,
+    "hu_roof_hd_tile_terra3_100": 21,
+    "hu_roof_hd_tile_terra6_086": 18,
+    "town_ground": 16,
+    "hu_roof_hd_tile_terra6_100": 11,
+    "hd_plaster_c3": 10,
+    "hu_roof_hd_tile_terra6_112": 8,
+    "hd_plaster_c4": 6
+   }
+  },
+  {
+   "name": "diag_game_pick4",
+   "kind": "game",
+   "pos": [
+    105.19,
+    178.8,
+    27.79
+   ],
+   "look": [
+    121.06,
+    162.94,
+    1.0
+   ],
+   "lens": null,
+   "fov": 30.0,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.0,
+    "ground": 0.5506,
+    "roof": 0.1815,
+    "facade": 0.122,
+    "other": 0.1458
+   },
+   "detail": {
+    "ground": 0.5506,
+    "roof": 0.1815,
+    "prop": 0.1458,
+    "facade": 0.122
+   },
+   "near3": 0.0,
+   "hit_d_med": 33.17,
+   "hit_d_min": 15.16,
+   "hit_z_med": 0.09,
+   "objects": 12,
+   "top_objects": [
+    [
+     "streets_bed",
+     0.435
+    ],
+    [
+     "city_blk441",
+     0.31
+    ],
+    [
+     "city_blk452",
+     0.131
+    ],
+    [
+     "blk_48",
+     0.036
+    ]
+   ],
+   "top1_share": 0.435,
+   "nearest": {
+    "obj": "city_blk452",
+    "mat": "hu_roof_hd_tile_terra5_100",
+    "d": 15.16,
+    "z": 15.33,
+    "cls": "roof"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 27.76,
+    "ground_mat": "cobble",
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 27.76
+    }
+   },
+   "stand": null,
+   "los": null,
+   "materials": {
+    "cobble": 146,
+    "hu_roof_hd_tile_terra5_100": 43,
+    "town_ground": 30,
+    "hd_plaster_c0": 19,
+    "hu_roof_hd_tile_terra0_086": 16,
+    "hu_stone": 14,
+    "timber_dark": 14,
+    "hu_roof_hd_tile_terra0_112": 13,
+    "hu_roof_hd_tile_terra0_100": 10,
+    "hu_roof_hd_tile_terra5_086": 9,
+    "town_street": 7,
+    "hu_roof_hd_tile_terra5_112": 4
+   }
+  },
+  {
+   "name": "diag_eye_pick1",
+   "kind": "eye",
+   "pos": [
+    -204.0,
+    -22.0,
+    1.72
+   ],
+   "look": [
+    -204.0,
+    24.0,
+    3.2
+   ],
+   "lens": 24.0,
+   "fov": null,
+   "verdict": "FAIL",
+   "bad": [
+    "camera is boxed in (5/6 axis rays hit)",
+    "ceiling 4.4 m above the camera (hd_plaster_c3)",
+    "77% of the frame is closer than 3 m -- nose against a surface",
+    "ground/street 0% (min 6%)",
+    "facade 100% -- the frame is one wall",
+    "cannot stand: eye is 1.32 m over the floor",
+    "view axis blocked after 2.5 m"
+   ],
+   "warn": [
+    "one object (city_blk135) is 100% of everything hit"
+   ],
+   "buckets": {
+    "sky": 0.0,
+    "ground": 0.0,
+    "roof": 0.0,
+    "facade": 1.0,
+    "other": 0.0
+   },
+   "detail": {
+    "facade": 1.0
+   },
+   "near3": 0.7679,
+   "hit_d_med": 2.8,
+   "hit_d_min": 2.55,
+   "hit_z_med": 1.8,
+   "objects": 1,
+   "top_objects": [
+    [
+     "city_blk135",
+     1.0
+    ]
+   ],
+   "top1_share": 1.0,
+   "nearest": {
+    "obj": "city_blk135",
+    "mat": "hd_plaster_c3",
+    "d": 2.55,
+    "z": 1.73,
+    "cls": "facade"
+   },
+   "solid": {
+    "up_hit": true,
+    "ceiling": 4.44,
+    "ceiling_mat": "hd_plaster_c3",
+    "ground": 1.32,
+    "ground_mat": "hu_stone",
+    "enclosed": true,
+    "axis": {
+     "+x": 3.34,
+     "-x": 5.02,
+     "+y": 2.56,
+     "-y": 1.8,
+     "+z": 4.44,
+     "-z": 1.32
+    }
+   },
+   "stand": {
+    "stand_h": 1.32,
+    "floor_spread": 0.0,
+    "eye_clear": 1.2,
+    "clear_by_height": {
+     "0.35": 1.2,
+     "1.00": 1.2,
+     "1.72": 1.2,
+     "2.05": 1.2
+    },
+    "ok": false
+   },
+   "los": {
+    "los": 2.5,
+    "los_12": false,
+    "stop_mat": "hd_plaster_c3",
+    "stop_z": 1.72,
+    "stop_d": 2.5
+   },
+   "materials": {
+    "hd_plaster_c3": 336
+   }
+  },
+  {
+   "name": "diag_eye_pick4",
+   "kind": "eye",
+   "pos": [
+    120.0,
+    164.0,
+    1.72
+   ],
+   "look": [
+    152.5,
+    131.5,
+    3.2
+   ],
+   "lens": 24.0,
+   "fov": null,
+   "verdict": "FAIL",
+   "bad": [
+    "camera is boxed in (5/6 axis rays hit)",
+    "cannot stand: only 0.90 m of clear air around the eye"
+   ],
+   "warn": [],
+   "buckets": {
+    "sky": 0.119,
+    "ground": 0.3363,
+    "roof": 0.0298,
+    "facade": 0.3542,
+    "other": 0.1607
+   },
+   "detail": {
+    "facade": 0.3542,
+    "ground": 0.3363,
+    "prop": 0.1548,
+    "sky": 0.119,
+    "roof": 0.0298,
+    "void": 0.006
+   },
+   "near3": 0.0,
+   "hit_d_med": 18.46,
+   "hit_d_min": 4.21,
+   "hit_z_med": 1.76,
+   "objects": 7,
+   "top_objects": [
+    [
+     "city_blk427",
+     0.443
+    ],
+    [
+     "streets_bed",
+     0.348
+    ],
+    [
+     "streetlife_2_2",
+     0.084
+    ],
+    [
+     "city_blk403",
+     0.047
+    ]
+   ],
+   "top1_share": 0.443,
+   "nearest": {
+    "obj": "streetlife_2_2",
+    "mat": "sl_awning_blue",
+    "d": 4.21,
+    "z": 2.36,
+    "cls": "prop"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 1.63,
+    "ground_mat": "town_ground",
+    "enclosed": true,
+    "axis": {
+     "+x": 30.07,
+     "-x": 1.28,
+     "+y": 1.86,
+     "-y": 27.99,
+     "+z": -1.0,
+     "-z": 1.63
+    }
+   },
+   "stand": {
+    "stand_h": 1.63,
+    "floor_spread": 0.33,
+    "eye_clear": 0.904,
+    "clear_by_height": {
+     "0.35": 0.904,
+     "1.00": 1.055,
+     "1.72": 1.055,
+     "2.05": 1.055
+    },
+    "ok": false
+   },
+   "los": {
+    "los": 18.5,
+    "los_12": true,
+    "stop_mat": "hu_void",
+    "stop_z": 1.72,
+    "stop_d": 18.5
+   },
+   "materials": {
+    "cobble": 103,
+    "hu_stone": 46,
+    "hd_plaster_c4": 28,
+    "timber_dark": 22,
+    "sl_wood": 14,
+    "hu_stone_warm": 10,
+    "timber": 8,
+    "town_street": 8,
+    "hu_roof_hd_tile_terra4_100": 7,
+    "sl_awning_blue": 7,
+    "hu_roof_hd_tile_terra4_086": 6,
+    "hd_plaster_c2": 5
+   }
+  },
+  {
+   "name": "diag_plaza_south",
+   "kind": "landmark",
+   "pos": [
+    0.0,
+    -46.0,
+    1.72
+   ],
+   "look": [
+    0.0,
+    34.0,
+    7.0
+   ],
+   "lens": 35.0,
+   "fov": null,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.1577,
+    "ground": 0.506,
+    "roof": 0.0476,
+    "facade": 0.2202,
+    "other": 0.0685
+   },
+   "detail": {
+    "ground": 0.506,
+    "facade": 0.2202,
+    "sky": 0.1577,
+    "prop": 0.0685,
+    "roof": 0.0476
+   },
+   "near3": 0.0,
+   "hit_d_med": 44.09,
+   "hit_d_min": 4.73,
+   "hit_z_med": 2.45,
+   "objects": 60,
+   "top_objects": [
+    [
+     "bridge_rib19",
+     0.219
+    ],
+    [
+     "land_terrain",
+     0.187
+    ],
+    [
+     "land_tower",
+     0.134
+    ],
+    [
+     "bridge_rib18",
+     0.042
+    ]
+   ],
+   "top1_share": 0.219,
+   "nearest": {
+    "obj": "bridge_rib19",
+    "mat": "stone",
+    "d": 4.73,
+    "z": 0.8,
+    "cls": "ground"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 1.01,
+    "ground_mat": "stone",
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": 41.12,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 1.01
+    }
+   },
+   "stand": null,
+   "los": null,
+   "materials": {
+    "stone": 118,
+    "land_ground": 63,
+    "flag": 36,
+    "mkt_tile_dark": 8,
+    "plaster": 8,
+    "roof_tile": 6,
+    "mkt_timber_dark": 6,
+    "hu_stone": 5,
+    "timber": 5,
+    "mkt_glass": 4,
+    "wood_stall": 4,
+    "timber_dark": 3
+   }
+  }
+ ]
+}

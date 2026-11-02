@@ -1,0 +1,10 @@
+00:00.453  blend            | Read blend: "E:\My World\Blender\renders\kingdom\capital_full.blend"
+street_props   verts=60693   r 48.1..630.1  x -606.5..630.1  z 0.0..3.4
+wells          verts=192     r 225.1..269.8  x -207.5..64.4  z 0.0..2.7
+outer_wall     verts=10444   r 620.5..666.8  x -659.4..643.3  z 0.0..33.2
+outer_gates    verts=104538  r 624.8..658.0  x -649.8..642.4  z -0.0..27.3
+loose prop objects: 0
+DONE
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

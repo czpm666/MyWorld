@@ -46,8 +46,16 @@ namespace MyWorld
         /// <param name="anchor">回退锚点（规格：敌人胸口高度 + 朝攻击者偏移 0.35 m）</param>
         /// <param name="toAttacker">攻击来向（由 `hitPoint` 或攻击者位置算出，**y 已置 0**）</param>
         /// <param name="shield">优先锚点：敌人的盾网格（取不到传 null）</param>
-        public static void BlockArc(Vector3 anchor, Vector3 toAttacker, Transform shield)
+        /// <param name="blockedDamage">被挡掉的伤害，用来给格挡分级（挡重击比挡轻击更响）；-1 = 不知道</param>
+        public static void BlockArc(Vector3 anchor, Vector3 toAttacker, Transform shield, float blockedDamage = -1f)
         {
+            // 新增：在既有春绿盾弧之外，再叠定向火花 / 柔光 / 震屏 / 金属音（VfxCombat 统一语义层）
+            // 方向沿攻击来向、位置用真实锚点（盾网格优先），并按被挡伤害分级。
+            VfxCombat.BlockSpark(anchor, toAttacker, blockedDamage);
+
+            // 一次性特效配额：同屏狂刷时宁可少几个弧，也不要卡帧（粒子池不受此限）
+            if (!VfxHub.RequestTransient()) return;
+
             var go = new GameObject("Vfx_BlockArc");
             var v = go.AddComponent<BlockArcVfx>();
             v.Init(anchor, toAttacker, shield);
@@ -160,6 +168,28 @@ namespace MyWorld
         public static void SwordSlash(Vector3 center, Vector3 forward, float hitRange,
                                       float hitHalfAngleDegrees, int segment)
         {
+            SwordSlash(center, forward, hitRange, hitHalfAngleDegrees, segment,
+                Vector3.zero, Vector3.zero, -1f, Vector3.zero);
+        }
+
+        /// <summary>
+        /// 同上，但**带上真实命中信息**（打击特效 T-0xx）。战斗路径请用这个重载。
+        ///
+        /// ⚠️ 为什么必须传进来而不是在这里自己扫：本函数只知道"挥到哪一片扇区"，
+        ///    不知道**刀锋到底碰到了谁身上的哪个点**。旧版在这里扫 `DamageableRegistry`
+        ///    再猜一个 `敌人.position + up*0.85` 当命中点 —— 于是"从背后砍"和"正面砍"
+        ///    的火花位置一模一样，看起来就是"特效没打在敌人身上"。
+        ///    真实碰撞点只有攻击方手里有（`Collider.ClosestPoint(判定中心)`）。
+        /// </summary>
+        /// <param name="hitPoint">**真实碰撞点**。`damage &lt; 0` 时忽略。</param>
+        /// <param name="attackDir">攻击方向（玩家→目标的水平方向），火花与冲击环沿它展开。</param>
+        /// <param name="damage">本次伤害 → 分级；**`&lt; 0` 表示这一下没打中**（只放刀光和刀风）。</param>
+        /// <param name="surfaceNormal">受击表面法线，可传 `Vector3.zero`（内部按攻击方向兜底）。</param>
+        public static void SwordSlash(Vector3 center, Vector3 forward, float hitRange,
+                                      float hitHalfAngleDegrees, int segment,
+                                      Vector3 hitPoint, Vector3 attackDir, float damage,
+                                      Vector3 surfaceNormal = default(Vector3))
+        {
             Vector3 f = Flatten(forward);
 
             // 弧心前移到身前，弧带才不会绕回来压住角色
@@ -168,6 +198,58 @@ namespace MyWorld
 
             int seg = Mathf.Clamp(segment, 1, SwordSegments.Length);
             SlashSeg S = SwordSegments[seg - 1];
+
+            bool didHit = damage >= 0f;
+
+            // 刀风（每次挥砍都有）+ 命中叠层（真实碰撞点 / 攻击方向 / 按伤害分级）。
+            VfxCombat.SwordSwing(center, forward, hitRange, seg, didHit);
+            if (didHit)
+                VfxCombat.MeleeImpact(hitPoint, attackDir, surfaceNormal, damage, S.color);
+
+            // 一次性特效配额：同屏狂刷时宁可少几道月牙，也不要卡帧（粒子池不受此限）
+            if (!VfxHub.RequestTransient()) return;
+
+            // ---- 剑影条带：叠在月牙**之上**的第二层 ----
+            // 月牙是"亮芯"（16 条 LineRenderer 光带），条带是"跟着刀走的那道影子"。
+            // 两者不互相替换：月牙这条链路是已验证能渲染的，不动它就是防回归；
+            // 条带负责"沿刃口扫过去 + 尾巴逐点变暗变窄"那半个打击感。
+            // 第 4 段是直线突刺（S.line），没有扫掠，不生成条带（下面会提前 return）。
+            if (!S.line && VfxHub.RequestTransient())
+            {
+                // 上挑/下劈的区分：SlashSeg.liftDrift 已经是"整段弧的上下漂移量"
+                // （第 2 段下劈 −0.70、第 3 段斜劈 −0.40、第 1 段横劈 0），
+                // 放大 1.6 倍当作条带逐点的竖直偏移；横劈没有漂移，给它一点上弓，
+                // 免得读成一条死平的直线。
+                float riseGain = S.liftDrift * 1.6f;
+                if (Mathf.Abs(riseGain) < 0.15f) riseGain = 0.30f;
+
+                var ribbonGo = new GameObject("Vfx_SlashRibbon");
+                ribbonGo.transform.position = origin;
+                ribbonGo.AddComponent<VfxSlashRibbon>().Init(
+                    origin, f,
+                    hitRange * SlashRadiusScale * S.radiusScale,
+                    S.arc,
+                    S.color,
+                    0.095f + 0.015f * (seg - 1),   // 第 2 段下劈扫得慢一点，看得清
+                    0.13f,
+                    S.pitch,
+                    S.roll,
+                    riseGain,
+                    (seg % 2) == 0);               // 相邻段反向扫，连段不糊成一坨
+            }
+
+            // ---- 贴地冲击弧：俯视主视角下真正让人读出"朝哪砍、砍到多大一片"的那一层 ----
+            // 竖直条带在 52° 俯视下几乎侧面对着相机，可见面积很小；贴地扇形是正对相机的，
+            // 所以这层不是条带的替代品，而是补位。圆心用 `center`（角色胸口）而不是 `origin`
+            // （武器前伸点）—— 俯视时玩家读的是"我砍到了哪一片地"，以角色为圆心才对。
+            // 第 4 段是直线突刺（S.line），铺地弧会把它读成"劈"，所以跳过。
+            if (!S.line)
+            {
+                VfxGroundArc.Spawn(center, forward, hitRange, Mathf.Max(60f, S.arc), S.color,
+                    0.30f + 0.02f * (seg - 1),   // 0.30~0.34 s，段位越高留得稍久
+                    0.14f,                        // 离地 0.14 m，避开地砖 z-fight
+                    0.10f);                       // 外缘上翘 0.10 m
+            }
 
             var go = new GameObject("Vfx_SwordSlash");
             go.transform.position = origin;
@@ -210,6 +292,9 @@ namespace MyWorld
         /// <summary>头顶冒一个黄色感叹号，duration 秒后自动消失。</summary>
         public static void Exclamation(Transform follow, float height, float duration)
         {
+            // 一次性特效配额（见 VfxHub.AllowTransient）：同屏狂刷时宁可这一帧少几个感叹号，也不要卡帧
+            if (!VfxHub.RequestTransient()) return;
+
             var go = new GameObject("Vfx_Exclamation");
             go.transform.position = follow.position + Vector3.up * height;
             var v = go.AddComponent<ExclamationMark>();
@@ -219,6 +304,9 @@ namespace MyWorld
         /// <summary>蓄力特效：跟着目标，半径收缩的圆环 + 中心球。</summary>
         public static void Charge(Transform follow, float height, float duration, Color color)
         {
+            // 一次性特效配额（见 VfxHub.AllowTransient）
+            if (!VfxHub.RequestTransient()) return;
+
             var go = new GameObject("Vfx_Charge");
             go.transform.position = follow.position + Vector3.up * height;
             var v = go.AddComponent<ChargeGlow>();
@@ -228,6 +316,9 @@ namespace MyWorld
         /// <summary>月牙形范围斩击：在 origin 处朝 forward 张开的一段圆弧。</summary>
         public static void Crescent(Vector3 origin, Vector3 forward, float radius, float arcDegrees, Color color)
         {
+            // 一次性特效配额（见 VfxHub.AllowTransient）
+            if (!VfxHub.RequestTransient()) return;
+
             var go = new GameObject("Vfx_Crescent");
             go.transform.position = origin;
             var v = go.AddComponent<CrescentSlash>();
@@ -237,6 +328,9 @@ namespace MyWorld
         /// <summary>向前劈砍：一条有厚度的直线斩击，快速淡出。</summary>
         public static void Slash(Vector3 origin, Vector3 forward, float length, Color color)
         {
+            // 一次性特效配额（见 VfxHub.AllowTransient）
+            if (!VfxHub.RequestTransient()) return;
+
             var go = new GameObject("Vfx_Slash");
             go.transform.position = origin;
             var v = go.AddComponent<CrescentSlash>();
@@ -317,7 +411,7 @@ namespace MyWorld
         private void Update()
         {
             life -= Time.deltaTime;
-            if (life <= 0f) { Destroy(gameObject); return; }
+            if (life <= 0f) { VfxHub.NoteTransientDestroyed(); Destroy(gameObject); return; }
 
             if (follow != null) transform.position = follow.position + Vector3.up * height;
 
@@ -380,7 +474,7 @@ namespace MyWorld
         private void Update()
         {
             life -= Time.deltaTime;
-            if (life <= 0f) { Destroy(gameObject); return; }
+            if (life <= 0f) { VfxHub.NoteTransientDestroyed(); Destroy(gameObject); return; }
 
             if (follow != null) transform.position = follow.position;
 
@@ -567,6 +661,19 @@ namespace MyWorld
             }
         }
 
+#if UNITY_EDITOR
+        /// <summary>
+        /// QA 专用：把月牙定格到指定进度（0~1）再渲染。理由同
+        /// <see cref="MyWorld.VfxSlashRibbon.DebugSetAge"/> —— 抓一张图要 ~0.2s，
+        /// 逐帧抓拍会让下一帧的 `deltaTime` 直接跳过整段生命周期。
+        /// </summary>
+        public void DebugSetProgress(float t)
+        {
+            life = Mathf.Clamp01(t) * MaxLife;
+            ApplyShape(life / MaxLife);
+        }
+#endif
+
         private void ApplyShape(float t)
         {
             if (!ready) return;
@@ -658,7 +765,7 @@ namespace MyWorld
         {
             life += Time.deltaTime;
             float t = life / MaxLife;
-            if (t >= 1f) { Destroy(gameObject); return; }
+            if (t >= 1f) { VfxHub.NoteTransientDestroyed(); Destroy(gameObject); return; }
             ApplyShape(t);
         }
     }
@@ -770,7 +877,7 @@ namespace MyWorld
         private void Update()
         {
             t += Time.deltaTime;
-            if (t >= Life) { Destroy(gameObject); return; }
+            if (t >= Life) { VfxHub.NoteTransientDestroyed(); Destroy(gameObject); return; }
             Apply(t);
         }
 

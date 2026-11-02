@@ -1,0 +1,8 @@
+hd_nature ['AUTUMN_CHANCE', 'BEECH', 'BUILDERS', 'DEAD', 'Euler', 'H', 'K', 'Matrix', 'Mesher', 'NATURE_DIR', 'OAK', 'PINE', 'PINE_CFG', 'RENDER_DIR', 'SEED_BASE', 'TAU', 'T_at', 'Vector', 'bmesh', 'bpy', 'bush', 'export_all', 'fallen_log', 'grass_tuft']
+tree_oak      0.18s objs=1    tris=20430  x   -3.9..   2.9 y   -3.6..   3.2 z   0.0.. 10.7
+bush          0.04s objs=1    tris=2372   x   -0.8..   0.8 y   -0.6..   0.7 z   0.0..  1.1
+tree_pine     0.13s objs=1    tris=10262  x   -3.3..   2.9 y   -2.9..   4.1 z   0.0.. 12.3
+grass_tuft    0.07s objs=1    tris=513    x   -0.3..   0.3 y   -0.3..   0.3 z   0.0..  0.4
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

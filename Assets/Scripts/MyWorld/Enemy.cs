@@ -23,6 +23,16 @@ namespace MyWorld
     [RequireComponent(typeof(CharacterController))]
     public class Enemy : MonoBehaviour, IDamageable
     {
+        /// <summary>
+        /// 任意敌人**真的掉血**时触发（被格挡的行动不会触发）。参数：敌人、命中点、命中法线。
+        /// 表现层（vfx-dev）订阅它来做火花/白闪/顿帧，逻辑文件因此不需要引用任何特效类。
+        /// ⚠️ 订阅方必须在 OnDestroy 里退订，否则 static 事件会在切场景后留下悬空回调。
+        /// </summary>
+        public static event System.Action<Enemy, Vector3, Vector3> AnyDamaged;
+
+        /// <summary>任意敌人死亡时触发（击杀计数、死亡特效用）。</summary>
+        public static event System.Action<Enemy> AnyDefeated;
+
         [Header("血量")]
         [SerializeField] private float maxHealth = 70f;
 
@@ -142,7 +152,15 @@ namespace MyWorld
 
         private Renderer[] renderers;
         private Material[] normalMats;
-        private Material flashMat;
+
+        // 受击闪色**按伤害分级**（轻=白 / 重=暖橙 / 暴=赤红，颜色表在 VfxFeel.FlashColor）。
+        // 三份材质在 Awake 里一次建好，UpdateFlash 只做"换 sharedMaterial"这一步 —— 运行时零分配。
+        private Material[] flashMats;
+        private int flashGrade;
+
+        // 冲刺拖尾：旧实现每帧 new 一个 GameObject（一次 0.28s 冲刺 ≈ 17 个），现在走池化粒子。
+        private float dashTrailTimer;
+        private bool dashTrailStarted;
 
         [SerializeField] private HealthBar healthBar;
 
@@ -154,6 +172,15 @@ namespace MyWorld
         public bool IsAlive => alive;
         public Transform Transform => transform;
         public bool IsStunned => beingPulled || stunTimer > 0f;
+
+        /// <summary>
+        /// 最近一次**真正掉血**的命中档位（轻/重/暴）。
+        ///
+        /// 给表现层用：`VfxDirector` 订阅 `AnyDamaged` 时事件参数里没有伤害值，
+        /// 但它可以顺手读这个属性，于是"受击血花"的大小也能跟着分级 ——
+        /// **不用扩事件的签名**（扩签名会波及每一个订阅方，是更大的改动面）。
+        /// </summary>
+        public HitGrade LastHitGrade { get; private set; }
 
         /// <summary>被抓钩拉拽时调用：停手、进僵直。不暂停的话 AI 的移动会和拉拽打架。</summary>
         public void SetPulled(bool pulled)
@@ -188,8 +215,12 @@ namespace MyWorld
             normalMats = new Material[renderers.Length];
             for (int i = 0; i < renderers.Length; i++) normalMats[i] = renderers[i].sharedMaterial;
 
-            flashMat = PlaceholderArt.NewLit(Color.white, 0f);
-            flashMat.name = "M_EnemyFlash";
+            flashMats = new Material[VfxFeel.FlashColor.Length];
+            for (int i = 0; i < flashMats.Length; i++)
+            {
+                flashMats[i] = PlaceholderArt.NewLit(VfxFeel.FlashColor[i], 0f);
+                flashMats[i].name = "M_EnemyFlash" + i;
+            }
         }
 
         private void OnEnable() => DamageableRegistry.Register(this);
@@ -267,14 +298,32 @@ namespace MyWorld
                 toAttacker.Normalize();
 
                 // 锚点：优先盾网格（语义最强），回退"胸口高度 + 朝攻击者偏移 0.35 m"（规格 §6.1）
+                // `amount` 一起传下去：格挡也是**有轻重的** —— 挡住一记重击该比挡住一记轻击更响，
+                // 分级由 VfxCombat.BlockSpark 按同一张 VfxFeel 表决定。
                 SkillVfx.BlockArc(transform.position + Vector3.up * 1.0f + toAttacker * 0.35f,
-                    toAttacker, ShieldAnchor());
+                    toAttacker, ShieldAnchor(), amount);
                 Debug.Log("[My World] 敌人举盾格挡，本次免伤");
                 return;
             }
 
+            // 伤害分级（轻/重/暴）。闪色、僵直、以及特效层/音频层的强度**全部查这一档**。
+            // ⚠️ VfxFeel.Grade 在同一帧内对同一伤害值只掷一次骰子（见那里的注释），
+            //    所以这里算出的档位和 VfxCombat / GameAudio 算出的**一定是同一个** ——
+            //    不会出现"闪了暴击的红光却只播轻击音"。
+            bool crit;
+            HitGrade grade = VfxFeel.Grade(amount, out crit);
+            flashGrade = VfxFeel.Index(grade);
+            LastHitGrade = grade;   // 给 VfxDirector 的血花分级用（见属性注释）
+
+            // flashDuration 仍是"轻击闪多久"的序列化基准（场景里调好的值不动），
+            // 重击/暴击按 VfxFeel.FlashSeconds 的档位比例放大。
+            float lightFlash = Mathf.Max(1e-4f, VfxFeel.FlashSecondsFor(HitGrade.Light));
+            flashTimer = flashDuration * (VfxFeel.FlashSecondsFor(grade) / lightFlash);
+
             health -= amount;
-            flashTimer = flashDuration;
+
+            // 表现层钩子（vfx-dev）：只有真掉血才有事件；被格挡的那一支已经 return 了。
+            AnyDamaged?.Invoke(this, hitPoint, hitNormal);
 
             // 普通攻击**不能打断施法**：正在蓄力时不进僵直，让它把招式放完。
             // （只有抓钩能打断，见 SetPulled）
@@ -284,7 +333,8 @@ namespace MyWorld
             // 冷却期内的打击照常掉血、照常闪白，只是不再续硬直。
             if (phase != Phase.Windup && hitStunCdTimer <= 0f)
             {
-                stunTimer = Mathf.Max(stunTimer, hitStunDuration);
+                // 越重的一下打得越懵：僵直时长按档位放大（VfxFeel.StunScale）。
+                stunTimer = Mathf.Max(stunTimer, hitStunDuration * VfxFeel.StunScaleFor(grade));
                 hitStunCdTimer = hitStunCooldown;
             }
 
@@ -299,6 +349,12 @@ namespace MyWorld
             alive = false;
             health = 0f;
             if (animator != null) animator.SetBool(DeadHash, true);
+
+            // 击杀计数（任务系统用）+ 表现钩子（vfx-dev）。
+            // 敌人只可能被玩家打死（目前没有友军/环境伤害），所以这里无条件记一次击杀。
+            AnyDefeated?.Invoke(this);
+            GameSession.AddCounter("kill");
+
             Destroy(gameObject, 4f);
         }
 
@@ -562,11 +618,47 @@ namespace MyWorld
             decisionTimer = decisionInterval;
         }
 
+        /// <summary>
+        /// 冲刺拖尾。
+        ///
+        /// 🔴 **旧实现每帧 `SkillVfx.Slash(...)`** —— 那是 `new GameObject("Vfx_Slash")` +
+        ///    一个 `LineRenderer` 子物体。一次 0.28s 的冲刺在 60fps 下 ≈ **17 帧 = 34 个新物体**，
+        ///    而"敌人冲刺"是 Loop 里最频繁的招式之一。
+        ///
+        /// 现在：**形状提示**只在冲刺起手放一次（一道月牙，告诉玩家"他冲过来了"），
+        /// 位移过程靠**池化粒子**（风线 + 尘）拖尾 —— 零 `new`，粒子池有上限且自动回收。
+        /// 观感上反而更连续：粒子是按世界位置撒的，不会像旧的 LineRenderer 那样跟着敌人瞬移。
+        /// </summary>
+        private void EmitDashTrail(float dt)
+        {
+            VfxHub hub = VfxHub.Instance;
+            if (hub == null) return;
+
+            Color c = pendingMove == EnemyMove.DashSlash ? SkillVfx.ChargeColor : SkillVfx.HeavyColor;
+            Vector3 back = -Flat(dashDir);
+            if (back.sqrMagnitude < 1e-4f) back = -Flat(transform.forward);
+            back.Normalize();
+
+            if (!dashTrailStarted)
+            {
+                dashTrailStarted = true;
+                SkillVfx.Slash(transform.position, dashDir, 2.2f, c);   // 起手一次，占用"一次性特效"配额
+            }
+
+            dashTrailTimer -= dt;
+            if (dashTrailTimer > 0f) return;
+            dashTrailTimer = 0.03f;
+
+            hub.Burst(hub.Streak, transform.position + Vector3.up * 0.9f, back, 2, 1.5f, 3.5f, 12f,
+                c, 0.05f, 0.11f, 0.12f, 0.22f, 0f, 0.10f);
+            hub.Burst(hub.Dust, transform.position + Vector3.up * 0.06f, back, 1, 0.4f, 1.2f, 40f,
+                new Color(0.80f, 0.74f, 0.63f, 0.5f), 0.10f, 0.20f, 0.18f, 0.34f, 0.2f);
+        }
+
         private void TickDash(float dt)
         {
-            // 冲刺途中持续拖出斩击残影
-            SkillVfx.Slash(transform.position, dashDir, 2.2f,
-                pendingMove == EnemyMove.DashSlash ? SkillVfx.ChargeColor : SkillVfx.HeavyColor);
+            // 冲刺途中持续拖出斩击残影（池化粒子，见 EmitDashTrail 的注释）
+            EmitDashTrail(dt);
 
             // 冲刺斩按**实际位移**收尾，而不是速度×时间。
             // CharacterController.Move 的实际位移会被它所在 transform 的缩放打折（敌人缩放 0.68），
@@ -673,6 +765,8 @@ namespace MyWorld
             dashStartPos = transform.position;
             lastDashTravelled = 0f;
             dashStuckFrames = 0;
+            dashTrailTimer = 0f;       // 起手立刻撒一撮，别等 0.03s
+            dashTrailStarted = false;  // 允许放一次起手月牙（见 EmitDashTrail）
         }
 
         /// <summary>冲刺速度。冲刺斩按"距离/时间"反推，保证正好冲 dashSlashDashDistance 那么远。</summary>
@@ -752,17 +846,29 @@ namespace MyWorld
             if (flashTimer <= 0f) return;
 
             flashTimer -= dt;
-            bool on = flashTimer > 0f;
+            Material flash = FlashMaterial();
+            // `flash != null` 是防御：万一 Awake 没跑（例如预制体上的组件被禁用过），
+            // 宁可这一帧不闪，也不要把 sharedMaterial 设成 null（那样整个敌人会渲染不出来）。
+            bool on = flashTimer > 0f && flash != null;
             for (int i = 0; i < renderers.Length; i++)
             {
                 if (renderers[i] == null) continue;
-                renderers[i].sharedMaterial = on ? flashMat : normalMats[i];
+                renderers[i].sharedMaterial = on ? flash : normalMats[i];
             }
+        }
+
+        /// <summary>本次受击该用哪一份闪色材质（按伤害分级，见 VfxFeel.FlashColor）。</summary>
+        private Material FlashMaterial()
+        {
+            if (flashMats == null || flashMats.Length == 0) return null;
+            return flashMats[Mathf.Clamp(flashGrade, 0, flashMats.Length - 1)];
         }
 
         private void OnDestroy()
         {
-            if (flashMat != null) Destroy(flashMat);
+            if (flashMats == null) return;
+            for (int i = 0; i < flashMats.Length; i++)
+                if (flashMats[i] != null) Destroy(flashMats[i]);
         }
     }
 }

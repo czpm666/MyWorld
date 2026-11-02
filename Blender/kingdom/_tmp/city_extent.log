@@ -1,0 +1,14 @@
+00:00.422  blend            | Read blend: "E:\My World\Blender\renders\kingdom\capital_full.blend"
+GROUP burbs    n=4     r 662.2 .. 1355.5
+GROUP city     n=246   r 68.2 .. 700.2
+GROUP fields   n=92    r 312.0 .. 602.1
+GROUP other    n=38442 r 0.1 .. 1385.8
+GROUP outer    n=346   r 20.3 .. 931.7
+GROUP props    n=1     r 871.2 .. 888.0
+Traceback (most recent call last):
+  File "E:\My World\Blender\kingdom\_tmp\city_extent.py", line 34, in <module>
+    import hd_layout as L
+ModuleNotFoundError: No module named 'hd_layout'
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

@@ -1,0 +1,1113 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace MyWorld.Maps
+{
+    /// <summary>
+    /// 布耶纳村（Buena Village）——菲托亚领边境的贫困农业村，主角童年住所。
+    ///
+    /// 原创几何，构图意图：空旷、土气、安静。
+    ///   东侧一条东西向土路进村 → 村口木门与路牌 → 村中心场院（水井 + 公告板 + 长凳）
+    ///   → 六座木农舍围着场院 → 谷仓与牲畜棚（鸡）在北 → 四片大农田夹在东西两侧
+    ///   → 村外树林与缓坡 → 只有 1 个杂货摊（行商）。没有城堡/协会/商店街。
+    ///
+    /// 套件用法（按 task-2 规格）：
+    ///   农舍 = 基础套件 KitArchitecture.House（更朴素），
+    ///   水井/摊位/树/道具 = RoaKit（同一 Assembly，internal 可见），
+    ///   大田里的庄稼用 KitProps.CropRow，建完统一 Kit.Optimize 合并（田地只需视觉，不要碰撞）。
+    /// 约定：建筑本地 +Z = 正立面；视觉先合并，再加招牌 / 点光 / 碰撞盒。
+    /// </summary>
+    public class BuenaVillageMap : MapBootstrap
+    {
+        // ==================== 布局常量（地面 120×120，内容压在 ±54 内）====================
+        const float RoadZ = -30f;      // 东西主土路
+        const float PlazaZ = -2f;      // 村中心场院
+        const float GateX = 46f;       // 村口（通往罗亚市的传送门）
+
+        Transform _w;
+        readonly Dictionary<string, Material> _mats = new Dictionary<string, Material>();
+        readonly List<Vector4> _plots = new List<Vector4>();   // x, z, 半宽, 半深：撒草时要避开
+        readonly List<Vector4> _keepOut = new List<Vector4>(); // 新增建筑占地：撒草/摆点缀时要避开
+        System.Random _rng = new System.Random(20261018);
+
+        /// <summary>登记一块"别往这儿撒草/摆道具"的矩形（x, z, 半宽, 半深）。</summary>
+        void KeepOut(float x, float z, float hw, float hd)
+        {
+            _keepOut.Add(new Vector4(x, z, hw, hd));
+        }
+
+        /// <summary>主路/支路/场院的矩形（含 pad 余量）占地测试：装饰物不能压在这上面。</summary>
+        bool OnPath(Vector3 p, float pad = 0f)
+        {
+            if (Mathf.Abs(p.z - RoadZ) < 2.6f + pad) return true;                          // 东西主路
+            if (Mathf.Abs(p.x) < 2.6f + pad && p.z > RoadZ && p.z < 22f) return true;      // 南北支路
+            if (Mathf.Abs(p.x) < 2.1f + pad && p.z >= 2f && p.z < 24f) return true;        // 北巷
+            if (new Vector2(p.x, p.z - PlazaZ).magnitude < 8.4f + pad) return true;        // 场院
+            return false;
+        }
+
+        Material M(string key)
+        {
+            Material m;
+            if (!_mats.TryGetValue(key, out m)) { m = MapMaterials.Get(key); _mats[key] = m; }
+            return m;
+        }
+
+        float R(float a, float b) { return a + (float)_rng.NextDouble() * (b - a); }
+
+        // Kit.SignBoard 的可读面朝本地 -Z；本图实测确认后统一 +180 度：
+        // 这样招牌按「建筑正面 +Z」摆放时，玩家从街上正面看到的就是正字。
+        static void Sign(Transform parent, string text, Vector3 pos, float yaw, float width = 1.2f,
+            float height = 0.5f, Color? bg = null, Color? fg = null)
+        {
+            Kit.SignBoard(parent, text, pos, yaw + 180f, width, height, bg, fg);
+        }
+
+
+        // ====================================================================================
+        // 环境：草地 + 土路 + 田土色斑 + 缓坡 + 矮边界
+        // ====================================================================================
+        protected override void BuildEnvironment(Transform world)
+        {
+            _w = world;
+
+            // ---- 地面：草地。必须保留 BoxCollider（玩家/敌人靠它落地）----
+            var ground = new GameObject("Ground").transform;
+            ground.SetParent(world, false);
+            Kit.Box(ground, "Grass", new Vector3(GroundSize, 1f, GroundSize),
+                new Vector3(0f, -0.5f, 0f), M("grass"), 0f, true);
+
+            // ---- 土路：东西主路 + 南北支路 + 场院 ----
+            var roads = new GameObject("Roads").transform;
+            roads.SetParent(world, false);
+            Kit.Slab(roads, "RoadEW", new Vector3(112f, 0.05f, 5.2f), new Vector3(0f, 0.02f, RoadZ), M("dirt"));
+            Kit.Slab(roads, "RoadNS", new Vector3(5.2f, 0.05f, 30f), new Vector3(0f, 0.02f, RoadZ + 16f), M("dirt"));
+            Kit.Slab(roads, "LaneNorth", new Vector3(4.2f, 0.05f, 20f), new Vector3(0f, 0.02f, 12f), M("dirt"));
+            RoaKit.FloorDisc(roads, "PlazaDirt", 8.2f, new Vector3(0f, 0.03f, PlazaZ), M("dirt"), 34);
+            // 车辙：两条踩得更深的土色
+            Kit.Slab(roads, "RutA", new Vector3(112f, 0.06f, 0.46f), new Vector3(0f, 0.03f, RoadZ - 1.25f), M("dirt_dark"));
+            Kit.Slab(roads, "RutB", new Vector3(112f, 0.06f, 0.46f), new Vector3(0f, 0.03f, RoadZ + 1.25f), M("dirt_dark"));
+
+            // ---- 草地色斑：让大片草地不是一块纯色 ----
+            // 用低多边形圆斑而不是矩形板：方板在斜视角下边界太硬，像没贴完的地砖。
+            var patches = new GameObject("Patches").transform;
+            patches.SetParent(world, false);
+            for (int i = 0; i < 34; i++)
+            {
+                float x = R(-52f, 52f), z = R(-52f, 52f);
+                if (Mathf.Abs(z - RoadZ) < 7f || Mathf.Abs(x) < 5f) continue;
+                RoaKit.FloorDisc(patches, "Patch" + i, R(2.2f, 4.6f), new Vector3(x, 0.015f, z),
+                    i % 3 == 0 ? M("grass_dry") : M("grass_dark"), 12);
+            }
+
+            // ---- 缓坡台地（村外，上面长树；玩家上不去，当天然围墙）----
+            Plateau("SlopeNW", new Vector3(-40f, 0f, 38f), 13f, 2.3f);
+            Plateau("SlopeN", new Vector3(13f, 0f, 45f), 14f, 1.9f);
+            Plateau("SlopeNE", new Vector3(42f, 0f, 32f), 11f, 2.5f);
+            Plateau("SlopeSW", new Vector3(-40f, 0f, -44f), 12f, 2.0f);
+
+            // ---- 边界：村子用矮墙（默认 3.2 太像城墙）----
+            BuildBoundary(world, 2.6f);
+        }
+
+        void Plateau(string name, Vector3 c, float radius, float height)
+        {
+            // 缓坡台地：Cyl 自带的 CapsuleCollider 会随半径放大成一颗巨球（半径 13 的球挡在半空），
+            // 所以视觉不挂碰撞，另外放一个本地方块当天然围墙。
+            // 台顶必须是草：早先用一个 dirt 圆柱当"边缘"，它其实是整块盖顶，所有台地都成了土馒头。
+            Kit.Cyl(_w, name, radius, height * 0.62f, new Vector3(c.x, height * 0.31f, c.z), M("dirt"), 16, false);
+            Kit.Cyl(_w, name + "_Top", radius * 0.99f, height * 0.4f, new Vector3(c.x, height * 0.8f, c.z), M("grass_dark"), 16, false);
+            Kit.Blocker(_w, name + "_Blocker", new Vector3(radius * 1.7f, height + 0.4f, radius * 1.7f),
+                new Vector3(c.x, (height + 0.4f) * 0.5f, c.z));
+            int n = Mathf.Max(3, Mathf.RoundToInt(radius * 0.28f));
+            for (int i = 0; i < n; i++)
+            {
+                float a = (i / (float)n) * 360f + R(-18f, 18f);
+                float rr = R(radius * 0.22f, radius * 0.78f);
+                var p = new Vector3(c.x + Mathf.Sin(a * Mathf.Deg2Rad) * rr, height, c.z + Mathf.Cos(a * Mathf.Deg2Rad) * rr);
+                if (i % 2 == 0) RoaKit.Pine(_w, p, R(0.9f, 1.45f));
+                else RoaKit.Tree(_w, p, R(0.85f, 1.3f), i % 4 == 0);
+            }
+        }
+
+        // ====================================================================================
+        // 地图内容
+        // ====================================================================================
+        protected override void BuildMapContent(Transform world)
+        {
+            _w = world;
+
+            BuildGate(world);
+            BuildPlaza(world);
+            BuildFarmhouses(world);
+            BuildBarnAndPen(world);
+            BuildPeddler(world);
+            BuildWindmill(world);        // 地标 ①：风车磨坊（会转的帆）
+            BuildChapel(world);          // 地标 ②：村教堂 + 钟塔
+            BuildInn(world);             // 旅店 / 据点（旅店老板可购买）
+            BuildSmithy(world);          // 铁匠铺（铁匠可购买）
+            BuildMarketStreet(world);    // 集市摊位（菜贩 / 草药婆）
+            BuildStreetLife(world);      // 路灯 / 挂旗 / 晾衣绳 / 告示板 / 货堆
+            BuildAcademyLink(world);     // 村子 ↔ 学园 的传送门（落在学园 court）
+            BuildFields(world);
+            BuildVegetation(world);
+            BuildInteractables(world);
+            BuildPeople(world);
+            BuildSpawns();
+        }
+
+        // ------------------------------------------------------------------ 村口 + 传送门
+        void BuildGate(Transform world)
+        {
+            var gate = new GameObject("VillageGate").transform;
+            gate.SetParent(world, false);
+
+            var wood = M("wood_dark");
+            // 两根门柱 + 横梁
+            Kit.Cyl(gate, "PostS", 0.22f, 4.0f, new Vector3(GateX, 2f, RoadZ - 3.4f), wood, 8, true);
+            Kit.Cyl(gate, "PostN", 0.22f, 4.0f, new Vector3(GateX, 2f, RoadZ + 3.4f), wood, 8, true);
+            Kit.Box(gate, "Lintel", new Vector3(0.34f, 0.36f, 7.6f), new Vector3(GateX, 4.0f, RoadZ), wood, 0f, false);
+            Kit.Box(gate, "Lintel2", new Vector3(0.28f, 0.22f, 7.0f), new Vector3(GateX, 3.6f, RoadZ), M("timber_mid"), 0f, false);
+            // 村名牌
+            Sign(gate, "布耶纳村", new Vector3(GateX - 0.32f, 3.0f, RoadZ), -90f, 1.9f, 0.62f);
+            // 挂的小木牌（作物收成写在上面）
+            Sign(gate, "菲托亚领", new Vector3(GateX + 0.3f, 3.0f, RoadZ), 90f, 1.5f, 0.5f,
+                M("cloth_cream").color, null);
+            // 门柱上的旧绳灯
+            Kit.PointLight(gate, new Vector3(GateX - 0.5f, 3.2f, RoadZ - 3.4f), new Color(1f, 0.78f, 0.45f), 9f, 0.9f);
+
+            // 通往罗亚市
+            // 落点用罗亚市那侧的 spawn id："village"（RoaTownMap.cs 里放在 z=-51、正对南门传送门）。
+            // 写错 id 不会崩，但会退回罗亚市默认出生点，人就落在城里而不是村门口。
+            ScenePortal.Create(world, new Vector3(GateX + 4f, 0f, RoadZ), MapId.RoaTown, "village", "前往 罗亚市", -90f);
+
+            // 路边的指路牌
+            KitProps.Signpost(gate, new Vector3(GateX - 3.6f, 0f, RoadZ - 4.2f), 0f, "罗亚市 →", -90f);
+        }
+
+        // ------------------------------------------------------------------ 村中心场院
+        void BuildPlaza(Transform world)
+        {
+            var plaza = new GameObject("Plaza").transform;
+            plaza.SetParent(world, false);
+            var c = new Vector3(0f, 0f, PlazaZ);
+
+            // 水井（RoaKit，村子唯一的"公共设施"）+ 自己的碰撞盒（井口挡人）
+            RoaKit.Well(plaza, c, 24f);
+            Kit.Blocker(plaza, "WellBlocker", new Vector3(2.3f, 1.2f, 2.3f), new Vector3(0f, 0.6f, PlazaZ));
+
+            // 公告板（功能件：任务板 buena_board）
+            QuestBoardInteractable.CreateStand(world, new Vector3(-5.6f, 0f, PlazaZ + 2.6f), "buena_board", 150f);
+
+            // 长凳 / 木桶 / 木箱 / 麻袋 / 陶罐：场院边随手堆的农具杂物
+            RoaKit.Bench(plaza, new Vector3(3.4f, 0f, PlazaZ + 2.2f), 210f, 1.8f);
+            RoaKit.Bench(plaza, new Vector3(-3.6f, 0f, PlazaZ - 2.6f), 30f, 1.6f);
+            RoaKit.Crate(plaza, new Vector3(4.6f, 0f, PlazaZ - 1.4f), 18f, 1.0f);
+            RoaKit.Crate(plaza, new Vector3(5.3f, 0f, PlazaZ - 0.4f), -12f, 0.8f);
+            RoaKit.Barrel(plaza, new Vector3(-5.0f, 0f, PlazaZ - 1.0f), 0f, 1.0f);
+            RoaKit.Barrel(plaza, new Vector3(-4.4f, 0f, PlazaZ - 2.0f), 0f, 0.85f);
+            RoaKit.Sack(plaza, new Vector3(2.2f, 0f, PlazaZ - 3.6f), 25f);
+            RoaKit.Sack(plaza, new Vector3(2.9f, 0f, PlazaZ - 3.2f), -15f);
+            RoaKit.Pot(plaza, new Vector3(-2.4f, 0f, PlazaZ + 3.4f), true);
+            RoaKit.Pot(plaza, new Vector3(-1.6f, 0f, PlazaZ + 3.8f), false);
+
+            // 场院边的干草堆与推车
+            RoaKit.Haystack(plaza, new Vector3(7.4f, 0f, PlazaZ + 3.6f), 1.0f);
+            RoaKit.Haystack(plaza, new Vector3(8.6f, 0f, PlazaZ + 2.4f), 0.85f);
+            RoaKit.Cart(plaza, new Vector3(-9.5f, 0f, RoadZ + 3.0f), -84f);
+
+            // 村里的两盏灯：一盏亮着（场院），一盏没点（省钱）
+            RoaKit.Lamp(plaza, "LampPlaza", new Vector3(6.2f, 0f, PlazaZ - 3.0f), 0f, true);
+            RoaKit.Lamp(plaza, "LampRoad", new Vector3(-14f, 0f, RoadZ + 3.4f), 0f, false);
+        }
+
+        // ------------------------------------------------------------------ 六座农舍
+        void BuildFarmhouses(Transform world)
+        {
+            var houses = new GameObject("Farmhouses").transform;
+            houses.SetParent(world, false);
+
+            // 主角家：最大的一间，茅草顶（最穷也最暖）
+            Farmhouse(houses, "Farmhouse_North", new Vector3(-7f, 0f, 18f), 176f, 7.6f, 5.6f, 3.2f,
+                "plaster_cream", "roof_thatch", "timber_mid", true, 11, "农舍");
+            // 村长家：村里唯一两层的，瓦顶（略体面）
+            Farmhouse(houses, "HeadmanHouse", new Vector3(11f, 0f, 19f), 196f, 7.0f, 5.4f, 3.1f,
+                "plaster_warm", "roof_terracotta", "timber_dark", true, 12, "村长家");
+            Farmhouse(houses, "Farmhouse_West", new Vector3(-15f, 0f, 6f), 138f, 6.0f, 4.6f, 3.0f,
+                "plaster_warm", "roof_thatch", "timber_mid", true, 13, null);
+            Farmhouse(houses, "Farmhouse_WestSouth", new Vector3(-16f, 0f, -13f), 74f, 5.6f, 4.4f, 3.0f,
+                "plaster_grey", "roof_thatch", "timber_light", false, 14, null);
+            Farmhouse(houses, "Farmhouse_East", new Vector3(15f, 0f, 5f), -140f, 5.8f, 4.6f, 3.0f,
+                "plaster_ochre", "roof_terracotta", "timber_dark", true, 15, null);
+            Farmhouse(houses, "Farmhouse_EastSouth", new Vector3(16f, 0f, -13f), -72f, 6.2f, 4.6f, 3.1f,
+                "plaster_cream", "roof_thatch", "timber_mid", true, 16, null);
+
+            // 每户门口的脚踏石 + 一口水缸 + 柴堆（让房子不是孤零零一个盒子）
+            // 注意：下面会往 houses 里继续挂东西，必须先固定数量，否则 childCount 越滚越大 → 死循环 → 原生崩
+            int houseCount = houses.childCount;
+            for (int i = 0; i < houseCount; i++)
+            {
+                var h = houses.GetChild(i);
+                Kit.Slab(houses, "Step_" + h.name, new Vector3(1.6f, 0.1f, 1.2f),
+                    h.localPosition + h.forward * 3.4f + Vector3.down * 0.02f, M("stone_light"), h.eulerAngles.y);
+                RoaKit.Barrel(houses, h.localPosition + h.forward * 3.0f + h.right * 2.2f, R(0f, 360f), 0.9f);
+                RoaKit.Crate(houses, h.localPosition + h.forward * 2.7f - h.right * 2.4f, R(0f, 360f), 0.85f);
+            }
+
+            // 屋后的小菜园
+            KitchenGarden(houses, new Vector3(-4.6f, 0f, 23f), 5f, 3.4f, 90f);
+            KitchenGarden(houses, new Vector3(-19.5f, 0f, 8f), 5f, 3.2f, 40f);
+            KitchenGarden(houses, new Vector3(19.5f, 0f, 8f), 5f, 3.2f, -40f);
+        }
+
+        void Farmhouse(Transform parent, string name, Vector3 pos, float yaw, float w, float d, float wallH,
+            string wallKey, string roofKey, string timberKey, bool chimney, int seed, string sign)
+        {
+            var spec = HouseSpec.Cottage();
+            spec.Width = w;
+            spec.Depth = d;
+            spec.WallHeight = wallH;
+            spec.RoofHeight = wallH * 0.74f;
+            spec.Wall = wallKey;
+            spec.Roof = roofKey;
+            spec.Timber = timberKey;
+            spec.Chimney = chimney;
+            spec.Floors = 1;
+            spec.Balcony = false;
+            spec.Overhang = 0.46f;
+            spec.Trim = true;
+            spec.Seed = seed;
+            spec.Fadeable = false;   // 关掉：House 内部的 MakeFadeable 发生在 Optimize 之前，会缓存到被合并销毁的 renderer
+            // 村长家是两层
+            if (name == "HeadmanHouse") { spec.Floors = 2; spec.Balcony = true; spec.WallHeight = 3.1f; }
+            if (!string.IsNullOrEmpty(sign)) { spec.Sign = true; spec.SignText = sign; }
+
+            var go = RoaKit.House(parent, spec, pos, yaw);
+            go.name = name;
+            Kit.MakeFadeable(go, 0.26f);   // 合并之后再挂淡出
+            FixHouseCollider(go, spec.Width, spec.Depth, spec.Floors, spec.WallHeight);
+        }
+
+        /// <summary>RoaKit.House 内部 Optimize(root,true) 写进本地 size 的是世界 AABB，
+        /// 房子只要不是 90° 的整数倍，碰撞盒就会横竖颠倒（套件已知问题，见回报）。这里按本地尺寸重写。</summary>
+        void FixHouseCollider(GameObject go, float w, float d, int floors, float wallH)
+        {
+            var bc = go.GetComponent<BoxCollider>();
+            if (bc == null) return;
+            float h = 0.4f + floors * Mathf.Max(2.5f, wallH) + 0.6f;
+            bc.size = new Vector3(w + 0.5f, h, d + 0.5f);
+            bc.center = new Vector3(0f, h * 0.5f, 0f);
+        }
+
+        void KitchenGarden(Transform parent, Vector3 center, float w, float d, float yaw)
+        {
+            var root = new GameObject("KitchenGarden").transform;
+            root.SetParent(parent, false);
+            root.localPosition = center;
+            root.localRotation = Quaternion.Euler(0f, yaw, 0f);
+
+            Kit.Slab(root, "Soil", new Vector3(w, 0.07f, d), new Vector3(0f, 0.03f, 0f), M("dirt_dark"));
+            var rows = new GameObject("Rows").transform;
+            rows.SetParent(root, false);
+            int n = Mathf.Max(2, Mathf.RoundToInt(w / 1.3f));
+            for (int i = 0; i < n; i++)
+            {
+                float x = -w * 0.5f + (i + 0.5f) * (w / n);
+                KitProps.CropRow(rows, new Vector3(x, 0.05f, 0f), 90f, d - 0.5f, i % 2 == 0 ? "cabbage" : "pumpkin");
+            }
+            Kit.Optimize(rows.gameObject, false);
+
+            // 一圈矮篱笆（挡住鸡，也挡住玩家）
+            FenceRun(root, new Vector3(-w * 0.5f - 0.3f, 0f, -d * 0.5f - 0.3f), new Vector3(w * 0.5f + 0.3f, 0f, -d * 0.5f - 0.3f));
+            FenceRun(root, new Vector3(w * 0.5f + 0.3f, 0f, d * 0.5f + 0.3f), new Vector3(-w * 0.5f - 0.3f, 0f, d * 0.5f + 0.3f));
+            FenceRun(root, new Vector3(-w * 0.5f - 0.3f, 0f, d * 0.5f + 0.3f), new Vector3(-w * 0.5f - 0.3f, 0f, -d * 0.5f - 0.3f));
+        }
+
+        // ------------------------------------------------------------------ 谷仓 + 牲畜棚（鸡）
+        void BuildBarnAndPen(Transform world)
+        {
+            var farm = new GameObject("BarnAndPen").transform;
+            farm.SetParent(world, false);
+
+            // 谷仓：木板墙 + 茅草顶（比住人的房子更粗笨）
+            var barn = HouseSpec.Cottage();
+            barn.Width = 10.5f; barn.Depth = 7.2f; barn.WallHeight = 4.3f; barn.RoofHeight = 3.3f;
+            barn.Wall = "wood_plank"; barn.Roof = "roof_thatch"; barn.Timber = "timber_dark";
+            barn.Chimney = false; barn.Sign = true; barn.SignText = "谷仓"; barn.Overhang = 0.55f;
+            barn.Seed = 21; barn.Fadeable = false;
+            var barnGo = RoaKit.House(farm, barn, new Vector3(-26f, 0f, 15f), 104f);
+            barnGo.name = "Barn";
+            FixHouseCollider(barnGo, barn.Width, barn.Depth, barn.Floors, barn.WallHeight);
+
+            // 谷仓门口的干草堆
+            RoaKit.Haystack(farm, new Vector3(-20.5f, 0f, 13.2f), 1.15f);
+            RoaKit.Haystack(farm, new Vector3(-19.2f, 0f, 14.4f), 1.0f);
+            RoaKit.Haystack(farm, new Vector3(-21.2f, 0f, 16.2f), 0.9f);
+            RoaKit.Cart(farm, new Vector3(-21.5f, 0f, 10.6f), 12f);
+            RoaKit.Crate(farm, new Vector3(-23.0f, 0f, 11.4f), 8f, 1.05f);
+
+            // 牲畜棚：四柱 + 单坡草顶 + 围栏（里面养鸡）
+            var pen = new Vector3(24f, 0f, 15f);
+            var wood = M("wood_dark");
+            for (int sx = -1; sx <= 1; sx += 2)
+                for (int sz = -1; sz <= 1; sz += 2)
+                    Kit.Cyl(farm, "ShedPost", 0.16f, 2.8f,
+                        pen + new Vector3(sx * 3.2f, 1.4f, sz * 2.0f), wood, 7, true);
+            Kit.BoxRot(farm, "ShedRoof", new Vector3(7.4f, 0.18f, 5.0f), pen + new Vector3(0f, 2.86f, 0f),
+                Quaternion.Euler(-9f, 0f, 0f), M("roof_thatch"), true);
+            Kit.Box(farm, "ShedBack", new Vector3(6.8f, 2.4f, 0.2f), pen + new Vector3(0f, 1.2f, 2.0f), M("wood_plank"), 0f, true);
+            Kit.Box(farm, "Trough", new Vector3(0.7f, 0.42f, 2.0f), pen + new Vector3(-2.0f, 0.21f, -1.2f), M("wood_barrel"), 0f, false);
+            Kit.Slab(farm, "TroughWater", new Vector3(0.55f, 0.06f, 1.8f), pen + new Vector3(-2.0f, 0.4f, -1.2f), M("water"), 0f, false);
+
+            // 围栏（留一个朝村子方向的缺口）
+            FenceRun(farm, pen + new Vector3(-4.6f, 0f, -3.2f), pen + new Vector3(-1.2f, 0f, -3.2f));
+            FenceRun(farm, pen + new Vector3(1.2f, 0f, -3.2f), pen + new Vector3(4.6f, 0f, -3.2f));
+            FenceRun(farm, pen + new Vector3(-4.6f, 0f, 3.4f), pen + new Vector3(4.6f, 0f, 3.4f));
+            FenceRun(farm, pen + new Vector3(-4.6f, 0f, 3.4f), pen + new Vector3(-4.6f, 0f, -3.2f));
+            FenceRun(farm, pen + new Vector3(4.6f, 0f, 3.4f), pen + new Vector3(4.6f, 0f, -3.2f));
+
+            // 鸡（原创几何：一个方块身子 + 头 + 喙 + 尾，会轻轻点头）
+            Chicken(farm, pen + new Vector3(-1.4f, 0f, 0.6f), 25f);
+            Chicken(farm, pen + new Vector3(0.2f, 0f, -0.8f), -40f);
+            Chicken(farm, pen + new Vector3(1.6f, 0f, 0.9f), 160f);
+            Chicken(farm, pen + new Vector3(2.6f, 0f, -1.8f), 95f);
+            Chicken(farm, pen + new Vector3(-2.6f, 0f, 1.8f), -120f);
+        }
+
+        void Chicken(Transform parent, Vector3 pos, float yaw)
+        {
+            var root = new GameObject("Chicken").transform;
+            root.SetParent(parent, false);
+            root.localPosition = pos;
+            root.localRotation = Quaternion.Euler(0f, yaw, 0f);
+
+            var white = M("plaster_white");
+            Kit.Box(root, "Body", new Vector3(0.34f, 0.3f, 0.44f), new Vector3(0f, 0.3f, 0f), white, 0f, false);
+            Kit.Box(root, "Head", new Vector3(0.18f, 0.2f, 0.18f), new Vector3(0f, 0.52f, 0.2f), white, 0f, false);
+            Kit.Box(root, "Comb", new Vector3(0.06f, 0.09f, 0.12f), new Vector3(0f, 0.64f, 0.19f), M("cloth_red"), 0f, false);
+            Kit.Box(root, "Beak", new Vector3(0.07f, 0.06f, 0.1f), new Vector3(0f, 0.5f, 0.31f), M("cloth_orange"), 0f, false);
+            Kit.Box(root, "Tail", new Vector3(0.1f, 0.24f, 0.1f), new Vector3(0f, 0.42f, -0.24f), M("plaster_grey"), 0f, false);
+            Kit.Box(root, "LegL", new Vector3(0.05f, 0.16f, 0.05f), new Vector3(-0.09f, 0.08f, 0.02f), M("cloth_orange"), 0f, false);
+            Kit.Box(root, "LegR", new Vector3(0.05f, 0.16f, 0.05f), new Vector3(0.09f, 0.08f, 0.02f), M("cloth_orange"), 0f, false);
+            var bob = root.gameObject.AddComponent<KitBob>();
+            bob.Amplitude = 0.035f;
+            bob.Speed = 2.2f;
+        }
+
+        // ------------------------------------------------------------------ 杂货摊（唯一的"商店"）
+        void BuildPeddler(Transform world)
+        {
+            var shop = new GameObject("Peddler").transform;
+            shop.SetParent(world, false);
+
+            // 一间很小很旧的杂货屋（木板墙，正面朝西南对着场院）
+            var hut = HouseSpec.Cottage();
+            hut.Width = 5.0f; hut.Depth = 4.2f; hut.WallHeight = 2.9f; hut.RoofHeight = 2.1f;
+            hut.Wall = "wood_plank"; hut.Roof = "roof_thatch"; hut.Timber = "timber_dark";
+            hut.Chimney = false; hut.Sign = true; hut.SignText = "杂货"; hut.Overhang = 0.44f;
+            hut.Seed = 31;
+            hut.Fadeable = false;
+            var hutGo = RoaKit.House(shop, hut, new Vector3(9.5f, 0f, -20.5f), 118f);
+            hutGo.name = "PeddlerHut";
+            Kit.MakeFadeable(hutGo, 0.26f);
+            FixHouseCollider(hutGo, hut.Width, hut.Depth, hut.Floors, hut.WallHeight);
+
+            // 屋前的摊位（借 RoaKit：条纹棚布是村里最"花"的一块布）
+            RoaKit.MarketStall(shop, new Vector3(14.2f, 0f, -22.4f), 208f, "cloth_cream");
+            RoaKit.Crate(shop, new Vector3(12.0f, 0f, -19.4f), 20f, 0.9f);
+            RoaKit.Barrel(shop, new Vector3(11.4f, 0f, -20.6f), 0f, 0.9f);
+            RoaKit.Sack(shop, new Vector3(15.8f, 0f, -20.4f), 40f);
+            KitProps.Signpost(shop, new Vector3(10.6f, 0f, -17.6f), 0f, "杂货 · 收粮换盐", 0f);
+        }
+
+        // ------------------------------------------------------------------ 五片大农田
+        void BuildFields(Transform world)
+        {
+            var fields = new GameObject("Fields").transform;
+            fields.SetParent(world, false);
+
+            Field(fields, "Field_W1", new Vector3(-38f, 0f, 6f), 17f, 12f, 0f, "wheat", true);
+            Field(fields, "Field_W2", new Vector3(-38f, 0f, -14f), 17f, 12f, 0f, "wheat", true);
+            Field(fields, "Field_E1", new Vector3(37f, 0f, 6f), 15f, 12f, 0f, "cabbage", true);
+            Field(fields, "Field_E2", new Vector3(37f, 0f, -14f), 15f, 12f, 0f, "pumpkin", true);
+            Field(fields, "Field_N", new Vector3(-16f, 0f, 37f), 13f, 11f, 0f, "wheat", false);
+        }
+
+        /// <summary>一块田：耕过的土 + 成排庄稼（合并）+ 三面木栅栏。</summary>
+        void Field(Transform parent, string name, Vector3 center, float w, float d, float yaw, string crop, bool fenced)
+        {
+            var root = new GameObject(name).transform;
+            root.SetParent(parent, false);
+            root.localPosition = center;
+            root.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            _plots.Add(new Vector4(center.x, center.z, w * 0.5f + 1.5f, d * 0.5f + 1.5f));
+
+            Kit.Slab(root, "Soil", new Vector3(w + 0.6f, 0.09f, d + 0.6f), new Vector3(0f, 0.03f, 0f), M("dirt_dark"));
+
+            // 田垄：沿 Z 排。行距 3 米（早先 1.25 米时一块田要 14 行 × 22 株，一次 Awake 里
+            // 上千个物体，配合套件 Cyl/Cone 不缓存网格，直接把这版 beta 的原生内存压崩过）。
+            var rows = new GameObject("Rows").transform;
+            rows.SetParent(root, false);
+            int n = Mathf.Max(3, Mathf.RoundToInt(w / 3.0f));
+            for (int i = 0; i < n; i++)
+            {
+                float x = -w * 0.5f + (i + 0.5f) * (w / n);
+                KitProps.CropRow(rows, new Vector3(x, 0.07f, 0f), 0f, d, crop == "wheat" && i % 3 == 1 ? "wheat" : crop);
+            }
+            Kit.Optimize(rows.gameObject, false);   // 庄稼只要视觉，不要几百个碰撞体
+
+            if (!fenced) return;
+            float hw = w * 0.5f + 0.5f, hd = d * 0.5f + 0.5f;
+            FenceRun(root, new Vector3(-hw, 0f, -hd), new Vector3(hw, 0f, -hd));
+            FenceRun(root, new Vector3(-hw, 0f, hd), new Vector3(hw, 0f, hd));
+            FenceRun(root, new Vector3(-hw, 0f, -hd), new Vector3(-hw, 0f, hd));
+            FenceRun(root, new Vector3(hw, 0f, -hd), new Vector3(hw, 0f, hd));
+        }
+
+        /// <summary>一段木栅栏：立柱 + 两道横杆，整段合并成一个包围盒碰撞（直线段，不会挡错地方）。
+        /// 注意不能直接用 KitProps.Fence：它自己会插一个 Blocker，而 Kit.Optimize 会把禁用渲染的
+        /// Blocker 也按材质并进 Batched 网格（默认材质是灰色 URP Lit），整段栅栏就变成一堵灰墙。</summary>
+        void FenceRun(Transform parent, Vector3 from, Vector3 to)
+        {
+            Vector3 d = to - from;
+            float len = d.magnitude;
+            if (len < 1.2f) return;
+            var root = new GameObject("Fence").transform;
+            root.SetParent(parent, false);
+            root.localPosition = from;
+            root.localRotation = Quaternion.LookRotation(d.normalized, Vector3.up);
+
+            Material wood = M("timber_mid");
+            Material cap = M("timber_dark");
+            int posts = Mathf.Max(2, Mathf.RoundToInt(len / 1.4f) + 1);
+            float step = len / (posts - 1);
+            for (int i = 0; i < posts; i++)
+            {
+                float z = step * i;
+                Kit.Box(root, "Post", new Vector3(0.12f, 1.1f, 0.12f), new Vector3(0f, 0.55f, z), wood, 0f, false);
+                Kit.Box(root, "PostCap", new Vector3(0.17f, 0.06f, 0.17f), new Vector3(0f, 1.12f, z), cap, 0f, false);
+            }
+            for (int i = 0; i < 2; i++)
+                Kit.Box(root, "Rail", new Vector3(0.07f, 0.1f, len), new Vector3(0f, 0.42f + i * 0.44f, len * 0.5f), wood, 0f, false);
+
+            Kit.Optimize(root.gameObject, false);
+            // 用本地空间的 Blocker 而不是 Optimize(root,true)：后者把世界 AABB 写进本地 size，
+            // 父节点（菜园/田）一转角度，栅栏碰撞盒就会横竖颠倒。本地尺寸在任意角度都对。
+            Kit.Blocker(root, "FenceCollider", new Vector3(0.3f, 1.1f, len), new Vector3(0f, 0.55f, len * 0.5f));
+        }
+
+        // ------------------------------------------------------------------ 草/树/石头/花
+        void BuildVegetation(Transform world)
+        {
+            var veg = new GameObject("Vegetation").transform;
+            veg.SetParent(world, false);
+
+            // 草丛（每丛 3 个 Cone，而套件的 ConeMesh 是每次 new Mesh —— 数量必须克制）
+            var tufts = new GameObject("Grass").transform;
+            tufts.SetParent(veg, false);
+            for (int i = 0; i < 60; i++)
+            {
+                var p = new Vector3(R(-50f, 50f), 0f, R(-50f, 50f));
+                if (!ClearGround(p)) continue;
+                RoaKit.GrassTuft(tufts, p, R(0.8f, 1.6f));
+            }
+            Kit.Optimize(tufts.gameObject, false);
+
+            // 花（村口与场院附近多一点）
+            var flowers = new GameObject("Flowers").transform;
+            flowers.SetParent(veg, false);
+            Color[] cols = { MapMaterials.ClothRed, MapMaterials.GlowAmber, MapMaterials.ClothPurple, MapMaterials.PlasterWhite };
+            for (int i = 0; i < 30; i++)
+            {
+                var p = new Vector3(R(-34f, 34f), 0f, R(-24f, 30f));
+                if (!ClearGround(p)) continue;
+                RoaKit.Flowers(flowers, p, cols[i % cols.Length]);
+            }
+            Kit.Optimize(flowers.gameObject, false);
+
+            // 灌木 / 石头
+            for (int i = 0; i < 20; i++)
+            {
+                var p = new Vector3(R(-50f, 50f), 0f, R(-50f, 50f));
+                if (!ClearGround(p)) continue;
+                if (i % 2 == 0) RoaKit.Bush(veg, p, R(0.85f, 1.5f));
+                else RoaKit.Rock(veg, p, R(0.7f, 1.6f));
+            }
+
+            // 村外树林：一圈树 + 南边一片密林（把地图围起来，也遮住边界墙）
+            for (int i = 0; i < 56; i++)
+            {
+                float a = i * (360f / 56f);
+                float rr = R(49f, 56f);
+                var p = new Vector3(Mathf.Sin(a * Mathf.Deg2Rad) * rr, 0f, Mathf.Cos(a * Mathf.Deg2Rad) * rr);
+                // 给东西主路留出村口通道
+                if (Mathf.Abs(p.z - RoadZ) < 6.5f && p.x > 30f) continue;
+                if (i % 3 == 0) RoaKit.Pine(veg, p, R(1.05f, 1.6f));
+                else RoaKit.Tree(veg, p, R(1.0f, 1.5f), i % 5 == 0);
+            }
+            for (int i = 0; i < 22; i++)
+            {
+                var p = new Vector3(R(-50f, 20f), 0f, R(-52f, -37f));
+                if (Mathf.Abs(p.x) < 6f) continue;
+                if (i % 2 == 0) RoaKit.Tree(veg, p, R(1.0f, 1.6f), i % 4 == 0);
+                else RoaKit.Pine(veg, p, R(1.1f, 1.7f));
+            }
+        }
+
+        /// <summary>这块地是不是空的（不在路/场院/农田上）。</summary>
+        bool ClearGround(Vector3 p)
+        {
+            if (Mathf.Abs(p.z - RoadZ) < 4.4f && Mathf.Abs(p.x) < 40f) return false;      // 主路
+            if (Mathf.Abs(p.x) < 4.2f && p.z > RoadZ && p.z < 24f) return false;           // 南北支路
+            if (Mathf.Abs(p.x) < 3.0f && p.z >= 24f && p.z < 34f) return false;            // 北巷
+            if (new Vector2(p.x, p.z - PlazaZ).magnitude < 9.5f) return false;             // 场院
+            for (int i = 0; i < _plots.Count; i++)
+            {
+                var r = _plots[i];
+                if (Mathf.Abs(p.x - r.x) < r.z && Mathf.Abs(p.z - r.y) < r.w) return false;
+            }
+            for (int i = 0; i < _keepOut.Count; i++)
+            {
+                var r = _keepOut[i];
+                if (Mathf.Abs(p.x - r.x) < r.z && Mathf.Abs(p.z - r.y) < r.w) return false;
+            }
+            if (Mathf.Abs(p.x) < 12f && p.z > 14f && p.z < 24f) return false;              // 农舍带
+            return true;
+        }
+
+        // ------------------------------------------------------------------ 可交互物
+        void BuildInteractables(Transform world)
+        {
+            // 田里/林边的草药
+            Vector3[] herbs =
+            {
+                new Vector3(-31f, 0f, -2f), new Vector3(-33f, 0f, 10f), new Vector3(30f, 0f, 1.5f),
+                new Vector3(40f, 0f, -20f), new Vector3(-24f, 0f, 30f), new Vector3(-10f, 0f, 41f),
+                new Vector3(22f, 0f, 26f), new Vector3(-45f, 0f, 8f),
+            };
+            for (int i = 0; i < herbs.Length; i++)
+                PickupInteractable.Create(world, herbs[i], PickupKind.Herb, 0, null, null);
+
+            // 村口的钱袋（跑腿奖励的暗示）
+            PickupInteractable.Create(world, new Vector3(43.4f, 0f, RoadZ - 4.4f), PickupKind.Coin, 12, null, "buena_coin_1");
+            PickupInteractable.Create(world, new Vector3(6.5f, 0f, 24f), PickupKind.Coin, 8, null, "buena_coin_2");
+
+            // 村外林边的两头狼（给动作游戏留个对手）
+            SpawnEnemy(new Vector3(44f, 0.2f, -41f), 210f);
+            SpawnEnemy(new Vector3(-44f, 0.2f, -40f), 150f);
+        }
+
+        // ------------------------------------------------------------------ NPC
+        void BuildPeople(Transform world)
+        {
+            SpawnNpc(NpcRole.Villager, "村民 · 大叔", new Vector3(3.2f, 0f, PlazaZ + 4.4f), 200f, new[]
+            {
+                "今年雨少，麦子长得慢。",
+                "要去罗亚市？顺着这条土路往东走就是。",
+                "村长家的屋顶是全村唯一不漏的。",
+            });
+            SpawnNpc(NpcRole.Villager, "村民 · 大婶", new Vector3(-3.0f, 0f, PlazaZ - 4.2f), 20f, new[]
+            {
+                "水井的水甜，别喝田边那口。",
+                "鸡又跑出来了，一会儿得去赶。",
+                "学园那边来的信差昨天路过，走得急。",
+            });
+            SpawnNpc(NpcRole.Villager, "村民 · 少年", new Vector3(-11.5f, 0f, 11.5f), 130f, new[]
+            {
+                "我长大要去罗亚市当冒险者！",
+                "你敢进南边林子吗？里面有狼。",
+            });
+            SpawnNpc(NpcRole.Villager, "村民 · 老奶奶", new Vector3(12.5f, 0f, 8.5f), 250f, new[]
+            {
+                "坐着歇会儿吧，孩子。",
+                "这村子穷，可是安静。",
+            });
+
+            // 行商（shopId 用工程里已有的 buena_peddler）
+            SpawnNpc(NpcRole.Merchant, "行商", new Vector3(13.4f, 0f, -21.2f), 200f, new[]
+            {
+                "收粮、换盐、修锄头，都找我。",
+                "学园的学生偶尔也来收草药，价钱不错。",
+            }, "buena_peddler");
+
+            // ---- 新增：村口卫兵（两张图的主路都得有人看着）----
+            SpawnNpc(NpcRole.Guard, "村卫兵 · 老托", new Vector3(43.4f, 0f, -26.6f), 205f, new[]
+            {
+                "往东就是罗亚市的大路，白天走没事。",
+                "南边林子里有狼，别一个人钻进去。",
+            });
+            SpawnNpc(NpcRole.Guard, "村卫兵 · 小丁", new Vector3(43.4f, 0f, -33.4f), 155f, new[]
+            {
+                "夜里村门要落闩，赶路的趁早。",
+                "行商的老周？他就在西边路口摆摊。",
+            });
+
+            // ---- 新增：铁匠 / 旅店 / 集市 / 磨坊 / 教堂 ----
+            SpawnNpc(NpcRole.Merchant, "铁匠 · 老铁", new Vector3(-12f, 0f, -35.6f), 0f, new[]
+            {
+                "锄头、镰刀、马蹄铁，都能修。",
+                "我这儿的磨刀石是青石磨的，比市里的硬。",
+            }, "buena_smith");
+            SpawnNpc(NpcRole.Innkeeper, "旅店老板娘 · 蓓尔", new Vector3(28.4f, 0f, -33.2f), 205f, new[]
+            {
+                "麦穗旅店，热汤管够，床位还剩两张。",
+                "风车那边的面粉，是我这儿面包的底气。",
+            }, "buena_inn", null, "buena_innkeeper");
+            SpawnNpc(NpcRole.Merchant, "菜贩 · 老周", new Vector3(-6.4f, 0f, 8.4f), 200f, new[]
+            {
+                "今早刚拔的萝卜，还带泥呢。",
+                "集市就这几摊，热闹得起来全靠学园的学生。",
+            }, "buena_market");
+            SpawnNpc(NpcRole.Merchant, "草药婆婆", new Vector3(7.2f, 0f, 7.5f), 340f, new[]
+            {
+                "止血草、安眠花，林子边采的。",
+                "年轻人的伤，敷上就好；心里的伤，老婆子没办法。",
+            }, "buena_herbal");
+            SpawnNpc(NpcRole.Villager, "磨坊主 · 汉克", new Vector3(-22.6f, 0f, 23.6f), 175f, new[]
+            {
+                "风一停，磨盘就歇；这一季风倒是够。",
+                "磨面收费一成，童叟无欺。",
+            });
+            SpawnNpc(NpcRole.Villager, "教堂执事 · 玛尔", new Vector3(22.4f, 0f, 23.4f), 210f, new[]
+            {
+                "钟一天敲三次，早、午、晚。",
+                "圣光不挑人，进来坐坐也好。",
+            });
+            SpawnNpc(NpcRole.Villager, "牧羊少年 · 皮特", new Vector3(19.2f, 0f, 20.4f), 130f, new[]
+            {
+                "羊又跑了两只，追了一早上。",
+                "你要是看见狼，别喊我，我跑得慢。",
+            });
+            SpawnNpc(NpcRole.Villager, "打铁学徒 · 小武", new Vector3(-14.6f, 0f, -34.2f), 60f, new[]
+            {
+                "师父说，火候比力气重要。",
+                "这炉子一整天都不能灭。",
+            });
+            SpawnNpc(NpcRole.Villager, "集市妇人 · 萝丝", new Vector3(2.8f, 0f, -11.2f), 330f, new[]
+            {
+                "鸡蛋又涨价了，你信不信。",
+                "学园食堂的采买今天要来，我得多备两筐。",
+            });
+            SpawnNpc(NpcRole.Villager, "旅人 · 卡尔", new Vector3(34.8f, 0f, -33.6f), 210f, new[]
+            {
+                "从石墙镇一路走过来，脚都磨破了。",
+                "这村子的风车，老远就能看见。",
+            });
+            SpawnNpc(NpcRole.Villager, "巡林人 · 阿岚", new Vector3(-34f, 0f, 24f), 120f, new[]
+            {
+                "林子边我埋了陷阱，别乱踩。",
+                "风车往西有小道，通到老石场。",
+            });
+        }
+
+        // ------------------------------------------------------------------ 出生点
+        void BuildSpawns()
+        {
+            PlaceSpawn("start", new Vector3(GateX - 2f, 0.2f, RoadZ), -90f);
+            PlaceSpawn("village_gate", new Vector3(GateX - 5f, 0.2f, RoadZ), -90f);
+            PlaceSpawn("well", new Vector3(0f, 0.2f, PlazaZ - 6.5f), 0f);
+            PlaceSpawn("home", new Vector3(-7f, 0.2f, 12.5f), 0f);
+            PlaceSpawn("field", new Vector3(-30f, 0.2f, -2f), 90f);
+            PlaceSpawn("shop", new Vector3(9.5f, 0.2f, -15.5f), 180f);
+            // 新增（学园的传送门 arrivalSpawn 用的是 "court"，村子这边对外只给 "start"/"village_gate"）
+            PlaceSpawn("inn", new Vector3(26f, 0.2f, -32.6f), 180f);
+            PlaceSpawn("smith", new Vector3(-12f, 0.2f, -34.6f), 180f);
+            PlaceSpawn("market", new Vector3(-2.6f, 0.2f, -6.5f), 180f);
+            PlaceSpawn("mill", new Vector3(-24f, 0.2f, 24.2f), 0f);
+            PlaceSpawn("chapel", new Vector3(24f, 0.2f, 22.6f), 0f);
+            PlaceSpawn("academy_gate", new Vector3(1.2f, 0.2f, 22.2f), 180f);
+        }
+
+        // ================= 地标 ①：风车磨坊 =================
+        void BuildWindmill(Transform world)
+        {
+            var root = new GameObject("Windmill").transform;
+            root.SetParent(world, false);
+            root.localPosition = new Vector3(-24f, 0f, 28f);
+            root.localRotation = Quaternion.Euler(0f, 180f, 0f);   // 帆面朝场院（本地 +Z = 世界 -Z）
+            KeepOut(-24f, 28f, 6.8f, 6.8f);
+
+            var v = new GameObject("Visual").transform;
+            v.SetParent(root, false);
+            var stone = M("stone_dark");
+            var wood = M("wood_dark");
+
+            Kit.Cyl(v, "Mound", 3.9f, 0.7f, new Vector3(0f, 0.35f, 0f), M("grass_dark"), 14, false);
+            Kit.Cyl(v, "MoundCurb", 4.0f, 0.16f, new Vector3(0f, 0.72f, 0f), M("dirt"), 14, false);
+            Kit.Cyl(v, "Base", 3.45f, 0.9f, new Vector3(0f, 1.15f, 0f), stone, 12, false);
+            Kit.Cyl(v, "Tower", 2.85f, 7.4f, new Vector3(0f, 5.3f, 0f), M("plaster_cream"), 12, false);
+            for (int i = 0; i < 3; i++)
+                Kit.Cyl(v, "Band" + i, 2.99f, 0.2f, new Vector3(0f, 2.3f + i * 2.2f, 0f), wood, 12, false);
+            Kit.Cyl(v, "Gallery", 3.7f, 0.24f, new Vector3(0f, 6.15f, 0f), M("wood_plank"), 14, false);
+            for (int i = 0; i < 12; i++)
+            {
+                float a = i * 30f;
+                Kit.Box(v, "Rail" + i, new Vector3(0.12f, 0.8f, 0.12f),
+                    new Vector3(Mathf.Sin(a * Mathf.Deg2Rad) * 3.5f, 6.68f, Mathf.Cos(a * Mathf.Deg2Rad) * 3.5f),
+                    wood, 0f, false);
+            }
+            Kit.Cyl(v, "Cap", 3.35f, 0.5f, new Vector3(0f, 9.2f, 0f), wood, 12, false);
+            // Kit.Cone 的 pos 是锥底（不是中心）；Cap 顶 9.45，所以锥底也给 9.45，否则屋顶会浮空。
+            Kit.Cone(v, "Roof", 3.6f, 2.8f, new Vector3(0f, 9.45f, 0f), M("roof_thatch"), 12, false);
+            Kit.Cyl(v, "Finial", 0.16f, 0.9f, new Vector3(0f, 12.7f, 0f), M("gold"), 8, false);
+
+            // 门 / 窗 / 门口的石阶
+            Kit.Box(v, "Door", new Vector3(1.5f, 2.5f, 0.22f), new Vector3(0f, 1.98f, 2.78f), wood, 0f, false);
+            Kit.Box(v, "DoorFrame", new Vector3(1.9f, 2.8f, 0.12f), new Vector3(0f, 2.1f, 2.9f), M("timber_dark"), 0f, false);
+            Kit.Box(v, "Step", new Vector3(2.2f, 0.26f, 1.0f), new Vector3(0f, 0.98f, 3.24f), stone, 0f, false);
+            Kit.Box(v, "WinW", new Vector3(0.72f, 0.9f, 0.12f), new Vector3(-1.55f, 3.7f, 2.55f), M("glow_amber"), 0f, false);
+            Kit.Box(v, "WinE", new Vector3(0.72f, 0.9f, 0.12f), new Vector3(1.55f, 3.7f, 2.55f), M("glow_amber"), 0f, false);
+            Kit.Box(v, "WinHigh", new Vector3(0.62f, 0.8f, 0.12f), new Vector3(0f, 7.4f, 2.48f), M("glow_amber"), 0f, false);
+            Kit.Optimize(v.gameObject, false);
+
+            // 帆：必须在合并之后单独建，才能挂 KitSpin 转起来
+            var hub = new GameObject("Sails").transform;
+            hub.SetParent(root, false);
+            hub.localPosition = new Vector3(0f, 8.55f, 3.45f);
+            for (int i = 0; i < 4; i++)
+            {
+                var arm = new GameObject("Arm" + i).transform;
+                arm.SetParent(hub, false);
+                arm.localRotation = Quaternion.Euler(0f, 0f, i * 90f);
+                Kit.Box(arm, "Beam", new Vector3(0.24f, 5.6f, 0.2f), new Vector3(0f, 2.9f, 0f), wood, 0f, false);
+                Kit.Slab(arm, "Sail", new Vector3(1.05f, 3.9f, 0.06f), new Vector3(0.66f, 3.55f, 0.13f), M("cloth_cream"));
+                Kit.Slab(arm, "Patch", new Vector3(0.52f, 1.15f, 0.07f), new Vector3(0.66f, 2.35f, 0.14f), M("cloth_red"));
+            }
+            Kit.CylRot(hub, "Hub", 0.42f, 0.5f, Vector3.zero, Quaternion.Euler(90f, 0f, 0f), wood, 10, false);
+            var spin = hub.gameObject.AddComponent<KitSpin>();
+            spin.Axis = Vector3.forward;
+            spin.DegreesPerSecond = 15f;
+
+            // 招牌 / 灯 / 碰撞（都在合并之后加）
+            Sign(root, "布耶纳风车", new Vector3(0f, 3.95f, 3.02f), 0f, 2.5f, 0.6f);
+            Sign(root, "磨坊 · 代磨面粉", new Vector3(0f, 3.18f, 3.02f), 0f, 1.9f, 0.38f, M("cloth_cream").color, null);
+            Kit.PointLight(root, new Vector3(0f, 3.2f, 3.6f), new Color(1f, 0.82f, 0.5f), 8f, 1.0f);
+            Kit.Blocker(root, "MillBlocker", new Vector3(7.8f, 10f, 7.8f), new Vector3(0f, 5f, 0f));
+
+            // 磨盘 / 麻袋 / 推车 / 草垛
+            Kit.Cyl(root, "Millstone", 0.92f, 0.32f, new Vector3(3.1f, 0.34f, -1.9f), stone, 14, false);
+            Kit.Cyl(root, "Millstone2", 0.7f, 0.26f, new Vector3(3.1f, 0.63f, -1.9f), M("stone_light"), 12, false);
+            RoaKit.Barrel(root, new Vector3(3.5f, 0f, -3.3f), 12f, 1.0f);
+            RoaKit.Sack(root, new Vector3(2.3f, 0f, -3.1f), 24f);
+            RoaKit.Sack(root, new Vector3(2.9f, 0f, -3.9f), -18f);
+            RoaKit.Cart(root, new Vector3(-4.2f, 0f, -3.6f), 78f);
+            RoaKit.Haystack(root, new Vector3(-3.6f, 0f, 2.9f), 0.9f);
+            Kit.MakeFadeable(root.gameObject, 0.3f);
+        }
+
+        // ================= 地标 ②：村教堂（钟塔） =================
+        void BuildChapel(Transform world)
+        {
+            var root = new GameObject("Chapel").transform;
+            root.SetParent(world, false);
+            root.localPosition = new Vector3(24f, 0f, 30f);
+            root.localRotation = Quaternion.Euler(0f, 180f, 0f);   // 门朝场院
+            KeepOut(24f, 30f, 5.6f, 7.2f);
+
+            var v = new GameObject("Visual").transform;
+            v.SetParent(root, false);
+            var stone = M("stone_light");
+            var dark = M("stone_dark");
+
+            Kit.Box(v, "Plinth", new Vector3(7.6f, 0.5f, 11.6f), new Vector3(0f, 0.25f, 0f), dark, 0f, false);
+            Kit.Box(v, "Nave", new Vector3(6.8f, 5.0f, 10.2f), new Vector3(0f, 3.0f, 0f), M("plaster_cream"), 0f, false);
+            for (int sx = -1; sx <= 1; sx += 2)
+                for (int sz = -1; sz <= 1; sz += 2)
+                    Kit.Box(v, "Post", new Vector3(0.34f, 5.1f, 0.34f),
+                        new Vector3(sx * 3.35f, 3.0f, sz * 5.05f), M("timber_dark"), 0f, false);
+            Kit.Mesh(v, "Roof", Kit.GableRoofMesh(7.7f, 11.2f, 2.7f, 0.5f, 0.3f),
+                new Vector3(0f, 5.55f, 0f), M("roof_terracotta"), false);
+
+            // 钟塔：本地 +Z 一侧 → 世界 -Z，正对场院
+            Kit.Box(v, "TowerBase", new Vector3(3.4f, 0.7f, 3.4f), new Vector3(0f, 0.35f, 5.9f), dark, 0f, false);
+            Kit.Box(v, "Tower", new Vector3(2.9f, 9.9f, 2.9f), new Vector3(0f, 4.95f, 5.9f), M("stone_wall"), 0f, false);
+            Kit.Box(v, "TowerBand", new Vector3(3.3f, 0.38f, 3.3f), new Vector3(0f, 7.2f, 5.9f), dark, 0f, false);
+            Kit.Box(v, "Belfry", new Vector3(1.75f, 2.1f, 1.75f), new Vector3(0f, 8.55f, 5.9f), M("black"), 0f, false);
+            // Cone 的 pos 是锥底：塔顶 9.9，锥底必须也是 9.9（早先写 11.7，尖顶整整浮空 1.8 米）。
+            Kit.Cone(v, "Spire", 2.15f, 3.6f, new Vector3(0f, 9.9f, 5.9f), M("roof_slate"), 8, false);
+            Kit.Box(v, "CrossV", new Vector3(0.14f, 0.9f, 0.14f), new Vector3(0f, 13.35f, 5.9f), M("gold"), 0f, false);
+            Kit.Box(v, "CrossH", new Vector3(0.6f, 0.14f, 0.14f), new Vector3(0f, 13.5f, 5.9f), M("gold"), 0f, false);
+            // 门 / 台阶
+            Kit.Box(v, "Door", new Vector3(1.5f, 2.6f, 0.22f), new Vector3(0f, 1.65f, 7.36f), M("wood_dark"), 0f, false);
+            Kit.Box(v, "DoorArch", new Vector3(1.9f, 0.3f, 0.3f), new Vector3(0f, 3.05f, 7.34f), stone, 0f, false);
+            Kit.Box(v, "Step", new Vector3(2.5f, 0.3f, 1.1f), new Vector3(0f, 0.15f, 8.1f), stone, 0f, false);
+            // 彩窗
+            for (int s = -1; s <= 1; s += 2)
+                for (int i = 0; i < 2; i++)
+                    Kit.Box(v, "Win", new Vector3(0.14f, 1.9f, 0.85f),
+                        new Vector3(s * 3.42f, 3.2f, -2.4f + i * 4.4f), M("glow_amber"), 0f, false);
+            Kit.Box(v, "RoseWin", new Vector3(1.0f, 1.0f, 0.16f), new Vector3(0f, 4.3f, 7.3f), M("glow_violet"), 0f, false);
+            Kit.Optimize(v.gameObject, false);
+
+            Sign(root, "村教堂", new Vector3(0f, 3.72f, 7.56f), 0f, 1.9f, 0.5f);
+            Kit.PointLight(root, new Vector3(0f, 3.3f, 8.4f), new Color(1f, 0.86f, 0.62f), 8f, 1.0f);
+            Kit.Blocker(root, "NaveBlocker", new Vector3(7.4f, 6.4f, 11.0f), new Vector3(0f, 3.2f, 0f));
+            Kit.Blocker(root, "TowerBlocker", new Vector3(3.3f, 10f, 3.3f), new Vector3(0f, 5f, 5.9f));
+
+            // 门前的长凳和一根拴马桩
+            RoaKit.Bench(root, new Vector3(-3.4f, 0f, 8.4f), 90f, 1.7f);
+            Kit.Cyl(root, "Post", 0.12f, 1.5f, new Vector3(3.4f, 0.75f, 8.6f), M("wood_dark"), 8, true);
+            Kit.MakeFadeable(root.gameObject, 0.3f);
+        }
+
+        // ================= 旅店（据点）：麦穗旅店 =================
+        void BuildInn(Transform world)
+        {
+            var inn = RoaKit.Inn(world, new Vector3(26f, 0f, -39f), 0f);
+            inn.name = "Inn";
+            // 招牌交给 RoaKit.Inn 原样：它的主牌同样挂在本地 +Z 正面，而隔离测试（WorkQC/sg_plusZ.png）
+            // 证明 yaw 0 的牌子正是从 +Z 侧可读 —— 也就是说本来就朝街，不需要翻牌，也不需要加孪生牌。
+            Kit.MakeFadeable(inn, 0.3f);
+            KeepOut(26f, -38.8f, 10.5f, 7.2f);
+
+            var yard = new GameObject("InnYard").transform;
+            yard.SetParent(world, false);
+            Kit.Slab(yard, "Apron", new Vector3(21f, 0.07f, 4.0f), new Vector3(26f, 0.035f, -33.1f), M("dirt"));
+            RoaKit.Barrel(yard, new Vector3(17.2f, 0f, -33.2f), 12f, 1.0f);
+            RoaKit.Barrel(yard, new Vector3(18.0f, 0f, -34.0f), 0f, 0.85f);
+            RoaKit.Crate(yard, new Vector3(34.6f, 0f, -33.4f), 20f, 1.0f);
+            RoaKit.Crate(yard, new Vector3(35.5f, 0f, -34.4f), -14f, 0.8f);
+            RoaKit.Sack(yard, new Vector3(35.2f, 0f, -35.6f), 30f);
+            RoaKit.Haystack(yard, new Vector3(36.4f, 0f, -36.6f), 0.95f);
+            RoaKit.Bench(yard, new Vector3(21.6f, 0f, -33.0f), 180f, 1.8f);
+            RoaKit.Bench(yard, new Vector3(30.4f, 0f, -33.0f), 180f, 1.8f);
+            RoaKit.Lamp(yard, "InnLampW", new Vector3(19.4f, 0f, -32.8f), 0f, true);
+            RoaKit.Lamp(yard, "InnLampE", new Vector3(32.6f, 0f, -32.8f), 0f, true);
+
+            // 门口的长桌：旅店在门外摆酒
+            Kit.Box(yard, "Table", new Vector3(2.4f, 0.14f, 1.0f), new Vector3(23.6f, 0.78f, -33.2f), M("wood_plank"), 0f, true);
+            for (int sx = -1; sx <= 1; sx += 2)
+                for (int sz = -1; sz <= 1; sz += 2)
+                    Kit.Box(yard, "TableLeg", new Vector3(0.14f, 0.76f, 0.14f),
+                        new Vector3(23.6f + sx * 1.0f, 0.38f, -33.2f + sz * 0.35f), M("wood_dark"), 0f, false);
+            Kit.Box(yard, "Tankard", new Vector3(0.16f, 0.22f, 0.16f), new Vector3(23.1f, 0.97f, -33.1f), M("copper"), 0f, false);
+            Kit.Box(yard, "Loaf", new Vector3(0.4f, 0.14f, 0.24f), new Vector3(24.2f, 0.92f, -33.2f), M("sand"), 0f, false);
+
+            // 马桩 / 水槽
+            Kit.Cyl(yard, "HitchPost", 0.14f, 1.5f, new Vector3(38.4f, 0.75f, -34.4f), M("wood_dark"), 8, true);
+            Kit.Box(yard, "HitchRail", new Vector3(4.6f, 0.16f, 0.16f), new Vector3(36.2f, 1.4f, -34.4f), M("wood_plank"), 0f, false);
+            Kit.Box(yard, "Trough", new Vector3(2.2f, 0.5f, 0.7f), new Vector3(38.4f, 0.25f, -35.9f), M("wood_barrel"), 0f, true);
+            Kit.Slab(yard, "TroughWater", new Vector3(2.0f, 0.05f, 0.55f), new Vector3(38.4f, 0.46f, -35.9f), M("water"));
+            KitProps.Signpost(yard, new Vector3(15.8f, 0f, -33.0f), 0f, "麦穗旅店 · 有热汤", 0f);
+        }
+
+        // ================= 铁匠铺 =================
+        void BuildSmithy(Transform world)
+        {
+            var root = new GameObject("Smithy").transform;
+            root.SetParent(world, false);
+            KeepOut(-12f, -37f, 8.5f, 7.5f);
+
+            var spec = HouseSpec.Cottage();
+            spec.Width = 8.2f;
+            spec.Depth = 6.0f;
+            spec.WallHeight = 3.2f;
+            spec.RoofHeight = 2.4f;
+            spec.Wall = "stone_wall";
+            spec.Roof = "roof_slate";
+            spec.Timber = "timber_dark";
+            spec.Chimney = true;
+            spec.Overhang = 0.5f;
+            spec.Seed = 41;
+            spec.Fadeable = false;
+            spec.Sign = true;
+            spec.SignText = "铁匠铺";
+            var house = RoaKit.House(root, spec, new Vector3(-12f, 0f, -40f), 0f);
+            house.name = "SmithyHouse";
+            Kit.MakeFadeable(house, 0.28f);
+            FixHouseCollider(house, spec.Width, spec.Depth, spec.Floors, spec.WallHeight);
+
+            var yard = new GameObject("SmithyYard").transform;
+            yard.SetParent(root, false);
+            Kit.Slab(yard, "Yard", new Vector3(11.5f, 0.08f, 4.6f), new Vector3(-12f, 0.04f, -34.8f), M("dirt_dark"));
+
+            // 锻炉
+            Kit.Box(yard, "Forge", new Vector3(2.6f, 1.5f, 2.0f), new Vector3(-16.3f, 0.75f, -34.9f), M("stone_wall"), 0f, true);
+            Kit.Box(yard, "ForgeCap", new Vector3(2.9f, 0.2f, 2.3f), new Vector3(-16.3f, 1.6f, -34.9f), M("stone_dark"), 0f, false);
+            Kit.Box(yard, "Embers", new Vector3(1.2f, 0.3f, 0.9f), new Vector3(-16.3f, 1.72f, -34.9f), M("glow_warm"), 0f, false);
+            Kit.PointLight(yard, new Vector3(-16.3f, 2.5f, -34.9f), new Color(1f, 0.6f, 0.25f), 8f, 1.5f);
+            Kit.Smoke(yard, new Vector3(-16.3f, 1.95f, -34.9f), new Color(0.72f, 0.7f, 0.68f), 3, 0.3f);
+
+            // 铁砧 / 淬火桶 / 磨石 / 煤堆
+            Kit.Cyl(yard, "AnvilStump", 0.36f, 0.86f, new Vector3(-13.6f, 0.43f, -34.4f), M("wood_dark"), 8, false);
+            Kit.Box(yard, "AnvilBody", new Vector3(1.0f, 0.36f, 0.46f), new Vector3(-13.6f, 1.04f, -34.4f), M("iron"), 0f, false);
+            Kit.Box(yard, "AnvilFace", new Vector3(1.16f, 0.1f, 0.5f), new Vector3(-13.6f, 1.26f, -34.4f), M("iron_grey"), 0f, false);
+            RoaKit.Barrel(yard, new Vector3(-14.9f, 0f, -35.4f), 15f, 0.95f);
+            Kit.Slab(yard, "Quench", new Vector3(0.86f, 0.05f, 0.86f), new Vector3(-14.9f, 0.84f, -35.4f), M("water"));
+            Kit.CylRot(yard, "Grindstone", 0.42f, 0.16f, new Vector3(-10.4f, 0.6f, -35.0f), Quaternion.Euler(90f, 0f, 0f), M("stone_light"), 10, false);
+            Kit.Cyl(yard, "GrindPost", 0.1f, 0.6f, new Vector3(-10.4f, 0.3f, -35.0f), M("wood_dark"), 6, false);
+            Kit.Cyl(yard, "Coal", 0.8f, 0.4f, new Vector3(-17.6f, 0.2f, -33.6f), M("black"), 8, false);
+            KitProps.WeaponRack(yard, new Vector3(-8.6f, 0f, -35.4f), -25f);
+            KitProps.Signpost(yard, new Vector3(-16.2f, 0f, -32.95f), 0f, "铁匠 · 修刃", 0f);
+            Kit.Blocker(yard, "ForgeBlocker", new Vector3(3.0f, 1.8f, 2.4f), new Vector3(-16.3f, 0.9f, -34.9f));
+        }
+
+        // ================= 集市摊位 =================
+        void BuildMarketStreet(Transform world)
+        {
+            var market = new GameObject("MarketRow").transform;
+            market.SetParent(world, false);
+
+            RoaKit.MarketStall(market, new Vector3(-6.8f, 0f, 7.2f), 200f, "cloth_red");
+            RoaKit.MarketStall(market, new Vector3(7.6f, 0f, 6.4f), 160f, "cloth_blue");
+            RoaKit.MarketStall(market, new Vector3(-7.4f, 0f, -10.4f), 25f, "cloth_teal");
+            RoaKit.MarketStall(market, new Vector3(7.8f, 0f, -12.0f), 335f, "cloth_cream");
+
+            // 摊边的货堆 / 筐 / 坛子
+            RoaKit.Crate(market, new Vector3(-9.0f, 0f, 9.0f), 14f, 0.95f);
+            RoaKit.Barrel(market, new Vector3(-9.4f, 0f, 7.4f), 0f, 0.9f);
+            RoaKit.Sack(market, new Vector3(9.6f, 0f, 8.0f), 30f);
+            RoaKit.Sack(market, new Vector3(9.2f, 0f, 7.0f), -22f);
+            RoaKit.Pot(market, new Vector3(-9.2f, 0f, -12.4f), false);
+            RoaKit.Pot(market, new Vector3(-8.6f, 0f, -11.4f), true);
+            RoaKit.Crate(market, new Vector3(9.8f, 0f, -13.4f), -8f, 0.85f);
+
+            // 摊位上方的小招牌（挂在摊子正前方的棚布下沿外侧）
+            Sign(market, "菜摊", new Vector3(-7.6f, 2.62f, 5.4f), 200f, 1.5f, 0.4f);
+            Sign(market, "果干 · 蜜饯", new Vector3(8.4f, 2.62f, 4.9f), 160f, 1.9f, 0.4f);
+            Sign(market, "陶器", new Vector3(-7.9f, 2.62f, -12.2f), 25f, 1.4f, 0.38f);
+            Sign(market, "草药 · 香包", new Vector3(8.3f, 2.62f, -13.6f), 335f, 2.0f, 0.4f);
+
+            // 集市口的木牌
+            Kit.Cyl(market, "SignPostL", 0.09f, 3.1f, new Vector3(-5.6f, 1.55f, 12.4f), M("wood_dark"), 6, false);
+            Kit.Cyl(market, "SignPostR", 0.09f, 3.1f, new Vector3(-3.6f, 1.55f, 12.4f), M("wood_dark"), 6, false);
+            Sign(market, "布耶纳市集", new Vector3(-4.6f, 2.9f, 12.4f), 190f, 2.6f, 0.6f);
+            Kit.Blocker(market, "SignPostsBlocker", new Vector3(2.2f, 3.1f, 0.3f), new Vector3(-4.6f, 1.55f, 12.4f));
+        }
+
+        // ================= 街道生活细节 =================
+        void BuildStreetLife(Transform world)
+        {
+            var life = new GameObject("StreetLife").transform;
+            life.SetParent(world, false);
+
+            // 路灯：沿主路两侧交替，全部落在路面外（|z-RoadZ| > 2.6）
+            float[] lx = { 32f, 20f, 8f, -6f, -20f, -34f };
+            for (int i = 0; i < lx.Length; i++)
+            {
+                bool north = i % 2 == 0;
+                float z = north ? RoadZ + 3.4f : RoadZ - 3.4f;
+                RoaKit.Lamp(life, "Lamp" + i, new Vector3(lx[i], 0f, z), 0f, i % 3 == 0);
+            }
+
+            // 跨街挂旗（立柱落在路两侧的草地上）
+            RoaKit.Bunting(life, new Vector3(26f, 0f, RoadZ), 90f, 6.6f);
+            RoaKit.Bunting(life, new Vector3(4f, 0f, RoadZ), 90f, 6.4f);
+            RoaKit.Bunting(life, new Vector3(-16f, 0f, RoadZ), 90f, 6.2f);
+
+            // 晾衣绳（村子最有生活味的一笔）
+            LaundryLine(life, new Vector3(-11f, 0f, 12.0f), 0f, 7.0f);
+            LaundryLine(life, new Vector3(12f, 0f, 11.5f), 0f, 6.0f);
+            LaundryLine(life, new Vector3(20f, 0f, -6.0f), 90f, 5.0f);
+
+            // 两块告示板
+            NoticeBoard(life, new Vector3(-5.4f, 0f, 10.6f), 18f, "村务通告");
+            NoticeBoard(life, new Vector3(5.8f, 0f, -14.6f), 340f, "收粮价目");
+
+            // 村口的卫兵岗棚 + 一支过路商队
+            GuardBooth(life, new Vector3(44.2f, 0f, -36.2f), 90f);
+            RoaKit.Tent(life, new Vector3(38.6f, 0f, -38.4f), 20f, "cloth_cream");
+            RoaKit.Cart(life, new Vector3(35.6f, 0f, -37.2f), 40f);
+            RoaKit.Campfire(life, new Vector3(37.2f, 0f, -34.6f));
+            RoaKit.Barrel(life, new Vector3(34.2f, 0f, -38.6f), 30f, 0.9f);
+            RoaKit.Crate(life, new Vector3(36.4f, 0f, -39.4f), 10f, 0.85f);
+            RoaKit.Haystack(life, new Vector3(40.2f, 0f, -39.8f), 0.85f);
+
+            // 路面：几处水洼（纯视觉，踩不到）
+            Kit.Slab(life, "Puddle1", new Vector3(1.8f, 0.02f, 0.9f), new Vector3(9f, 0.035f, -30.6f), M("water"));
+            Kit.Slab(life, "Puddle2", new Vector3(1.4f, 0.02f, 1.1f), new Vector3(-23f, 0.035f, -29.2f), M("water"));
+
+            // 村口的木牌
+            KitProps.Signpost(life, new Vector3(40.6f, 0f, -26.4f), 0f, "罗亚市 →  学园 ↗", 0f);
+        }
+
+        /// <summary>一根晾衣绳：两根木杆 + 绳子 + 几块布。整根合并成一个渲染。</summary>
+        void LaundryLine(Transform parent, Vector3 center, float yaw, float length)
+        {
+            var root = new GameObject("LaundryLine").transform;
+            root.SetParent(parent, false);
+            root.localPosition = center;
+            root.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            float half = length * 0.5f;
+
+            for (int s = -1; s <= 1; s += 2)
+            {
+                Kit.Cyl(root, "Pole", 0.08f, 2.7f, new Vector3(s * half, 1.35f, 0f), M("wood_dark"), 6, false);
+                Kit.Box(root, "PoleCap", new Vector3(0.24f, 0.14f, 0.24f), new Vector3(s * half, 2.72f, 0f), M("wood_dark"), 0f, false);
+            }
+            Kit.Slab(root, "Rope", new Vector3(length, 0.035f, 0.035f), new Vector3(0f, 2.5f, 0f), M("timber_mid"));
+
+            string[] cloths = { "cloth_cream", "cloth_blue", "cloth_red", "cloth_cream" };
+            int n = Mathf.Max(2, Mathf.RoundToInt(length / 1.5f));
+            for (int i = 0; i < n; i++)
+            {
+                float x = -half + (i + 0.5f) * (length / n);
+                Kit.Slab(root, "Cloth" + i, new Vector3(0.95f, 1.05f, 0.045f),
+                    new Vector3(x, 1.92f, 0.02f), M(cloths[i % cloths.Length]));
+            }
+            Kit.Optimize(root.gameObject, false);
+        }
+
+        /// <summary>村务告示板：两根柱子 + 板面 + 顶部小雨檐 + 几张贴纸。</summary>
+        void NoticeBoard(Transform parent, Vector3 pos, float yaw, string text)
+        {
+            var root = new GameObject("NoticeBoard").transform;
+            root.SetParent(parent, false);
+            root.localPosition = pos;
+            root.localRotation = Quaternion.Euler(0f, yaw, 0f);
+
+            for (int s = -1; s <= 1; s += 2)
+                Kit.Cyl(root, "Post", 0.1f, 2.2f, new Vector3(s * 0.85f, 1.1f, 0f), M("wood_dark"), 6, true);
+            Kit.Box(root, "BoardBack", new Vector3(2.0f, 1.3f, 0.1f), new Vector3(0f, 1.7f, 0f), M("timber_dark"), 0f, true);
+            Kit.Box(root, "BoardFace", new Vector3(1.86f, 1.16f, 0.04f), new Vector3(0f, 1.7f, 0.07f), M("parchment"), 0f, false);
+            Kit.Box(root, "Eave", new Vector3(2.3f, 0.1f, 0.5f), new Vector3(0f, 2.42f, 0.1f), M("roof_thatch"), 0f, false);
+
+            // 钉在板上的纸片
+            var papers = new[]
+            {
+                new Vector3(-0.52f, 1.86f, 0.1f), new Vector3(0.04f, 1.9f, 0.1f),
+                new Vector3(0.5f, 1.82f, 0.1f), new Vector3(-0.2f, 1.48f, 0.1f),
+            };
+            for (int i = 0; i < papers.Length; i++)
+                Kit.Box(root, "Paper" + i, new Vector3(0.22f, 0.28f, 0.012f), papers[i], M("cloth_cream"), 0f, false);
+
+            Sign(root, text, new Vector3(0f, 2.72f, 0.04f), 0f, 1.8f, 0.34f);
+            Kit.Optimize(root.gameObject, false);
+            Kit.Blocker(root, "BoardBlocker", new Vector3(2.0f, 1.3f, 0.3f), new Vector3(0f, 1.7f, 0f));
+        }
+
+        /// <summary>村口的卫兵岗棚：四根柱子 + 单坡顶 + 一张凳子 + 一支长矛。</summary>
+        void GuardBooth(Transform parent, Vector3 pos, float yaw)
+        {
+            var root = new GameObject("GuardBooth").transform;
+            root.SetParent(parent, false);
+            root.localPosition = pos;
+            root.localRotation = Quaternion.Euler(0f, yaw, 0f);
+
+            for (int sx = -1; sx <= 1; sx += 2)
+                for (int sz = -1; sz <= 1; sz += 2)
+                    Kit.Cyl(root, "Post", 0.12f, 2.5f, new Vector3(sx * 1.1f, 1.25f, sz * 1.1f), M("wood_dark"), 6, false);
+            Kit.Box(root, "Roof", new Vector3(2.9f, 0.16f, 2.9f), new Vector3(0f, 2.6f, 0f), M("wood_plank"), 0f, false);
+            Kit.Box(root, "RoofSlope", new Vector3(3.3f, 0.12f, 3.3f), new Vector3(0f, 2.78f, 0f), M("roof_thatch"), 0f, false);
+            RoaKit.Bench(root, new Vector3(0f, 0f, 0.35f), 0f, 1.4f);
+            Kit.Cyl(root, "Spear", 0.045f, 2.0f, new Vector3(-1.0f, 1.0f, -1.0f), M("wood_light"), 6, false);
+            Kit.Box(root, "SpearTip", new Vector3(0.1f, 0.3f, 0.1f), new Vector3(-1.0f, 2.1f, -1.0f), M("steel"), 0f, false);
+            Kit.Optimize(root.gameObject, false);
+            Kit.Blocker(root, "BoothRoofBlocker", new Vector3(2.6f, 0.4f, 2.6f), new Vector3(0f, 2.7f, 0f));
+        }
+
+        // ================= 村子 ↔ 学园 的传送门 =================
+        void BuildAcademyLink(Transform world)
+        {
+            var link = new GameObject("AcademyLink").transform;
+            link.SetParent(world, false);
+            var spot = new Vector3(1.2f, 0f, 24.6f);
+
+            RoaKit.FloorDisc(link, "RuneFloor", 3.2f, new Vector3(spot.x, 0.06f, spot.z), M("marble"), 24);
+            RoaKit.RuneCircle(link, new Vector3(spot.x, 0.09f, spot.z), true);
+            ScenePortal.Create(world, spot, MapId.RanoaAcademy, "court", "前往 拉诺亚魔法学园", 180f);
+            Kit.PointLight(link, new Vector3(spot.x, 2.4f, spot.z), new Color(0.72f, 0.66f, 1f), 8f, 1.0f);
+            KitProps.Signpost(link, new Vector3(-1.9f, 0f, 25.4f), 20f, "学园 ↗", 0f);
+        }
+    }
+}

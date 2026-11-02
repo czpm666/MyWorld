@@ -1,0 +1,821 @@
+{
+ "generated_by": "look/_shotgen.py",
+ "shots": [
+  {
+   "name": "game_avenue_north",
+   "kind": "game",
+   "pos": [
+    0.0,
+    619.07,
+    28.51
+   ],
+   "look": [
+    0.0,
+    641.5,
+    1.0
+   ],
+   "lens": null,
+   "fov": 30.0,
+   "yaw": 90.0,
+   "pitch": -50.8,
+   "note": "An 11 m paved avenue in a 17 m corridor, running north to the outer gate: cobbles up the middle of the frame, two storey-and-a-half eaves either side, roof ridges filling the lower left and right corners. No sky -- a 52 degree camera cannot see above the horizon.",
+   "player": [
+    0.0,
+    640.0
+   ],
+   "heading": [
+    0.0,
+    1.0
+   ],
+   "offset": [
+    0.0,
+    0.0
+   ],
+   "rig": {
+    "pitch": 52.0,
+    "dist": 34.0,
+    "vfov": 30.0,
+    "cam_up": 26.792,
+    "cam_back": 20.932,
+    "lens_equiv_mm": 44.8,
+    "source": "Unity TopDownCameraRig.cs defaults"
+   }
+  },
+  {
+   "name": "game_avenue_east",
+   "kind": "game",
+   "pos": [
+    599.07,
+    0.0,
+    28.51
+   ],
+   "look": [
+    621.5,
+    0.0,
+    1.0
+   ],
+   "lens": null,
+   "fov": 30.0,
+   "yaw": 0.0,
+   "pitch": -50.8,
+   "note": "The east avenue seen from inside: a long cobbled slot with jettied timber fronts on both sides, the sunlit right-hand wall carrying the frame, roof tiles along the bottom edge.",
+   "player": [
+    620.0,
+    0.0
+   ],
+   "heading": [
+    1.0,
+    0.0
+   ],
+   "offset": [
+    0.0,
+    0.0
+   ],
+   "rig": {
+    "pitch": 52.0,
+    "dist": 34.0,
+    "vfov": 30.0,
+    "cam_up": 26.792,
+    "cam_back": 20.932,
+    "lens_equiv_mm": 44.8,
+    "source": "Unity TopDownCameraRig.cs defaults"
+   }
+  },
+  {
+   "name": "game_avenue_west",
+   "kind": "game",
+   "pos": [
+    -679.07,
+    0.0,
+    28.51
+   ],
+   "look": [
+    -701.5,
+    0.0,
+    1.0
+   ],
+   "lens": null,
+   "fov": 30.0,
+   "yaw": 180.0,
+   "pitch": -50.8,
+   "note": "The west avenue at dusk-side light: shadowed left wall, warm right wall, the street's own gutter line leading the eye out of frame.",
+   "player": [
+    -700.0,
+    0.0
+   ],
+   "heading": [
+    -1.0,
+    0.0
+   ],
+   "offset": [
+    0.0,
+    0.0
+   ],
+   "rig": {
+    "pitch": 52.0,
+    "dist": 34.0,
+    "vfov": 30.0,
+    "cam_up": 26.792,
+    "cam_back": 20.932,
+    "lens_equiv_mm": 44.8,
+    "source": "Unity TopDownCameraRig.cs defaults"
+   }
+  },
+  {
+   "name": "game_avenue_south",
+   "kind": "game",
+   "pos": [
+    0.0,
+    -539.07,
+    28.51
+   ],
+   "look": [
+    0.0,
+    -561.5,
+    1.0
+   ],
+   "lens": null,
+   "fov": 30.0,
+   "yaw": 270.0,
+   "pitch": -50.8,
+   "note": "The south avenue toward the harbour: same canyon, but the ground is hollowed by the long shadows the brief asks for, and the far end of the street dissolves into haze.",
+   "player": [
+    0.0,
+    -560.0
+   ],
+   "heading": [
+    0.0,
+    -1.0
+   ],
+   "offset": [
+    0.0,
+    0.0
+   ],
+   "rig": {
+    "pitch": 52.0,
+    "dist": 34.0,
+    "vfov": 30.0,
+    "cam_up": 26.792,
+    "cam_back": 20.932,
+    "lens_equiv_mm": 44.8,
+    "source": "Unity TopDownCameraRig.cs defaults"
+   }
+  },
+  {
+   "name": "game_street_roof",
+   "kind": "game",
+   "pos": [
+    -12.56,
+    -466.75,
+    28.51
+   ],
+   "look": [
+    0.9,
+    -448.8,
+    1.0
+   ],
+   "lens": null,
+   "fov": 30.0,
+   "yaw": 53.1,
+   "pitch": -50.8,
+   "note": "Player at (0,-450) heading 53 degrees north-east into a block corner: roof ridges run diagonally across the middle of the frame, the lane turns out of sight, both eaves are in shot.",
+   "player": [
+    0.0,
+    -450.0
+   ],
+   "heading": [
+    0.6,
+    0.8
+   ],
+   "offset": [
+    0.0,
+    0.0
+   ],
+   "rig": {
+    "pitch": 52.0,
+    "dist": 34.0,
+    "vfov": 30.0,
+    "cam_up": 26.792,
+    "cam_back": 20.932,
+    "lens_equiv_mm": 44.8,
+    "source": "Unity TopDownCameraRig.cs defaults"
+   }
+  },
+  {
+   "name": "game_street_1",
+   "kind": "game",
+   "pos": [
+    -295.93,
+    5.0,
+    28.51
+   ],
+   "look": [
+    -273.5,
+    5.0,
+    1.0
+   ],
+   "lens": null,
+   "fov": 30.0,
+   "yaw": 0.0,
+   "pitch": -50.8,
+   "note": "A secondary street 275 m from the centre, 13.0 m wide, with 90 m of clear corridor: two facades close enough to read, roofs at both bottom corners, cobbles between them.",
+   "player": [
+    -275.0,
+    5.0
+   ],
+   "heading": [
+    1.0,
+    0.0
+   ],
+   "offset": [
+    0.0,
+    0.0
+   ],
+   "rig": {
+    "pitch": 52.0,
+    "dist": 34.0,
+    "vfov": 30.0,
+    "cam_up": 26.792,
+    "cam_back": 20.932,
+    "lens_equiv_mm": 44.8,
+    "source": "Unity TopDownCameraRig.cs defaults"
+   }
+  },
+  {
+   "name": "game_street_2",
+   "kind": "game",
+   "pos": [
+    -248.87,
+    -889.47,
+    28.51
+   ],
+   "look": [
+    -268.3,
+    -878.25,
+    1.0
+   ],
+   "lens": null,
+   "fov": 30.0,
+   "yaw": 150.0,
+   "pitch": -50.8,
+   "note": "A secondary street 919 m from the centre, 12.0 m wide, with 90 m of clear corridor: two facades close enough to read, roofs at both bottom corners, cobbles between them.",
+   "player": [
+    -267.0,
+    -879.0
+   ],
+   "heading": [
+    -0.866,
+    0.5
+   ],
+   "offset": [
+    0.0,
+    0.0
+   ],
+   "rig": {
+    "pitch": 52.0,
+    "dist": 34.0,
+    "vfov": 30.0,
+    "cam_up": 26.792,
+    "cam_back": 20.932,
+    "lens_equiv_mm": 44.8,
+    "source": "Unity TopDownCameraRig.cs defaults"
+   }
+  },
+  {
+   "name": "game_street_3",
+   "kind": "game",
+   "pos": [
+    -691.47,
+    474.87,
+    28.51
+   ],
+   "look": [
+    -680.25,
+    494.3,
+    1.0
+   ],
+   "lens": null,
+   "fov": 30.0,
+   "yaw": 60.0,
+   "pitch": -50.8,
+   "note": "A secondary street 841 m from the centre, 13.0 m wide, with 82 m of clear corridor: two facades close enough to read, roofs at both bottom corners, cobbles between them.",
+   "player": [
+    -681.0,
+    493.0
+   ],
+   "heading": [
+    0.5,
+    0.866
+   ],
+   "offset": [
+    0.0,
+    0.0
+   ],
+   "rig": {
+    "pitch": 52.0,
+    "dist": 34.0,
+    "vfov": 30.0,
+    "cam_up": 26.792,
+    "cam_back": 20.932,
+    "lens_equiv_mm": 44.8,
+    "source": "Unity TopDownCameraRig.cs defaults"
+   }
+  },
+  {
+   "name": "game_street_4",
+   "kind": "game",
+   "pos": [
+    -369.22,
+    781.58,
+    28.51
+   ],
+   "look": [
+    -347.55,
+    787.39,
+    1.0
+   ],
+   "lens": null,
+   "fov": 30.0,
+   "yaw": 15.0,
+   "pitch": -50.8,
+   "note": "A secondary street 861 m from the centre, 12.0 m wide, with 90 m of clear corridor: two facades close enough to read, roofs at both bottom corners, cobbles between them.",
+   "player": [
+    -349.0,
+    787.0
+   ],
+   "heading": [
+    0.9659,
+    0.2588
+   ],
+   "offset": [
+    0.0,
+    0.0
+   ],
+   "rig": {
+    "pitch": 52.0,
+    "dist": 34.0,
+    "vfov": 30.0,
+    "cam_up": 26.792,
+    "cam_back": 20.932,
+    "lens_equiv_mm": 44.8,
+    "source": "Unity TopDownCameraRig.cs defaults"
+   }
+  },
+  {
+   "name": "eye_avenue_gate",
+   "kind": "eye",
+   "pos": [
+    0.0,
+    860.0,
+    1.72
+   ],
+   "look": [
+    0.0,
+    967.2,
+    26.0
+   ],
+   "lens": 28.0,
+   "fov": null,
+   "yaw": 90.0,
+   "pitch": 12.8,
+   "note": "Standing on the north avenue 87 m from the gatehouse: two 32 m towers fill the frame, the arch between them is a black slot, the avenue's cobbles run out from under your feet."
+  },
+  {
+   "name": "eye_avenue_south",
+   "kind": "eye",
+   "pos": [
+    0.0,
+    -700.0,
+    1.72
+   ],
+   "look": [
+    0.0,
+    -900.0,
+    8.0
+   ],
+   "lens": 24.0,
+   "fov": null,
+   "yaw": 270.0,
+   "pitch": 1.8,
+   "note": "The south avenue looking away from town: houses step down either side, the road narrows into haze, the outer wall crosses the far end."
+  },
+  {
+   "name": "eye_plaza_south",
+   "kind": "eye",
+   "pos": [
+    -14.0,
+    -48.0,
+    1.72
+   ],
+   "look": [
+    2.0,
+    30.0,
+    9.0
+   ],
+   "lens": 35.0,
+   "fov": null,
+   "yaw": 78.4,
+   "pitch": 5.2,
+   "note": "The market square from its south-west corner, clear of the misplaced bridge-rib strip at x=0: the fountain's kerb in the middle distance, the market hall's steps and arcade across the far side, the cathedral's south flank closing the left."
+  },
+  {
+   "name": "eye_cathedral_front",
+   "kind": "eye",
+   "pos": [
+    -225.0,
+    4.0,
+    1.72
+   ],
+   "look": [
+    -225.0,
+    43.0,
+    16.0
+   ],
+   "lens": 18.0,
+   "fov": null,
+   "yaw": 90.0,
+   "pitch": 20.1,
+   "note": "The cathedral's west front from 39 m back: the three portal bays at eye level, paving running up to them, the rose window above, the gable cut by the top of the frame.  18 mm because 40 m of facade will not fit otherwise."
+  },
+  {
+   "name": "eye_guild_front",
+   "kind": "eye",
+   "pos": [
+    210.0,
+    66.0,
+    1.72
+   ],
+   "look": [
+    210.0,
+    83.0,
+    6.5
+   ],
+   "lens": 18.0,
+   "fov": null,
+   "yaw": 90.0,
+   "pitch": 15.7,
+   "note": "The guildhall's south front at 17 m: the jettied upper floor overhangs the portal, its windows read as dark rectangles, the eave cuts across the top, its own cobbled forecourt in the foreground."
+  },
+  {
+   "name": "eye_castle_ramp",
+   "kind": "eye",
+   "pos": [
+    0.0,
+    172.0,
+    1.72
+   ],
+   "look": [
+    0.0,
+    266.0,
+    30.0
+   ],
+   "lens": 24.0,
+   "fov": null,
+   "yaw": 90.0,
+   "pitch": 16.7,
+   "note": "The castle ramp looking up at the gatehouse: the road climbs between retaining walls, the twin towers stand at the top of the rise, the rock face closes everything behind them."
+  },
+  {
+   "name": "eye_street_1",
+   "kind": "eye",
+   "pos": [
+    -407.2,
+    20.2,
+    1.72
+   ],
+   "look": [
+    -407.2,
+    60.2,
+    4.0
+   ],
+   "lens": 24.0,
+   "fov": null,
+   "yaw": 90.0,
+   "pitch": 3.3,
+   "note": "A measured street at 408 m from the centre, 40.0 m of clear air ahead at 1.72 m: both facades in the frame, the far end of the street falling away."
+  },
+  {
+   "name": "eye_street_2",
+   "kind": "eye",
+   "pos": [
+    177.8,
+    119.2,
+    1.72
+   ],
+   "look": [
+    217.8,
+    119.2,
+    4.0
+   ],
+   "lens": 24.0,
+   "fov": null,
+   "yaw": 0.0,
+   "pitch": 3.3,
+   "note": "A measured street at 214 m from the centre, 40.0 m of clear air ahead at 1.72 m: both facades in the frame, the far end of the street falling away."
+  },
+  {
+   "name": "aerial_city",
+   "kind": "aerial",
+   "pos": [
+    1036.0,
+    -1835.0,
+    710.0
+   ],
+   "look": [
+    0.0,
+    20.0,
+    15.0
+   ],
+   "lens": 50.0,
+   "fov": null,
+   "yaw": 119.2,
+   "pitch": -18.1,
+   "note": "The whole town from the south-east at 710 m: the ring wall reads as a circle, the four avenues as spokes, the castle rock and the cathedral spire are the two things that break the roofline."
+  },
+  {
+   "name": "aerial_castle",
+   "kind": "aerial",
+   "pos": [
+    222.0,
+    503.0,
+    120.0
+   ],
+   "look": [
+    0.0,
+    330.0,
+    55.0
+   ],
+   "lens": 50.0,
+   "fov": null,
+   "yaw": 217.9,
+   "pitch": -13.0,
+   "note": "The castle from the north-east: the rock shelf, the curtain, and the keep standing on top of all of it, roofs of the upper town in front."
+  },
+  {
+   "name": "aerial_harbour",
+   "kind": "aerial",
+   "pos": [
+    150.0,
+    -560.0,
+    150.0
+   ],
+   "look": [
+    0.0,
+    -770.0,
+    6.0
+   ],
+   "lens": 40.0,
+   "fov": null,
+   "yaw": 234.5,
+   "pitch": -29.2,
+   "note": "The harbour: two quays, the bridge with its piers, thirty boats along the water, warehouses at the back."
+  },
+  {
+   "name": "overview_city",
+   "kind": "overview",
+   "pos": [
+    1391.0,
+    -1746.0,
+    903.0
+   ],
+   "look": [
+    0.0,
+    -20.0,
+    10.0
+   ],
+   "lens": 34.0,
+   "fov": null,
+   "yaw": 128.9,
+   "pitch": -21.9,
+   "note": "The establishing frame: the whole capital in one plate, wall and towers on the left, cathedral and town right, the river and the sea haze beyond."
+  },
+  {
+   "name": "landmark_castle_keep",
+   "kind": "landmark",
+   "pos": [
+    0.0,
+    200.0,
+    95.0
+   ],
+   "look": [
+    0.0,
+    333.0,
+    58.0
+   ],
+   "lens": 70.0,
+   "fov": null,
+   "yaw": 90.0,
+   "pitch": -15.5,
+   "note": "The keep from above the gatehouse: the four turrets and the lantern spire at 84.7 m read against the sky, the curtain wall and its towers step down in front, the upper town's roofs below."
+  },
+  {
+   "name": "landmark_cathedral_front",
+   "kind": "landmark",
+   "pos": [
+    -150.0,
+    -120.0,
+    38.0
+   ],
+   "look": [
+    -225.0,
+    93.0,
+    34.0
+   ],
+   "lens": 50.0,
+   "fov": null,
+   "yaw": 109.4,
+   "pitch": -1.0,
+   "note": "The cathedral from the south-east, above the roofs: the transept end, the apse, the 66 m spire over the ridge, the city's slate and terracotta between us and it."
+  },
+  {
+   "name": "landmark_market_hall",
+   "kind": "landmark",
+   "pos": [
+    0.0,
+    -30.0,
+    9.0
+   ],
+   "look": [
+    0.0,
+    34.0,
+    11.0
+   ],
+   "lens": 35.0,
+   "fov": null,
+   "yaw": 90.0,
+   "pitch": 1.8,
+   "note": "The market hall from the square: the open arcade at ground level, the great tiled roof above it, the lantern on the ridge, stalls and carts in the foreground."
+  },
+  {
+   "name": "landmark_guild",
+   "kind": "landmark",
+   "pos": [
+    196.0,
+    58.0,
+    26.0
+   ],
+   "look": [
+    210.1,
+    97.7,
+    12.0
+   ],
+   "lens": 45.0,
+   "fov": null,
+   "yaw": 70.4,
+   "pitch": -18.4,
+   "note": "The guildhall three-quarter from the south-west: jettied upper storey, the tall chimney on its east end, the gable end facing the street."
+  },
+  {
+   "name": "landmark_gate_north",
+   "kind": "landmark",
+   "pos": [
+    0.0,
+    860.0,
+    26.0
+   ],
+   "look": [
+    0.0,
+    947.2,
+    20.0
+   ],
+   "lens": 50.0,
+   "fov": null,
+   "yaw": 90.0,
+   "pitch": -3.9,
+   "note": "The north gatehouse from the avenue: twin towers, the arch between them, the curtain wall running away on both sides, roofs of the ring district in front."
+  },
+  {
+   "name": "landmark_gate_south",
+   "kind": "landmark",
+   "pos": [
+    -0.0,
+    -860.0,
+    26.0
+   ],
+   "look": [
+    -0.0,
+    -947.2,
+    20.0
+   ],
+   "lens": 50.0,
+   "fov": null,
+   "yaw": 270.0,
+   "pitch": -3.9,
+   "note": "The south gatehouse from the avenue: twin towers, the arch between them, the curtain wall running away on both sides, roofs of the ring district in front."
+  },
+  {
+   "name": "landmark_gate_east",
+   "kind": "landmark",
+   "pos": [
+    860.0,
+    0.0,
+    26.0
+   ],
+   "look": [
+    947.2,
+    0.0,
+    20.0
+   ],
+   "lens": 50.0,
+   "fov": null,
+   "yaw": 0.0,
+   "pitch": -3.9,
+   "note": "The east gatehouse from the avenue: twin towers, the arch between them, the curtain wall running away on both sides, roofs of the ring district in front."
+  },
+  {
+   "name": "landmark_gate_west",
+   "kind": "landmark",
+   "pos": [
+    -860.0,
+    0.0,
+    26.0
+   ],
+   "look": [
+    -947.2,
+    0.0,
+    20.0
+   ],
+   "lens": 50.0,
+   "fov": null,
+   "yaw": 180.0,
+   "pitch": -3.9,
+   "note": "The west gatehouse from the avenue: twin towers, the arch between them, the curtain wall running away on both sides, roofs of the ring district in front."
+  },
+  {
+   "name": "extra_castle_gate",
+   "kind": "landmark",
+   "pos": [
+    0.0,
+    130.0,
+    30.0
+   ],
+   "look": [
+    0.0,
+    266.0,
+    32.0
+   ],
+   "lens": 40.0,
+   "fov": null,
+   "yaw": 90.0,
+   "pitch": 0.8,
+   "note": "The castle gatehouse with the keep behind it: the gate arch, the two flanking towers, the rock rising straight out of the roofs."
+  },
+  {
+   "name": "extra_castle_keep_air",
+   "kind": "landmark",
+   "pos": [
+    0.0,
+    110.0,
+    52.0
+   ],
+   "look": [
+    0.0,
+    320.0,
+    62.0
+   ],
+   "lens": 70.0,
+   "fov": null,
+   "yaw": 90.0,
+   "pitch": 2.7,
+   "note": "The keep from the city below: the rock rim as a plinth, the gate towers in the middle ground, the keep's lantern spire at 84.7 m behind them."
+  },
+  {
+   "name": "extra_cathedral_west",
+   "kind": "landmark",
+   "pos": [
+    -270.0,
+    16.0,
+    28.0
+   ],
+   "look": [
+    -225.0,
+    43.0,
+    25.0
+   ],
+   "lens": 18.0,
+   "fov": null,
+   "yaw": 31.0,
+   "pitch": -3.3,
+   "note": "The cathedral's west front from inside its own reserved forecourt, 50 m out and off-axis: both towers' shoulders, the rose window, the portal, and the paving between us and the doors."
+  },
+  {
+   "name": "extra_harbour_bridge",
+   "kind": "landmark",
+   "pos": [
+    60.0,
+    -700.0,
+    24.0
+   ],
+   "look": [
+    0.0,
+    -762.0,
+    4.0
+   ],
+   "lens": 35.0,
+   "fov": null,
+   "yaw": 225.9,
+   "pitch": -13.1,
+   "note": "The river bridge from the north quay: three arches, the parapet line, boats moored under it, warehouses behind."
+  }
+ ]
+}

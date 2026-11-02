@@ -1,0 +1,54 @@
+{
+ "version": 1,
+ "note": "diagnostic probes for the v24 faults; see Docs/AGENT_CAMERA.md. pos/look in metres, Blender Z-up.",
+ "shots": [
+  {
+   "name": "diag_plaza_old",
+   "kind": "landmark",
+   "pos": [13.62, 32.56, 12.0],
+   "look": [13.62, 136.16, 6.0],
+   "lens": 35.0,
+   "note": "the shipped v24 plaza camera: reported as a floating brick + black glass"
+  },
+  {
+   "name": "diag_game_pick1",
+   "kind": "game",
+   "pos": [-204.0, -42.93, 27.79],
+   "look": [-204.0, -20.5, 1.0],
+   "fov": 30.0,
+   "note": "render.game_cam() on spots.json pick 1 (x=-204 y=-22 looking +Y)"
+  },
+  {
+   "name": "diag_game_pick4",
+   "kind": "game",
+   "pos": [105.19, 178.8, 27.79],
+   "look": [121.06, 162.94, 1.0],
+   "fov": 30.0,
+   "note": "render.game_cam() on spots.json pick 4 (x=120 y=164 looking SE)"
+  },
+  {
+   "name": "diag_eye_pick1",
+   "kind": "eye",
+   "pos": [-204.0, -22.0, 1.72],
+   "look": [-204.0, 24.0, 3.2],
+   "lens": 24.0,
+   "note": "render.street_views() on spots.json pick 1 -- the frame that came out as one wall"
+  },
+  {
+   "name": "diag_eye_pick4",
+   "kind": "eye",
+   "pos": [120.0, 164.0, 1.72],
+   "look": [152.5, 131.5, 3.2],
+   "lens": 24.0,
+   "note": "render.street_views() on spots.json pick 4"
+  },
+  {
+   "name": "diag_plaza_south",
+   "kind": "landmark",
+   "pos": [0.0, -46.0, 1.72],
+   "look": [0.0, 34.0, 7.0],
+   "lens": 35.0,
+   "note": "candidate replacement: south edge of the plaza looking north at fountain + market hall"
+  }
+ ]
+}

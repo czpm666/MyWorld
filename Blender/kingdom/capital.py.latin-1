@@ -1,0 +1,1520 @@
+"""Asura Kingdom capital -- Ars (é¿æ¯æçå?Â· ä¸»å Ars).
+
+Headless build:
+  blender.exe -b --factory-startup --python capital.py -- --stage mass
+  blender.exe -b --factory-startup --python capital.py -- --stage full --render
+
+Coordinate plan (metres, origin = Grand Market plaza, +Y = towards the castle):
+    outer wall        radius 300, height 10
+    inner wall        radius 150 around the castle district
+    castle rock       centre (0, 205), top z = 18
+    cathedral         (-150, 60)
+    adventurers guild (140, 70)
+    harbour suburb    outside the south gate, on the river at y = -350
+"""
+import os
+import sys
+import math
+import random
+import time
+
+import bpy
+from mathutils import Vector
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+BL = os.path.dirname(HERE)
+for p in (BL, HERE):
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
+import medkit as K
+from medkit import (T_at, box, cyl, cone, sphere, gable_roof, window, door,
+                    lantern, mat_plaster, mat_wood, mat_tile, mat_stone,
+                    mat_cobble, mat_flag, mat_metal, mat_gold, mat_glass,
+                    mat_foliage, mat_water, mat_earth, mat_cloth)
+import medbuild as B
+import kcommon as KC
+
+OUT_FBX = os.path.join(BL, "export", "capital")
+OUT_PNG = os.path.join(BL, "renders", "kingdom")
+
+# ------------------------------------------------------------------ layout
+R_WALL = 300.0
+WALL_H = 10.0
+WALL_T = 2.4
+R_INNER = 150.0
+INNER_H = 8.0
+ROCK_C = (0.0, 205.0)
+ROCK_R = 82.0
+ROCK_TOP = 18.0
+CATH_C = (-152.0, 58.0)
+GUILD_C = (142.0, 66.0)
+RIVER_Y = -352.0
+RIVER_W = 46.0
+GATE_R = R_WALL
+RING_R = (72.0, 112.0, 150.0, 192.0, 236.0, 272.0)
+RADIAL_N = 8
+ST_W = 8.0           # street half-ish width used for occupancy
+SEED = 20261022
+
+rng = random.Random(SEED)
+
+# occupancy raster (1 m cells) -- keeps buildings out of streets & each other
+CELL = 1.0
+GRID = 900
+_occ = {}
+
+
+def gkey(x, y):
+    return (int(math.floor(x / CELL)), int(math.floor(y / CELL)))
+
+
+def mark_disc(cx, cy, r, pad=0.0):
+    r2 = (r + pad) ** 2
+    x0, x1 = int((cx - r - pad) / CELL), int((cx + r + pad) / CELL)
+    y0, y1 = int((cy - r - pad) / CELL), int((cy + r + pad) / CELL)
+    for gx in range(x0, x1 + 1):
+        for gy in range(y0, y1 + 1):
+            dx = (gx + 0.5) * CELL - cx
+            dy = (gy + 0.5) * CELL - cy
+            if dx * dx + dy * dy <= r2:
+                _occ[(gx, gy)] = 1
+
+
+def mark_rect(cx, cy, w, d, rot=0.0, pad=0.0):
+    hw, hd = w * 0.5 + pad, d * 0.5 + pad
+    ca, sa = math.cos(-rot), math.sin(-rot)
+    r = math.hypot(hw, hd)
+    x0, x1 = int((cx - r) / CELL), int((cx + r) / CELL)
+    y0, y1 = int((cy - r) / CELL), int((cy + r) / CELL)
+    for gx in range(x0, x1 + 1):
+        for gy in range(y0, y1 + 1):
+            px = (gx + 0.5) * CELL - cx
+            py = (gy + 0.5) * CELL - cy
+            lx = px * ca - py * sa
+            ly = px * sa + py * ca
+            if abs(lx) <= hw and abs(ly) <= hd:
+                _occ[(gx, gy)] = 1
+
+
+def is_free(cx, cy, w, d, rot=0.0):
+    hw, hd = w * 0.5, d * 0.5
+    ca, sa = math.cos(-rot), math.sin(-rot)
+    # sample the four corners + centre
+    for sx, sy in ((0, 0), (hw, hd), (-hw, hd), (hw, -hd), (-hw, -hd),
+                   (hw, 0), (-hw, 0), (0, hd), (0, -hd)):
+        px, py = sx * ca - sy * sa, sx * sa + sy * ca
+        if (gkey(cx + px, cy + py)) in _occ:
+            return False
+    return True
+
+
+# ------------------------------------------------------------------ material set
+MAT = {}
+
+
+def init_mats():
+    K._MAT_CACHE.clear()
+    MAT["plaster"] = mat_plaster()
+    MAT["plaster2"] = mat_plaster("plaster_warm", base="#ddcdb2", dirt="#c2b090", scale=4.4)
+    MAT["wood"] = mat_wood()
+    MAT["wood_dark"] = mat_wood("timber_dark", base="#3a2517", light="#543823", scale=12)
+    MAT["tile"] = mat_tile()
+    MAT["tile_blue"] = mat_tile("roof_slate", base="#4a5560", dark="#333c46", light="#5f6d7a")
+    MAT["stone"] = mat_stone()
+    MAT["stone_warm"] = mat_stone("stone_sand", base="#8d8168", dark="#5b5342", light="#a89b7f", scale=2.0)
+    # castle rock: darker and much coarser than dressed masonry, so the rock does
+    # not read as a second kind of wall
+    MAT["rock"] = mat_stone("rock_cliff", base="#6a6357", dark="#3b382f", light="#8b8474", scale=0.9)
+    MAT["cobble"] = mat_cobble()
+    MAT["flag"] = mat_flag()
+    MAT["iron"] = mat_metal()
+    MAT["gold"] = mat_gold()
+    MAT["glass"] = mat_glass()
+    MAT["leaf"] = mat_foliage()
+    MAT["leaf_dark"] = mat_foliage("leaf_dark", base="#2f4f28", light="#4a7135", scale=6.0)
+    MAT["water"] = mat_water()
+    MAT["earth"] = mat_earth(scale=4.0, detail=4.0, bump=0.18, patch=0.45)
+    MAT["grass"] = mat_earth("grass_dry", base="#6d7448", dark="#4d5433",
+                             scale=2.2, detail=2.5, bump=0.06, patch=0.60)
+    MAT["hill"] = mat_earth("hill_far", base="#5c6b4a", dark="#42503a",
+                            scale=1.6, detail=2.0, bump=0.04, patch=0.55)
+    MAT["hill_dark"] = mat_earth("hill_far_dark", base="#4b5a42", dark="#354234",
+                                 scale=1.6, detail=2.0, bump=0.04, patch=0.55)
+    MAT["banner_red"] = mat_cloth("banner_red", "#8e2b26")
+    MAT["banner_gold"] = mat_cloth("banner_gold", "#b9882c")
+    MAT["banner_blue"] = mat_cloth("banner_blue", "#2f4a74")
+    MAT["cloth_a"] = mat_cloth("cloth_a", "#a8543f")
+    MAT["cloth_b"] = mat_cloth("cloth_b", "#3f5a56")
+    MAT["cloth_c"] = mat_cloth("cloth_c", "#8f7a3e")
+    MAT["glow"] = mat_glow("torch_glow", "#ffb057", 12.0)
+    MAT["glow_warm"] = mat_glow("lamp_glow", "#ffd79a", 7.0)
+
+
+def mat_glow(name, hexcol, strength=8.0):
+    """Emissive material (Principled emission channel, no shader rewiring)."""
+    old = bpy.data.materials.get(name)
+    if old is not None:
+        return old
+    mat = bpy.data.materials.new(name)
+    mat.use_nodes = True
+    bsdf = None
+    for n in mat.node_tree.nodes:
+        if n.type == "BSDF_PRINCIPLED":
+            bsdf = n
+            break
+    if bsdf is not None:
+        for key in ("Base Color", "Base Colour"):
+            if key in bsdf.inputs:
+                bsdf.inputs[key].default_value = K.c(hexcol, 1.0)
+                break
+        for key in ("Emission Color", "Emission"):
+            if key in bsdf.inputs:
+                try:
+                    bsdf.inputs[key].default_value = K.c(hexcol, 1.0)
+                except TypeError:
+                    pass
+                break
+        for key in ("Emission Strength",):
+            if key in bsdf.inputs:
+                bsdf.inputs[key].default_value = strength
+                break
+    return mat
+
+
+# ------------------------------------------------------------------ primitives
+def disc(name, r, z, mat, seg=128, cx=0.0, cy=0.0):
+    verts = [(cx, cy, z)]
+    for i in range(seg):
+        a = 2 * math.pi * i / seg
+        verts.append((cx + r * math.cos(a), cy + r * math.sin(a), z))
+    faces = [(0, 1 + i, 1 + (i + 1) % seg) for i in range(seg)]
+    ob = K.mesh_obj(name, verts, faces)
+    K.assign(ob, mat)
+    return ob
+
+
+def annulus(name, r0, r1, z, mat, seg=160):
+    verts, faces = [], []
+    for i in range(seg):
+        a = 2 * math.pi * i / seg
+        ca, sa = math.cos(a), math.sin(a)
+        verts.append((r0 * ca, r0 * sa, z))
+        verts.append((r1 * ca, r1 * sa, z))
+    for i in range(seg):
+        j = (i + 1) % seg
+        faces.append((2 * i, 2 * i + 1, 2 * j + 1, 2 * j))
+    ob = K.mesh_obj(name, verts, faces)
+    K.assign(ob, mat)
+    return ob
+
+
+def wall_ring(name, r, h, t, mat, seg=192, merlon=True, merlon_h=1.25, z=0.0,
+              cx=0.0, cy=0.0):
+    """Cylindrical curtain wall with crenellations, built from one mesh."""
+    verts, faces = [], []
+    ri, ro = r - t * 0.5, r + t * 0.5
+    for i in range(seg):
+        a = 2 * math.pi * i / seg
+        ca, sa = math.cos(a), math.sin(a)
+        verts += [(cx + ri * ca, cy + ri * sa, z), (cx + ro * ca, cy + ro * sa, z),
+                  (cx + ri * ca, cy + ri * sa, z + h), (cx + ro * ca, cy + ro * sa, z + h)]
+    for i in range(seg):
+        j = (i + 1) % seg
+        b, c = 4 * i, 4 * j
+        faces += [(b + 0, b + 1, c + 1, c + 0),      # bottom
+                  (b + 2, c + 2, c + 3, b + 3),      # top
+                  (b + 1, b + 3, c + 3, c + 1),      # outer
+                  (b + 0, c + 0, c + 2, b + 2)]      # inner
+    ob = K.mesh_obj(name, verts, faces)
+    K.assign(ob, mat)
+    parts = [ob]
+    if merlon:
+        step = 2.6
+        n = int(2 * math.pi * r / step)
+        for i in range(n):
+            if i % 2:
+                continue
+            a = 2 * math.pi * i / n
+            cx_, cy_ = r * math.cos(a), r * math.sin(a)
+            parts.append(box("%s_m%d" % (name, i), T_at(cx + cx_, cy + cy_, z + h + merlon_h * 0.5, rz=a),
+                             (t * 1.05, 1.35, merlon_h), mat, bev=0.03))
+    return parts
+
+
+def rock_mass(name, cx, cy, R, z_top, mat, seed=7, seg=72, levels=7, taper=0.20):
+    """Irregular castle rock: a jittered stack of rings, not a smooth cone.
+
+    A plain `cyl` reads as a concrete wedding cake from any distance, so the
+    radius gets a per-angle sine plus per-vertex noise and each ring gets a
+    small random height wobble.
+    """
+    rr = random.Random(seed)
+    verts, faces = [], []
+    z0 = -2.0
+    for l in range(levels):
+        t = l / float(levels)
+        z = z0 + (z_top - z0) * t
+        base = R * (1.0 - taper * t)
+        for i in range(seg):
+            a = 2 * math.pi * i / seg
+            j = (1.0 + 0.07 * math.sin(a * 5.0 + seed * 0.7)
+                 + 0.045 * math.sin(a * 11.0 + 1.3)
+                 + 0.030 * rr.uniform(-1.0, 1.0))
+            verts.append((cx + base * j * math.cos(a),
+                          cy + base * j * math.sin(a),
+                          z + rr.uniform(-0.45, 0.45) * (1.0 - t)))
+    # ledge ring at the top, slightly inset, so walls have a lip to sit on
+    top_r = R * (1.0 - taper)
+    for i in range(seg):
+        a = 2 * math.pi * i / seg
+        j = 1.0 + 0.05 * math.sin(a * 7.0 + seed)
+        verts.append((cx + top_r * 0.98 * j * math.cos(a),
+                      cy + top_r * 0.98 * j * math.sin(a), z_top + 0.35))
+    for l in range(levels - 1):
+        for i in range(seg):
+            n = (i + 1) % seg
+            a0, a1 = l * seg + i, l * seg + n
+            b0, b1 = (l + 1) * seg + i, (l + 1) * seg + n
+            faces.append((a0, a1, b1, b0))
+    last = (levels - 1) * seg
+    topbase = levels * seg
+    for i in range(seg):
+        n = (i + 1) % seg
+        faces.append((last + i, last + n, topbase + n, topbase + i))
+    # cap
+    centre = len(verts)
+    verts.append((cx, cy, z_top + 0.5))
+    for i in range(seg):
+        n = (i + 1) % seg
+        faces.append((topbase + i, topbase + n, centre))
+    ob = K.mesh_obj(name, verts, faces)
+    K.assign(ob, mat)
+    return ob
+
+
+def tower(name, x, y, r=7.0, h=17.0, mat=None, roof_mat=None, roof=True, seg=24, z=0.0):
+    mat = mat or MAT["stone"]
+    roof_mat = roof_mat or MAT["tile_blue"]
+    parts = [cyl(name + "_body", T_at(x, y, z + h * 0.5), r, h, mat, seg=seg),
+             cyl(name + "_cor", T_at(x, y, z + h - 0.25), r * 1.14, 0.7, mat, seg=seg)]
+    if roof:
+        parts.append(cone(name + "_roof", T_at(x, y, z + h + r * 0.05), r * 1.12, r * 1.45,
+                          roof_mat, seg=seg))
+        # gilded tip: sunk into the cone so it reads as a finial, not as a ball
+        # floating above a needle-shaped spire that vanishes at distance
+        parts.append(sphere(name + "_knob", T_at(x, y, z + h + r * 1.5 - 0.36), 0.32,
+                            MAT["gold"], seg=10, ring=8))
+    return parts
+
+
+def gatehouse(name, ang, r=R_WALL, w=26.0, d=13.0, h=15.0):
+    """Gate through the curtain wall at polar angle `ang`.
+
+    The tunnel is only ~13 m deep and carries a paved floor plus torches on both
+    jambs: an unlit 16 m hole renders as a BLACK VOID (no bounce light in EEVEE),
+    which was read as a broken mesh.
+    """
+    x, y = r * math.cos(ang), r * math.sin(ang)
+    ca, sa = math.cos(ang), math.sin(ang)
+    out = []
+    # two flanking towers, opening 11 m wide between them
+    for s in (-1, 1):
+        dx, dy = -math.sin(ang) * s, math.cos(ang) * s
+        px, py = x + dx * (w * 0.5 - 4.0), y + dy * (w * 0.5 - 4.0)
+        out += tower(name + "_tw%d" % (s + 1), px, py, r=6.4, h=h + 3.0)
+    # gate block: two piers + lintel, so there is a real 11 m hole
+    for s in (-1, 1):
+        out.append(box(name + "_pier%d" % (s + 1),
+                       T_at(x - math.sin(ang) * s * 7.6, y + math.cos(ang) * s * 7.6, h * 0.5, rz=ang),
+                       (d, 4.6, h), MAT["stone"], bev=0.05))
+    out.append(box(name + "_lintel", T_at(x, y, h - 1.6, rz=ang), (d, w - 4.4, 3.2),
+                   MAT["stone"], bev=0.05))
+    out.append(box(name + "_merlons", T_at(x, y, h + 0.6, rz=ang), (d * 0.9, w, 1.2),
+                   MAT["stone"], bev=0.05))
+    # portcullis bars
+    for i in range(9):
+        out.append(box(name + "_bar%d" % i,
+                       T_at(x, y, h * 0.5, rz=ang).__matmul__(
+                           T_at(0.0, -4.6 + i * 1.15, 0.0)),
+                       (0.22, 0.22, h - 3.2), MAT["iron"]))
+    # banners on the gate face
+    for s in (-1, 1):
+        bx = x + (-math.sin(ang) * s * 9.0) + ca * (d * 0.5 + 0.2)
+        by = y + (math.cos(ang) * s * 9.0) + sa * (d * 0.5 + 0.2)
+        out.append(box(name + "_ban%d" % (s + 1), T_at(bx, by, h - 3.4, rz=ang),
+                       (0.10, 2.2, 5.0), MAT["banner_red"]))
+    # paved floor through the tunnel + aprons outside, so the road does not stop
+    # at the wall line and the hole is not a black gap over bare grass
+    out.append(box(name + "_road", T_at(x, y, 0.07, rz=ang),
+                   (d + 26.0, 11.2, 0.14), MAT["cobble"]))
+    # torches on both jambs of the tunnel, at the outer and inner mouth
+    for s in (-1, 1):
+        for k in (0, 1):
+            along = (d * 0.5 - 2.0) - k * 1.4          # + outward, - inward
+            ox = x + ca * along - sa * s * 5.15
+            oy = y + sa * along + ca * s * 5.15
+            out.append(box(name + "_torch_br%d%d" % (s + 1, k),
+                           T_at(ox, oy, 3.1, rz=ang), (0.16, 0.55, 0.16), MAT["iron"]))
+            out.append(box(name + "_torch_fl%d%d" % (s + 1, k),
+                           T_at(ox - sa * s * 0.22, oy + ca * s * 0.22, 3.46, rz=ang),
+                           (0.34, 0.34, 0.55), MAT["glow"]))
+    mark_rect(x, y, w * 1.1, d * 1.3, rot=-ang, pad=2.0)
+    return out
+
+
+# ------------------------------------------------------------------ ground
+def build_ground():
+    if HD["on"]:
+        return ground_hd()
+    out = [disc("ground_outer", 640.0, -0.35, MAT["grass"], seg=140),
+           disc("ground_town", R_WALL + 2.0, 0.0, MAT["flag"], seg=160)]
+    # paving rings & radial avenues
+    for i, rr in enumerate(RING_R):
+        w = ST_W * (1.25 if rr in (112.0, 192.0) else 0.85)
+        out.append(annulus("ring_%d" % i, rr - w * 0.5, rr + w * 0.5, 0.06, MAT["cobble"]))
+    for i in range(RADIAL_N):
+        a = 2 * math.pi * i / RADIAL_N
+        L = R_WALL - 6.0
+        out.append(box("ave_%d" % i, T_at(L * 0.5 * math.cos(a), L * 0.5 * math.sin(a), 0.06, rz=a),
+                       (L, ST_W * 1.1, 0.05), MAT["cobble"]))
+    # mark the streets as occupied so no house lands on them
+    for rr in RING_R:
+        w = ST_W * (1.25 if rr in (112.0, 192.0) else 0.85)
+        seg = 260
+        for i in range(seg):
+            a = 2 * math.pi * i / seg
+            mark_rect(rr * math.cos(a), rr * math.sin(a), (2 * math.pi * rr / seg) * 1.6, w, rot=-a)
+    for i in range(RADIAL_N):
+        a = 2 * math.pi * i / RADIAL_N
+        L = R_WALL
+        n = int(L / 2.0)
+        for k in range(n):
+            t = (k + 0.5) * L / n
+            mark_rect(t * math.cos(a), t * math.sin(a), L / n * 1.4, ST_W * 1.1, rot=-a)
+    # grand market plaza (paved, reserved)
+    out.append(box("plaza", T_at(0, 0, 0.08), (78, 78, 0.06), MAT["flag"]))
+    mark_rect(0, 0, 82, 82, pad=1.0)
+    # distant hills / mountain ring so the horizon is not a flat green dish
+    hr = random.Random(SEED + 11)
+    for i in range(22):
+        a = 2 * math.pi * i / 22 + hr.uniform(-0.08, 0.08)
+        rad = hr.uniform(400.0, 620.0)
+        px, py = rad * math.cos(a), rad * math.sin(a)
+        if py < RIVER_Y + RIVER_W + 30.0:
+            continue
+        rr = hr.uniform(70.0, 150.0)
+        hh = hr.uniform(26.0, 58.0)
+        out.append(cone("hill%d" % i, T_at(px, py, -2.0), rr, hh,
+                        MAT["hill"] if i % 2 else MAT["hill_dark"], seg=22))
+    return out
+
+
+# ------------------------------------------------------------------ castle
+def build_castle():
+    out = []
+    cx, cy = ROCK_C
+    # rock: one irregular mass (stacked truncated cones read as a concrete cake)
+    out.append(rock_mass("rock_mass", cx, cy, ROCK_R, ROCK_TOP, MAT["rock"], seed=11))
+    # boulders and broken ledges around the foot so the base is not a clean circle
+    rb = random.Random(SEED + 31)
+    for i in range(18):
+        a = 2 * math.pi * i / 18.0 + rb.uniform(-0.12, 0.12)
+        rad = ROCK_R * rb.uniform(0.86, 1.06)
+        out.append(box("rock_boul%d" % i,
+                       T_at(cx + rad * math.cos(a), cy + rad * math.sin(a),
+                            rb.uniform(-0.5, 1.8), rz=a + rb.uniform(-0.5, 0.5),
+                            rx=rb.uniform(-0.25, 0.25)),
+                       (rb.uniform(3.0, 7.0), rb.uniform(2.5, 5.5), rb.uniform(1.6, 4.2)),
+                       MAT["rock"], bev=0.18))
+    # courtyard floor on top of the rock: a thin cylinder, not a single-sided disc,
+    # so it still has a face when seen from the ramp below the rim
+    out.append(cyl("rock_top", T_at(cx, cy, ROCK_TOP + 0.05), 51.5, 0.9, MAT["stone_warm"], seg=64))
+    z = ROCK_TOP
+    # castle curtain wall + towers on the rock
+    out += wall_ring("castle_wall", 52.0, 9.0, 2.2, MAT["stone_warm"], seg=96,
+                     z=z, cx=cx, cy=cy)
+    for i in range(8):
+        a = 2 * math.pi * i / 8 + math.pi / 8
+        out += tower("castle_tw%d" % i, cx + 52.0 * math.cos(a), cy + 52.0 * math.sin(a),
+                     r=5.2, h=13.0, z=z)
+    # gate towards the city (-Y side)
+    out += tower("castle_g1", cx - 9.0, cy - 50.0, r=5.0, h=15.0, z=z)
+    out += tower("castle_g2", cx + 9.0, cy - 50.0, r=5.0, h=15.0, z=z)
+    out.append(box("castle_gate", T_at(cx, cy - 50.0, z + 6.0), (14, 4.0, 12.0),
+                   MAT["stone_warm"], bev=0.05))
+    # ramp down the rock to the city level
+    ramp_l = math.hypot(64.0, z)
+    out.append(box("castle_bridge",
+                   T_at(cx, cy - 50.0 - 32.0, z * 0.5) @ T_at(0, 0, 0, rx=-math.atan2(z, 64.0)),
+                   (9.0, ramp_l, 1.2), MAT["stone_warm"], bev=0.03))
+    for i in range(9):
+        out.append(box("castle_bridge_p%d" % i,
+                       T_at(cx - 4.2 + (i % 2) * 8.4, cy - 52.0 - i * 6.6,
+                            z * (1.0 - (i * 6.6 + 2.0) / 64.0) + 1.4),
+                       (0.8, 0.8, 3.2), MAT["stone_warm"]))
+    # keep
+    kx, ky = cx, cy + 12.0
+    out.append(box("keep_body", T_at(kx, ky, z + 17.0), (26, 22, 34), MAT["stone_warm"], bev=0.06))
+    for s in (-1, 1):
+        out.append(box("keep_wing%d" % (s + 1), T_at(kx + s * 17.0, ky + 6.0, z + 11.0),
+                       (10, 14, 22), MAT["stone_warm"], bev=0.05))
+        out += tower("keep_t%d" % (s + 1), kx + s * 14.6, ky - 12.2, r=3.8, h=38.0,
+                     mat=MAT["stone_warm"], roof_mat=MAT["tile_blue"], z=z)
+    out.append(box("keep_merlons", T_at(kx, ky, z + 34.6), (26.6, 22.6, 1.4),
+                   MAT["stone_warm"], bev=0.04))
+    for i in range(11):
+        out.append(box("keep_m%d" % i, T_at(kx - 12.0 + i * 2.4, ky - 11.4, z + 35.9),
+                       (1.3, 1.0, 1.6), MAT["stone_warm"]))
+    # great hall + courtyard buildings
+    out.append(box("hall", T_at(kx - 22.0, ky - 16.0, z + 6.0), (20, 13, 12),
+                   MAT["stone_warm"], bev=0.05))
+    out.append(gable_roof("hall_roof", T_at(kx - 22.0, ky - 16.0, 0.0), 20.0, 13.0, 12.0,
+                          44.0, MAT["tile_blue"], MAT["stone_warm"]))
+    out.append(box("stable", T_at(kx + 24.0, ky - 20.0, z + 4.5), (16, 10, 9), MAT["stone_warm"]))
+    out.append(gable_roof("stable_roof", T_at(kx + 24.0, ky - 20.0, z), 16.0, 10.0, 9.0,
+                          38.0, MAT["tile"], MAT["wood"]))
+    # windows on the keep face towards the city (with sills, big enough to read)
+    for f in range(4):
+        for i in range(5):
+            out.append(window("keep_w%d%d" % (f, i),
+                              T_at(kx - 9.0 + i * 4.5, ky - 11.0, z + 6.0 + f * 7.0, rz=math.pi),
+                              1.8, 2.9, MAT["stone_warm"], MAT["glass"]))
+            out.append(box("keep_sill%d%d" % (f, i),
+                           T_at(kx - 9.0 + i * 4.5, ky - 11.6, z + 3.7 + f * 7.0),
+                           (2.4, 0.9, 0.35), MAT["stone_warm"], bev=0.05))
+    # banner poles standing ON the front merlons, banners hanging from the top
+    for s in (-1, 1):
+        out.append(cyl("pole%d" % (s + 1), T_at(kx + s * 13.0, ky - 11.0, z + 42.3), 0.18, 13.0,
+                       MAT["wood_dark"], seg=8))
+        out.append(box("banner%d" % (s + 1),
+                       T_at(kx + s * 13.0 + 1.3, ky - 11.0, z + 45.2),
+                       (2.4, 0.09, 7.4), MAT["banner_red"]))
+    mark_disc(cx, cy, ROCK_R + 6.0)
+    return out
+
+
+# ------------------------------------------------------------------ mesh packing
+def join_parts(name, parts):
+    """Merge a list of built objects into ONE mesh (pure data, no depsgraph).
+
+    Deliberately avoids `evaluated_depsgraph_get()`: calling it while the scene
+    is being mutated crashed Blender 5.2 with EXCEPTION_ACCESS_VIOLATION inside
+    `deg_flush_updates_and_refresh`.  The trade-off is that Bevel *modifiers* on
+    the merged parts are dropped, so this is only used for cheap fill (houses,
+    trees); landmarks keep their own objects and their bevels.
+    """
+    verts, faces, fmat = [], [], []
+    slots, mats = {}, []
+    for ob in parts:
+        if ob is None or ob.type != "MESH":
+            continue
+        me = ob.data
+        base = len(verts)
+        for v in me.vertices:
+            verts.append(tuple(v.co))
+        local = []
+        for m in me.materials:
+            if m is None:
+                m = MAT.get("plaster")
+            key = m.name if m else "fallback"
+            if key not in slots:
+                slots[key] = len(mats)
+                mats.append(m)
+            local.append(slots[key])
+        for p in me.polygons:
+            faces.append(tuple(base + i for i in p.vertices))
+            fmat.append(local[p.material_index] if local else 0)
+    me = bpy.data.meshes.new(name)
+    me.from_pydata(verts, [], faces)
+    me.validate()
+    me.update()
+    for m in mats:
+        if m is not None:
+            me.materials.append(m)
+    if len(me.polygons) == len(fmat):
+        top = max(0, len(me.materials) - 1)
+        for p, mi in zip(me.polygons, fmat):
+            p.material_index = min(mi, top)
+    ob = K.link(bpy.data.objects.new(name, me))
+    # bulk-remove the sources: deleting one by one is O(n) per object in bpy.data
+    # and made house building take ~4.5 s each on a 3 000-object file
+    dead = [o for o in parts if o is not None and o.type == "MESH"]
+    try:
+        bpy.data.batch_remove(dead)
+    except Exception:
+        for o in dead:
+            try:
+                bpy.data.objects.remove(o, do_unlink=True)
+            except Exception:
+                pass
+    return ob
+
+
+# ------------------------------------------------------------------ lower city
+HOUSE_KIND = ("plain", "shop", "stone", "tall", "narrow")
+BUDGET = {"houses": 100000, "placed": 0}
+
+# ------------------------------------------------------------------ hd switch
+# --hd swaps the greybox landmarks for the hand-modelled hd_* modules.  The
+# default path is untouched: HD["on"] stays False, every branch below keeps the
+# legacy geometry, and capital_hd_glue is never imported.
+HD = {"on": False}
+HG = None          # capital_hd_glue module, imported on first use
+_HD_MAT = None     # capital MAT + the extra keys the hd modules ask for
+_HD_PLAN = None    # house kind / frontage planner
+
+
+def hd_glue():
+    global HG
+    if HG is None:
+        import capital_hd_glue
+        HG = capital_hd_glue
+    return HG
+
+
+def hd_mat():
+    global _HD_MAT
+    if _HD_MAT is None:
+        _HD_MAT = hd_glue().hd_materials(MAT)
+    return _HD_MAT
+
+
+def hd_house_plan(w, d, nf):
+    """Kind / frontage for the next hd house (alternating gables, mixed kinds)."""
+    global _HD_PLAN
+    if _HD_PLAN is None:
+        _HD_PLAN = hd_glue().HousePlanner(rng)
+    return _HD_PLAN.next(w, d, nf)
+
+
+def place_house(name, x, y, rot, w, d, nf, kind, r):
+    if HD["on"]:
+        return place_house_hd(name, x, y, rot, w, d, nf, kind, r)
+    stone_ground = kind == "stone"
+    parts = B.house(name, T_at(x, y, 0.0, rz=rot), W=w, D=d, FH=3.1, nF=nf,
+                    pitch=rng.choice((38.0, 41.0, 44.0)),
+                    walls=MAT["plaster"] if r < 0.5 else MAT["plaster2"],
+                    timber=MAT["wood"], roof=MAT["tile"] if r < 0.72 else MAT["tile_blue"],
+                    rng=rng, win_front=max(1, int(w / 2.4)), win_side=max(1, int(d / 3.0)),
+                    has_sign=(kind == "shop"), stone_ground=stone_ground,
+                    corner_style="quoin" if r > 0.6 else "timber",
+                    dormers=1 if (nf >= 3 and r > 0.4) else 0,
+                    jetty_corbels=(r > 0.5), eave_brackets=(r > 0.7))
+    # a chimney pot and a shop sign board
+    if kind == "shop":
+        parts.append(box(name + "_sign", T_at(x, y, 3.3, rz=rot).__matmul__(T_at(0.0, d * 0.5 + 0.35, 0.0)),
+                         (2.1, 0.14, 0.9), MAT["wood_dark"], bev=0.02))
+    if kind == "tall":
+        parts.append(box(name + "_attic", T_at(x, y, 3.1 * nf + 1.2, rz=rot), (w * 0.8, d * 0.8, 2.4),
+                         MAT["plaster"], bev=0.03))
+    # back yard: without it every plot is bare paving and the city reads as
+    # houses dropped on a grey floor (no figure / ground at aerial distance)
+    parts.append(box(name + "_yard",
+                     T_at(x, y, 0.05, rz=rot) @ T_at(0.0, -(d * 0.5 + 3.4), 0.0),
+                     (w * 0.94, 6.2, 0.06),
+                     rng.choice((MAT["earth"], MAT["grass"], MAT["earth"]))))
+    mark_rect(x, y, w, d, rot=-rot, pad=0.9)
+    _yd = d * 0.5 + 3.4
+    mark_rect(x + _yd * math.sin(rot), y - _yd * math.cos(rot),
+              w * 0.94, 6.2, rot=-rot, pad=0.2)
+    BUDGET["placed"] += 1
+    if BUDGET["placed"] % 25 == 0:
+        print("[capital] houses placed =", BUDGET["placed"], flush=True)
+    return [join_parts(name, parts)]
+
+
+def place_house_hd(name, x, y, rot, w, d, nf, kind, r):
+    """One hd_houses house in place of the medbuild greybox.
+
+    hd_houses models the walls with real openings and keeps the legacy contract
+    (+Y = front, origin = footprint centre, z = 0 = ground), so only the shell is
+    swapped.  Its footprint is roughly (w+1.5) x (d+2.1) because of the eaves and
+    the shop front props, hence the narrower request (rows are spaced by w) and
+    the slightly larger reserved rect.
+    """
+    spec = hd_house_plan(w, d, nf)
+    ww = max(4.6, spec["w"] - 0.9)
+    dd = spec["d"]
+    parts = hd_glue().house(hd_mat(), rng, x, y, rot, ww, dd, spec["floors"],
+                            spec["kind"], spec["frontage"])
+    # back yard: without it every plot is bare paving and the city reads as
+    # houses dropped on a grey floor (no figure / ground at aerial distance)
+    yd = dd * 0.5 + 4.2
+    parts.append(box(name + "_yard",
+                     T_at(x, y, 0.05, rz=rot) @ T_at(0.0, -yd, 0.0),
+                     (ww * 0.94, 6.0, 0.06),
+                     rng.choice((MAT["earth"], MAT["grass"], MAT["earth"]))))
+    mark_rect(x, y, ww + 1.6, dd + 2.2, rot=-rot, pad=0.3)
+    mark_rect(x + yd * math.sin(rot), y - yd * math.cos(rot),
+              ww * 0.94, 6.0, rot=-rot, pad=0.2)
+    BUDGET["placed"] += 1
+    if BUDGET["placed"] % 25 == 0:
+        print("[capital] houses placed =", BUDGET["placed"], flush=True)
+    return parts
+
+
+def row_along(points, name_prefix, side=1.0, depth_range=(6.0, 9.0),
+              w_range=(6.5, 11.0), skip_cb=None, road_half=4.5, back_row=True):
+    """Fill a polyline with adjoining town houses facing the line.
+
+    `road_half` is half the street width: houses are pushed back by that plus a
+    pavement plus half their own depth, otherwise the row overlaps the reserved
+    street band and `is_free` rejects almost every plot (that bug left the capital
+    with ~70 isolated houses on bare paving instead of street frontages).
+    """
+    out = []
+    idx = 0
+    for i in range(len(points) - 1):
+        x0, y0 = points[i]
+        x1, y1 = points[i + 1]
+        seg_len = math.hypot(x1 - x0, y1 - y0)
+        if seg_len < 4.0:
+            continue
+        ang = math.atan2(y1 - y0, x1 - x0)
+        nx, ny = -math.sin(ang) * side, math.cos(ang) * side
+        t = 0.0
+        while t < seg_len - 5.0 and BUDGET["placed"] < BUDGET["houses"]:
+            w = rng.uniform(*w_range)
+            d = rng.uniform(*depth_range)
+            if t + w > seg_len:
+                break
+            u = (t + w * 0.5) / seg_len
+            px = x0 + (x1 - x0) * u
+            py = y0 + (y1 - y0) * u
+            for row, off in ((0, road_half + 2.4 + d * 0.5),
+                             (1, road_half + 2.4 + d + 7.4 + d * 0.5)):
+                if row and not back_row:
+                    continue
+                dd = d * (1.0 if row == 0 else 0.88)
+                cx = px + nx * off
+                cy = py + ny * off
+                # the house front is local +Y, i.e. Rz(rot) maps +Y to
+                # (-sin rot, cos rot): that equals the street-ward direction
+                # only with rot = atan2(-(px-cx), py-cy).  The legacy mirrors it
+                # (correct for north-south streets only) and is left as is; hd
+                # houses have real doors, so they need the true facing.
+                if HD["on"]:
+                    rot = math.atan2(-(px - cx), (py - cy))
+                else:
+                    rot = math.atan2(px - cx, py - cy)
+                name = "%s_%d_%d" % (name_prefix, idx, row)
+                if (not skip_cb or not skip_cb(cx, cy)) and is_free(cx, cy, w, dd, rot):
+                    r = rng.random()
+                    nf = 2 if r < 0.42 else (3 if r < 0.86 else 4)
+                    kind = rng.choices(HOUSE_KIND, weights=(44, 22, 14, 12, 8))[0]
+                    if nf == 4:
+                        kind = "tall"
+                    out += place_house(name, cx, cy, rot, w, dd, nf, kind, r)
+            idx += 1
+            # party walls: rows are continuous, so houses only nudge, never gap
+            t += w + rng.uniform(0.05, 0.35)
+    return out
+
+
+def ring_half(i, rr):
+    return (ST_W * (1.25 if rr in (112.0, 192.0) else 0.85)) * 0.5
+
+
+def build_lower_city():
+    out = []
+    # ring frontages, both sides
+    for i, rr in enumerate(RING_R):
+        seg = 52
+        pts = [(rr * math.cos(2 * math.pi * k / seg), rr * math.sin(2 * math.pi * k / seg))
+               for k in range(seg + 1)]
+        for side in (1.0, -1.0):
+            out += row_along(pts, "rh%d%s" % (i, "a" if side > 0 else "b"), side=side,
+                             road_half=ring_half(i, rr),
+                             skip_cb=lambda x, y: (math.hypot(x, y) > R_WALL - 4.0))
+    # radial frontages
+    for i in range(RADIAL_N):
+        a = 2 * math.pi * i / RADIAL_N
+        pts = []
+        r = 40.0
+        while r <= R_WALL - 8.0:
+            pts.append((r * math.cos(a), r * math.sin(a)))
+            r += 24.0
+        if len(pts) > 1:
+            for side in (1.0, -1.0):
+                out += row_along(pts, "ra%d%s" % (i, "a" if side > 0 else "b"), side=side,
+                                 road_half=ST_W * 1.1 * 0.5,
+                                 depth_range=(6.0, 8.5), w_range=(6.0, 9.0))
+    return out
+
+
+# ------------------------------------------------------------------ landmarks
+def build_cathedral():
+    out = []
+    cx, cy = CATH_C
+    L, W = 46.0, 19.0
+    # nave
+    out.append(box("cath_nave", T_at(cx, cy, 10.0), (W, L, 20.0), MAT["stone_warm"], bev=0.05))
+    out.append(gable_roof("cath_roof", T_at(cx, cy, 0.0), W, L, 20.0, 52.0,
+                          MAT["tile_blue"], MAT["stone_warm"]))
+    # aisles
+    for s in (-1, 1):
+        out.append(box("cath_aisle%d" % (s + 1), T_at(cx + s * (W * 0.5 + 4.4), cy - 2.0, 6.0),
+                       (8.8, L - 10.0, 12.0), MAT["stone_warm"], bev=0.04))
+        out.append(gable_roof("cath_aisleroof%d" % (s + 1),
+                              T_at(cx + s * (W * 0.5 + 4.4), cy - 2.0, 0.0),
+                              8.8, L - 10.0, 12.0, 30.0, MAT["tile_blue"], MAT["stone_warm"]))
+        # buttresses
+        n = 6
+        for k in range(n):
+            t = (k + 0.5) / n
+            out.append(box("cath_bt%d%d" % (s + 1, k),
+                           T_at(cx + s * (W * 0.5 + 9.2), cy - L * 0.5 + t * L, 5.2),
+                           (1.6, 1.9, 10.4), MAT["stone_warm"], bev=0.03))
+    # west front + towers
+    wy = cy - L * 0.5 - 2.0
+    out.append(box("cath_front", T_at(cx, wy, 11.0), (W + 17.0, 5.0, 22.0), MAT["stone_warm"], bev=0.05))
+    for s in (-1, 1):
+        tx = cx + s * (W * 0.5 + 4.0)
+        out.append(box("cath_tw%d" % (s + 1), T_at(tx, wy, 20.0), (8.0, 8.0, 40.0),
+                       MAT["stone_warm"], bev=0.05))
+        out.append(cone("cath_spire%d" % (s + 1), T_at(tx, wy, 40.0), 5.6, 16.0,
+                        MAT["tile_blue"], seg=8))
+        # gilt cross: two boxes + a small orb. Spheres alone left two gold dots
+        # hanging in the sky because the thin bars disappear at distance.
+        out.append(box("cath_crossv%d" % (s + 1), T_at(tx, wy, 58.2), (0.34, 0.34, 3.0),
+                       MAT["gold"], bev=0.02))
+        out.append(box("cath_crossh%d" % (s + 1), T_at(tx, wy, 58.9), (0.34, 2.3, 0.34),
+                       MAT["gold"], bev=0.02))
+        out.append(sphere("cath_orb%d" % (s + 1), T_at(tx, wy, 56.4), 0.42, MAT["gold"],
+                          seg=10, ring=8))
+    # rose window (recessed disc + ring)
+    out.append(cyl("cath_rose_bg", T_at(cx, wy - 2.6, 15.0, rx=math.pi * 0.5), 4.4, 0.6,
+                   MAT["glass"], seg=32))
+    out.append(cyl("cath_rose_ring", T_at(cx, wy - 2.9, 15.0, rx=math.pi * 0.5), 4.8, 0.9,
+                   MAT["stone_warm"], seg=32, r2=4.5))
+    # portal + steps
+    out.append(box("cath_door", T_at(cx, wy - 2.9, 4.2), (5.0, 0.8, 8.4), MAT["wood_dark"], bev=0.03))
+    for i in range(4):
+        out.append(box("cath_step%d" % i, T_at(cx, wy - 4.0 - i * 1.3, 0.25 - i * 0.0),
+                       (16.0, 1.3, 0.5 + i * 0.0), MAT["stone_warm"]))
+    mark_rect(cx, cy, W + 22.0, L + 8.0)
+    return out
+
+
+def build_guild_hall():
+    out = []
+    cx, cy = GUILD_C
+    out.append(box("guild_body", T_at(cx, cy, 8.0), (24.0, 15.0, 16.0), MAT["stone_warm"], bev=0.05))
+    out.append(box("guild_upper", T_at(cx, cy, 17.5), (24.8, 15.8, 3.0), MAT["wood_dark"], bev=0.03))
+    out.append(gable_roof("guild_roof", T_at(cx, cy, 0.0, rz=math.pi * 0.5), 15.8, 24.8, 19.0, 46.0,
+                          MAT["tile"], MAT["plaster"]))
+    for i in range(3):
+        out.append(box("guild_door%d" % i, T_at(cx - 5.0 + i * 5.0, cy - 7.7, 2.6), (2.6, 0.3, 5.2),
+                       MAT["wood_dark"], bev=0.02))
+    for f in range(2):
+        for i in range(4):
+            out.append(window("guild_w%d%d" % (f, i), T_at(cx - 7.5 + i * 5.0, cy - 7.6, 6.0 + f * 5.2),
+                              1.5, 2.2, MAT["wood_dark"], MAT["glass"]))
+    # hanging sign + banners flanking the doors
+    out.append(box("guild_signarm", T_at(cx + 9.0, cy - 8.4, 9.0), (0.16, 1.6, 0.16), MAT["iron"]))
+    out.append(box("guild_sign", T_at(cx + 9.0, cy - 9.3, 7.4), (0.14, 2.0, 1.7), MAT["gold"], bev=0.02))
+    for s in (-1, 1):
+        out.append(cyl("guild_pole%d" % (s + 1), T_at(cx + s * 11.4, cy - 8.6, 8.0), 0.14, 16.0,
+                       MAT["wood_dark"], seg=8))
+        out.append(box("guild_ban%d" % (s + 1), T_at(cx + s * 11.4 + 0.9, cy - 8.6, 11.0),
+                       (1.7, 0.07, 6.4), MAT["banner_blue"]))
+    mark_rect(cx, cy, 26.0, 17.0)
+    return out
+
+
+def build_market():
+    out = []
+    # colonnade hall on the north edge of the plaza
+    hy = 34.0
+    out.append(box("mkt_floor", T_at(0, hy, 0.6), (54.0, 20.0, 1.2), MAT["stone_warm"]))
+    for i in range(9):
+        for s in (-1, 1):
+            out.append(cyl("mkt_col%d%d" % (i, s + 1),
+                           T_at(-24.0 + i * 6.0, hy + s * 9.0, 4.6), 0.46, 8.2,
+                           MAT["stone_warm"], seg=10))
+    out.append(gable_roof("mkt_gable", T_at(0, hy, 0.0, rz=math.pi * 0.5), 22.0, 56.0, 9.2, 26.0,
+                          MAT["tile"], MAT["plaster"]))
+    mark_rect(0, hy, 56.0, 22.0)
+    # fountain in the middle of the plaza
+    out.append(cyl("fnt_basin", T_at(0, 0, 0.55), 6.2, 1.1, MAT["stone_warm"], seg=28))
+    out.append(cyl("fnt_water", T_at(0, 0, 1.02), 5.6, 0.2, MAT["water"], seg=28))
+    out.append(cyl("fnt_pillar", T_at(0, 0, 2.4), 1.1, 4.2, MAT["stone_warm"], seg=14))
+    out.append(sphere("fnt_top", T_at(0, 0, 4.7), 1.5, MAT["stone_warm"], seg=16, ring=10))
+    # market stalls in two rows
+    idx = 0
+    for row in (-1, 1):
+        for i in range(6):
+            sx = -22.0 + i * 8.6
+            sy = row * 15.0
+            if math.hypot(sx, sy) < 9.0:
+                continue
+            out += B.market_stall("stall_%d" % idx, T_at(sx, sy, 0.0,
+                                                        rz=math.pi * 0.5 if row > 0 else -math.pi * 0.5),
+                                  w=3.4, d=2.3, cloth=MAT["cloth_a"] if idx % 2 else MAT["cloth_b"])
+            idx += 1
+            mark_rect(sx, sy, 3.6, 2.6)
+    # carts & barrels around the plaza edge
+    for i in range(5):
+        a = 2 * math.pi * i / 5 + 0.4
+        px, py = 30 * math.cos(a), 30 * math.sin(a)
+        if i % 2:
+            out += B.cart("mkt_cart%d" % i, T_at(px, py, 0.0, rz=a))
+        else:
+            out += B.barrel_cluster("mkt_bar%d" % i, T_at(px, py, 0.0, rz=a), rng)
+        mark_rect(px, py, 3.0, 2.0)
+    return out
+
+
+# ------------------------------------------------------------------ harbour
+def build_harbour():
+    out = []
+    # river
+    out.append(box("river", T_at(0, RIVER_Y, -1.1), (900.0, RIVER_W, 2.0), MAT["water"]))
+    # quay wall along the south side of the outer wall, on the river bank
+    out.append(box("quay", T_at(0, RIVER_Y + RIVER_W * 0.5 + 3.0, 1.2), (520.0, 8.0, 3.4),
+                   MAT["stone_warm"], bev=0.03))
+    for i in range(6):
+        px = -170.0 + i * 68.0
+        out.append(box("quay_step%d" % i, T_at(px, RIVER_Y + RIVER_W * 0.5 - 1.6, 0.35),
+                       (60.0, 4.0, 0.7), MAT["stone_warm"]))
+    # piers
+    for i in range(3):
+        px = -110.0 + i * 96.0
+        out.append(box("pier%d" % i, T_at(px, RIVER_Y + 12.0, 0.9), (9.0, 40.0, 0.5),
+                       MAT["wood_dark"]))
+        for k in range(6):
+            for s in (-1, 1):
+                out.append(cyl("pier%d_p%d%d" % (i, k, s + 1),
+                               T_at(px + s * 4.0, RIVER_Y + 12.0 - 18.0 + k * 7.0, -2.2),
+                               0.26, 6.0, MAT["wood_dark"], seg=8))
+    # warehouses behind the quay
+    for i in range(4):
+        px = -150.0 + i * 100.0
+        py = RIVER_Y + RIVER_W * 0.5 + 26.0
+        out.append(box("wh%d" % i, T_at(px, py, 6.0), (30.0, 17.0, 12.0), MAT["stone"], bev=0.04))
+        out.append(gable_roof("wh%d_roof" % i, T_at(px, py, 0.0, rz=math.pi * 0.5), 17.0, 30.0, 12.0,
+                              38.0, MAT["tile"], MAT["wood"]))
+        out.append(box("wh%d_door" % i, T_at(px, py - 8.7, 3.4), (6.0, 0.4, 6.8), MAT["wood_dark"]))
+        mark_rect(px, py, 32.0, 19.0)
+    # crane (timber A-frame with a jib)
+    cx = 40.0
+    cy = RIVER_Y + RIVER_W * 0.5 + 5.0
+    for s in (-1, 1):
+        out.append(box("crane_leg%d" % (s + 1), T_at(cx + s * 3.2, cy, 5.0, rz=0, ry=math.radians(9 * s)),
+                       (0.7, 0.7, 10.0), MAT["wood_dark"]))
+    out.append(box("crane_jib", T_at(cx, cy - 6.0, 9.6, rx=math.radians(12)), (0.5, 13.0, 0.5),
+                   MAT["wood_dark"]))
+    out.append(cyl("crane_rope", T_at(cx, cy - 12.0, 6.0), 0.06, 7.0, MAT["iron"], seg=6))
+    out.append(box("crane_hook", T_at(cx, cy - 12.0, 2.2), (0.7, 0.4, 1.0), MAT["iron"]))
+    # boats
+    for i, (bx, by, br) in enumerate(((-110.0, RIVER_Y + 6.0, 0.06),
+                                      (0.0, RIVER_Y - 4.0, -0.10),
+                                      (96.0, RIVER_Y + 7.5, 0.03))):
+        out += boat("boat%d" % i, bx, by, br)
+    return out
+
+
+def hull_loft(name, T, L, W, H, mat, seg=12, ztop=0.62, zbot=-1.25):
+    """Lofted boat hull: a tapered box tube, so the ends come to a stem.
+
+    The old version was a plain box + two smaller boxes, which read as a raft /
+    a floating crate ("hull-less boat" in review).
+    """
+    verts, faces = [], []
+    for i in range(seg + 1):
+        t = -1.0 + 2.0 * i / seg
+        yy = t * L * 0.5
+        k = (1.0 - abs(t) ** 2.1) ** 0.5
+        hw = max(0.20, W * 0.5 * k)
+        zb = zbot * (0.32 + 0.68 * k)
+        for (lx, lz) in ((hw, ztop), (-hw, ztop), (-hw, zb), (hw, zb)):
+            w = T @ Vector((lx, yy, lz))
+            verts.append((w.x, w.y, w.z))
+    for i in range(seg):
+        a, b = i * 4, (i + 1) * 4
+        for k in range(4):
+            faces.append((a + k, a + (k + 1) % 4, b + (k + 1) % 4, b + k))
+    faces.append((3, 2, 1, 0))
+    o = seg * 4
+    faces.append((o, o + 1, o + 2, o + 3))
+    ob = K.mesh_obj(name, verts, faces)
+    K.assign(ob, mat)
+    return ob
+
+
+def boat(name, x, y, rz):
+    T = T_at(x, y, 0.0, rz=rz)
+    out = []
+    L, W, H = 17.0, 5.0, 1.9
+    out.append(hull_loft(name + "_hull", T, L, W, H, MAT["wood_dark"]))
+    # deck planks follow the taper, so the rim does not overhang the hull
+    out.append(hull_loft(name + "_deck", T @ T_at(0, 0, 0.02), L * 0.9, W * 0.86, 0.0,
+                         MAT["wood"], seg=10, ztop=0.02, zbot=-0.10))
+    # gunwale rails
+    for s in (-1, 1):
+        out.append(box(name + "_rail%d" % (s + 1), T @ T_at(s * W * 0.46, 0.0, 0.72),
+                       (0.16, L * 0.72, 0.22), MAT["wood_dark"]))
+    out.append(cyl(name + "_mast", T @ T_at(0, 1.0, 4.6), 0.16, 8.0, MAT["wood_dark"], seg=8))
+    out.append(box(name + "_yard", T @ T_at(0, 1.0, 7.4), (6.6, 0.14, 0.14), MAT["wood_dark"]))
+    # a furled sail under the yard
+    out.append(box(name + "_sail", T @ T_at(0, 1.1, 6.9), (5.6, 0.35, 0.9), MAT["cloth_a"]))
+    for i in range(3):
+        out.append(box(name + "_cargo%d" % i, T @ T_at(-1.2 + i * 1.2, -2.0 + i * 2.0, 1.35),
+                       (1.1, 1.1, 1.0), MAT["wood"]))
+    return out
+
+
+def build_suburbs():
+    out = []
+    # roads leaving the four gates
+    for i in range(4):
+        a = math.pi * 0.5 * i
+        for side in (1.0, -1.0):
+            pts = []
+            r = R_WALL + 12.0
+            while r < 470.0:
+                pts.append((r * math.cos(a), r * math.sin(a)))
+                r += 26.0
+            out += row_along(pts, "sub%d%s" % (i, "a" if side > 0 else "b"), side=side,
+                             depth_range=(6.0, 8.0), w_range=(6.0, 9.5),
+                             skip_cb=lambda x, y: math.hypot(x, y) < R_WALL + 8.0
+                             or abs(y - RIVER_Y) < 34.0)
+    # fields outside the wall: crop patches
+    rr = random.Random(SEED + 7)
+    for i in range(26):
+        a = rr.uniform(0, 2 * math.pi)
+        rad = rr.uniform(R_WALL + 40.0, 600.0)
+        px, py = rad * math.cos(a), rad * math.sin(a)
+        if abs(py - RIVER_Y) < 40.0:
+            continue
+        w, d = rr.uniform(26.0, 46.0), rr.uniform(20.0, 34.0)
+        if not is_free(px, py, w, d, a):
+            continue
+        out.append(box("field%d" % i, T_at(px, py, 0.06, rz=a), (w, d, 0.12),
+                       MAT["grass"] if i % 3 else MAT["earth"]))
+        for k in range(7):
+            out.append(box("field%d_row%d" % (i, k),
+                           T_at(px, py, 0.22, rz=a).__matmul__(T_at(0.0, -d * 0.5 + (k + 0.5) * d / 7.0, 0.0)),
+                           (w * 0.92, 0.5, 0.22), MAT["grass"]))
+        mark_rect(px, py, w, d, rot=-a)
+    # trees beyond the wall and in the plazas
+    for i in range(90):
+        a = rr.uniform(0, 2 * math.pi)
+        rad = rr.uniform(40.0, 620.0)
+        px, py = rad * math.cos(a), rad * math.sin(a)
+        if abs(py - RIVER_Y) < 26.0:
+            continue
+        if rad < R_WALL and not (rr.random() < 0.10):
+            continue
+        if not is_free(px, py, 5.0, 5.0, 0.0):
+            continue
+        out += B.tree("tree%d" % i, T_at(px, py, 0.0, rz=rr.uniform(0, 6.28)), h=rr.uniform(3.6, 6.4),
+                      rng=rr, leaf_mat=MAT["leaf"] if i % 3 else MAT["leaf_dark"])
+        mark_disc(px, py, 2.6)
+    return out
+
+
+# ------------------------------------------------------------------ hd build
+HD_GATE_HALF = 14.4          # hd gatehouse is 29.4 m wide: half the wall opening
+
+
+def wrap_pi(a):
+    """Wrap an angle into (-pi, pi]."""
+    return (a + math.pi) % (2.0 * math.pi) - math.pi
+
+
+def hd_curtain_walls():
+    """Outer curtain with a gate-sized opening at each of the four gates.
+
+    The hd gatehouse is a solid 29.4 m wall block with a 5.5 m arch through it,
+    so the curtain has to butt into its flanks.  The legacy ring ran straight
+    through the passage and then a greybox gatehouse was parked on top of it,
+    which is exactly the double-masonry the hd version must not have.
+    """
+    out = []
+    M = hd_mat()
+    gap = math.asin(min(1.0, HD_GATE_HALF / R_WALL))
+    for k in range(4):
+        out += hd_glue().wall_arc("outer_wall%d" % k, R_WALL, WALL_H, WALL_T,
+                                  M["stone"], k * math.pi * 0.5 + gap,
+                                  (k + 1) * math.pi * 0.5 - gap, seg_deg=1.2)
+    rw = random.Random(SEED + 3)
+    # buttresses break the "necklace of beads" read of an evenly spaced ring
+    for i in range(72):
+        a = 2 * math.pi * i / 72.0 + math.pi / 72.0
+        if abs(a - round(a / (math.pi * 0.5)) * math.pi * 0.5) < gap * 1.2:
+            continue
+        out.append(box("wt_butt%d" % i,
+                       T_at((R_WALL + 1.15) * math.cos(a), (R_WALL + 1.15) * math.sin(a),
+                            WALL_H * 0.46, rz=a),
+                       (3.2, 2.6, WALL_H * 0.92), M["stone"], bev=0.05))
+    for i in range(16):
+        a = 2 * math.pi * i / 16 + math.pi / 16
+        if i % 4 == 0:
+            continue
+        rr = 7.2 + rw.uniform(-1.5, 1.8)
+        hh = WALL_H + 6.0 + rw.uniform(-2.5, 5.0)
+        out += tower("wt%d" % i, (R_WALL - 0.6) * math.cos(a), (R_WALL - 0.6) * math.sin(a),
+                     r=rr, h=hh)
+    return out
+
+
+def hd_gates():
+    """One hd gatehouse per gate; local +Y = outside the city."""
+    M = hd_mat()
+    out = []
+    for k in range(4):
+        a = k * math.pi * 0.5
+        out += hd_glue().gatehouse(M, rng, R_WALL * math.cos(a), R_WALL * math.sin(a),
+                                   a - math.pi * 0.5, 0.0, name="gate%d" % k)
+    return out
+
+
+def build_castle_hd():
+    """hd_castle lifted onto the rock, plus the approach ramp it cannot know about.
+
+    hd_castle is modelled with z = 0 = its own courtyard and the main gate on
+    local +Y; on the city it has to stand on the rock cap (18.35..18.5) and look
+    down at the city, so it is rotated by pi and lifted by 18.45.
+    """
+    M = hd_mat()
+    cx, cy = ROCK_C
+    out = [rock_mass("rock_mass", cx, cy, ROCK_R, ROCK_TOP, MAT["rock"], seed=11)]
+    rb = random.Random(SEED + 31)
+    for i in range(18):
+        a = 2 * math.pi * i / 18.0 + rb.uniform(-0.12, 0.12)
+        rad = ROCK_R * rb.uniform(0.86, 1.06)
+        out.append(box("rock_boul%d" % i,
+                       T_at(cx + rad * math.cos(a), cy + rad * math.sin(a),
+                            rb.uniform(-0.5, 1.8), rz=a + rb.uniform(-0.5, 0.5),
+                            rx=rb.uniform(-0.25, 0.25)),
+                       (rb.uniform(3.0, 7.0), rb.uniform(2.5, 5.5), rb.uniform(1.6, 4.2)),
+                       MAT["rock"], bev=0.18))
+    out.append(cyl("rock_top", T_at(cx, cy, ROCK_TOP + 0.05), 51.5, 0.9, MAT["stone_warm"], seg=64))
+    z = ROCK_TOP + 0.45
+    out += hd_glue().castle(M, rng, cx, cy, math.pi, z)
+    # hd_castle's causeway deck ends at local y = 47.2 (world y = 157.8, z ~ 21):
+    # the ramp starts just behind that so the two decks overlap, and its flanks
+    # reach the ground (the rock face is steeper than any walkable grade).
+    # Drawn with the castle's own palette so ramp and castle read as one mass.
+    out += hd_glue().wedge_ramp(hd_glue().castle_mats(M), "castle_ramp", cx,
+                                y_top=cy - 47.6, z_top=z + 2.55,
+                                y_bot=cy - 80.5, z_bot=0.0, w=11.5)
+    mark_disc(cx, cy, ROCK_R + 6.0)
+    return out
+
+
+def build_cathedral_hd():
+    """hd_cathedral on the old close; local +Y = west front, turned city-ward."""
+    cx, cy = CATH_C
+    out = hd_glue().cathedral(hd_mat(), rng, cx, cy, math.pi, 0.0)
+    # module footprint is 49.6 x 93.6: reserve the close plus a forecourt, or the
+    # row builder packs houses against the portal steps
+    mark_rect(cx, cy, 50.0, 94.0, pad=1.0)
+    mark_rect(cx, cy - 47.0 - 8.0, 54.0, 16.0, pad=0.5)
+    return out
+
+
+def build_guild_hd():
+    cx, cy = GUILD_C
+    out = hd_glue().guild_hall(hd_mat(), rng, cx, cy, 0.0, 0.0)
+    mark_rect(cx, cy, 23.0, 38.0, pad=0.8)
+    return out
+
+
+def build_market_hd():
+    """hd market hall + fountain, keeping the legacy stalls / carts around them."""
+    M = hd_mat()
+    hy = 34.0
+    out = hd_glue().market_hall(M, rng, 0.0, hy, 0.0, 0.0)
+    mark_rect(0.0, hy, 44.0, 30.0, pad=0.6)
+    out += hd_glue().fountain(M, rng, 0.0, 0.0, 0.0, 0.0)
+    mark_disc(0.0, 0.0, 10.6)
+    # stalls: the hall's front props reach y = 16.35, so the rows move in to Â±13
+    idx = 0
+    for row in (-1, 1):
+        for i in range(6):
+            sx = -22.0 + i * 8.6
+            sy = row * 13.0
+            if math.hypot(sx, sy) < 9.0:
+                continue
+            out += B.market_stall("stall_%d" % idx,
+                                  T_at(sx, sy, 0.0, rz=math.pi * 0.5 if row > 0 else -math.pi * 0.5),
+                                  w=3.4, d=2.3, cloth=MAT["cloth_a"] if idx % 2 else MAT["cloth_b"])
+            idx += 1
+            mark_rect(sx, sy, 3.6, 2.6)
+    for i in range(5):
+        a = 2 * math.pi * i / 5 + 0.4
+        px, py = 30 * math.cos(a), 30 * math.sin(a)
+        if i % 2:
+            out += B.cart("mkt_cart%d" % i, T_at(px, py, 0.0, rz=a))
+        else:
+            out += B.barrel_cluster("mkt_bar%d" % i, T_at(px, py, 0.0, rz=a), rng)
+        mark_rect(px, py, 3.0, 2.0)
+    return out
+
+
+# ------------------------------------------------------------------ hd city
+# The old city lined concentric rings, so every house sat at the same distance
+# from the plaza -- exactly the "all buildings on identical rings" look the new
+# brief rejects.  In --hd mode the street network and the plots come from
+# hd_layout (BSP street cutting, hd_layout.py); capital.py only meshes the
+# placements it returns.  The plan is bigger than the time budget allows to
+# mesh, so `hd_pick` spends the budget on street frontage (a lined street with a
+# hollow courtyard still reads as a city; an empty street does not).
+HD_CAP = {"houses": 4200}       # the whole plan; ~0.12 s per hd house
+HD_LAY = {"res": None, "picked": None}
+
+
+def hd_layout_res():
+    if HD_LAY["res"] is None:
+        import hd_layout as L
+        t0 = time.time()
+        specs = L.capital_layout_specs(
+            seed=SEED, r_core=R_WALL - 4.0,
+            plaza=(0.0, 0.0, 84.0),
+            castle=(ROCK_C[0], ROCK_C[1], ROCK_R + 12.0),
+            cathedral=(CATH_C[0], CATH_C[1], 54.0, 98.0),
+            guild=(GUILD_C[0], GUILD_C[1], 26.0, 44.0),
+            market_hall=(0.0, 34.0, 48.0, 34.0),
+            fountain=(0.0, 0.0, 26.0),
+            gates=((R_WALL, 0.0), (0.0, R_WALL), (-R_WALL, 0.0), (0.0, -R_WALL)),
+            outer=True)
+        res = L.layout_city(specs)
+        HD_LAY["res"] = res
+        st = res["stats"]
+        print("[capital] hd layout: %d blocks / %d sub-blocks / %d plots "
+              "(houses %d, shops %d) in %.1f s"
+              % (st["blocks"], st["sub_blocks"], st["buildings"], st["houses"],
+                 st["shops"], time.time() - t0), flush=True)
+    return HD_LAY["res"]
+
+
+def poly_slab(name, pts, z, mat):
+    """Flat slab from a footprint polygon (block paving / garden floor)."""
+    pts = [(float(p[0]), float(p[1])) for p in pts]
+    a = 0.0
+    for i in range(len(pts)):
+        x0, y0 = pts[i]
+        x1, y1 = pts[(i + 1) % len(pts)]
+        a += x0 * y1 - x1 * y0
+    if a < 0.0:
+        pts.reverse()
+    verts = [(p[0], p[1], z) for p in pts]
+    faces = [(0, i, i + 1) for i in range(1, len(pts) - 1)]
+    ob = K.mesh_obj(name, verts, faces)
+    K.assign(ob, mat)
+    return ob
+
+
+def _spread(seq, n):
+    """n items out of seq, evenly spaced: keeps street rhythm, no clumps."""
+    if n >= len(seq):
+        return list(seq)
+    if n <= 0:
+        return []
+    step = len(seq) / float(n)
+    return [seq[int(i * step)] for i in range(n)]
+
+
+def hd_pick():
+    if HD_LAY["picked"] is not None:
+        return HD_LAY["picked"]
+    res = hd_layout_res()
+    pl = res["placements"]
+    cap = int(HD_CAP["houses"])
+    shops = [p for p in pl if p["source"] == "shop"]
+    front = [p for p in pl if p["source"] != "shop" and p.get("ring", 0) == 0]
+    inner = [p for p in pl if p["source"] != "shop" and p.get("ring", 0) > 0]
+    core = [p for p in front if p.get("district") == "core"]
+    outer = [p for p in front if p.get("district") != "core"]
+    picked = _spread(core, min(len(core), int(cap * 0.74)))
+    picked += _spread(outer, cap - len(picked))
+    if len(picked) < cap:
+        picked += _spread(inner, min(len(inner), cap - len(picked)))
+    picked = picked + shops
+    HD_LAY["picked"] = picked
+    n_c = sum(1 for p in picked if p.get("district") == "core")
+    print("[capital] hd build budget: %d of %d plots (%d core / %d outer), "
+          "%d shops" % (len(picked), len(pl), n_c, len(picked) - n_c - len(shops),
+                        len(shops)), flush=True)
+    return picked
+
+
+def _built_blocks(picked, res):
+    """Blocks that are dense enough in the build to be paved as town, not garden."""
+    tot, hit = {}, {}
+    for p in res["placements"]:
+        tot[p["block"]] = tot.get(p["block"], 0) + 1
+    for p in picked:
+        hit[p["block"]] = hit.get(p["block"], 0) + 1
+    return set(b for b in hit if hit[b] >= 0.30 * max(1, tot.get(b, 1)))
+
+
+def ground_hd():
+    """Paving for the layout city: street = the gap between two block slabs."""
+    out = [disc("ground_outer", 640.0, -0.35, MAT["grass"], seg=140),
+           disc("ground_town", R_WALL + 2.0, 0.0, MAT["cobble"], seg=160)]
+    res = hd_layout_res()
+    town = _built_blocks(hd_pick(), res)
+    for i, b in enumerate(res["blocks"]):
+        out.append(poly_slab("blk_%d" % i, b["poly"], 0.06,
+                             MAT["flag"] if i in town else MAT["grass"]))
+    out.append(box("plaza", T_at(0, 0, 0.11), (78, 78, 0.06), MAT["flag"]))
+    hr = random.Random(SEED + 11)
+    for i in range(22):
+        a = 2 * math.pi * i / 22 + hr.uniform(-0.08, 0.08)
+        rad = hr.uniform(430.0, 640.0)
+        px, py = rad * math.cos(a), rad * math.sin(a)
+        if py < RIVER_Y + RIVER_W + 30.0:
+            continue
+        out.append(cone("hill%d" % i, T_at(px, py, -2.0), hr.uniform(70.0, 150.0),
+                        hr.uniform(26.0, 58.0),
+                        MAT["hill"] if i % 2 else MAT["hill_dark"], seg=22))
+    return out
+
+
+def build_city_hd():
+    G = hd_glue()
+    M = hd_mat()
+    picked = hd_pick()
+    by_block = {}
+    for p in picked:
+        by_block.setdefault(p["block"], []).append(p)
+    out = []
+    t0 = time.time()
+    n_h = n_s = n_fail = 0
+    for k, bi in enumerate(sorted(by_block)):
+        parts = []
+        for p in by_block[bi]:
+            if p["source"] == "shop":
+                ob = G.shop(p["kind"], M, rng, p["x"], p["y"], p["yaw"], p["z"])
+                n_s += 1 if ob else 0
+            else:
+                ob = G.house(M, rng, p["x"], p["y"], p["yaw"],
+                             max(4.6, float(p["w"]) - 0.5), float(p["d"]),
+                             int(p["floors"]), p["kind"], p.get("variant", "eaves"))
+                n_h += 1 if ob else 0
+            if ob:
+                parts.append(ob)
+            else:
+                n_fail += 1
+        # one object per block: 260 objects per house would be 1 M objects for
+        # the full plan, and every render pass would pay for it
+        ob = G.merge_objects("city_blk%02d" % bi, parts)
+        if ob is not None:
+            out.append(ob)
+        print("[capital] hd city blk %d/%d  %d buildings  %.0f s"
+              % (k + 1, len(by_block), len(parts), time.time() - t0), flush=True)
+    o, f, t = hd_glue().stats(out)
+    print("[capital] hd city done: %d buildings (houses %d / shops %d / failed %d)"
+          " objects=%d faces=%d tris=%d in %.0f s"
+          % (n_h + n_s, n_h, n_s, n_fail, o, f, t, time.time() - t0), flush=True)
+    return out
+
+
+# ------------------------------------------------------------------ assembly
+def build(stage="full"):
+    K.reset_scene()
+    init_mats()
+    groups = {}
+    groups["ground"] = build_ground()
+    if HD["on"]:
+        # the hd modules take `rng`, but a 60k-line build must be reproducible
+        # even if a helper somewhere reaches for the global generator
+        random.seed(SEED)
+        groups["walls"] = hd_curtain_walls()
+        groups["gates"] = hd_gates()
+        # the inner ring is dropped: it runs through the castle rock (55 m from
+        # its centre against a 82 m footprint) and it would slice the new 93.6 m
+        # cathedral; the hd castle brings its own curtain wall anyway
+        groups["inner"] = []
+        groups["castle"] = build_castle_hd()
+        groups["cathedral"] = build_cathedral_hd()
+        groups["guild"] = build_guild_hd()
+        groups["market"] = build_market_hd()
+        print("[capital] hd: 4 gatehouses, castle, cathedral, guild hall, market",
+              flush=True)
+    else:
+        groups["walls"] = wall_ring("outer_wall", R_WALL, WALL_H, WALL_T, MAT["stone"], seg=220)
+        rw = random.Random(SEED + 3)
+        # buttresses break the "necklace of beads" read of an evenly spaced ring
+        for i in range(72):
+            a = 2 * math.pi * i / 72.0 + math.pi / 72.0
+            groups["walls"].append(box("wt_butt%d" % i,
+                                       T_at((R_WALL + 1.15) * math.cos(a), (R_WALL + 1.15) * math.sin(a),
+                                            WALL_H * 0.46, rz=a),
+                                       (3.2, 2.6, WALL_H * 0.92), MAT["stone"], bev=0.05))
+        for i in range(16):
+            a = 2 * math.pi * i / 16 + math.pi / 16
+            if i % 4 == 0:
+                continue
+            rr = 7.2 + rw.uniform(-1.5, 1.8)
+            hh = WALL_H + 6.0 + rw.uniform(-2.5, 5.0)
+            groups["walls"] += tower("wt%d" % i, (R_WALL - 0.6) * math.cos(a),
+                                     (R_WALL - 0.6) * math.sin(a), r=rr, h=hh)
+        gates = []
+        for i in range(4):
+            gates += gatehouse("gate%d" % i, math.pi * 0.5 * i)
+        groups["gates"] = gates
+        groups["inner"] = wall_ring("inner_wall", R_INNER, INNER_H, 2.0, MAT["stone_warm"], seg=140)
+        for i in range(6):
+            a = 2 * math.pi * i / 6 + math.pi / 6
+            groups["inner"] += tower("itw%d" % i, R_INNER * math.cos(a), R_INNER * math.sin(a),
+                                     r=5.0, h=12.0, mat=MAT["stone_warm"])
+        groups["castle"] = build_castle()
+        groups["cathedral"] = build_cathedral()
+        groups["guild"] = build_guild_hall()
+        groups["market"] = build_market()
+    groups["harbour"] = build_harbour()
+    if stage == "full":
+        groups["city"] = build_city_hd() if HD["on"] else build_lower_city()
+        groups["suburbs"] = [] if HD["on"] else build_suburbs()
+    else:
+        groups["city"] = []
+        groups["suburbs"] = []
+    return groups
+
+
+def flatten(seq):
+    out = []
+    for it in seq or ():
+        if isinstance(it, (list, tuple)):
+            out += flatten(it)
+        elif it is not None:
+            out.append(it)
+    return out
+
+
+def report(groups):
+    tot_o = tot_t = 0
+    for k, parts in groups.items():
+        parts = flatten(parts)
+        groups[k] = parts
+        t = 0
+        for p in parts:
+            me = p.data
+            t += len(me.polygons) if me else 0
+        tot_o += len(parts)
+        tot_t += t
+        print("[capital] %-10s objects=%-6d faces=%d" % (k, len(parts), t))
+    print("[capital] TOTAL objects=%d faces=%d" % (tot_o, tot_t))
+    return tot_o, tot_t
+
+
+_D45 = math.radians(45.0)
+SHOTS = (
+    ("ars_overview", (430.0, -560.0, 330.0), (0.0, 20.0, 0.0), 34.0),
+    ("ars_castle", (150.0, -60.0, 120.0), (-10.0, 190.0, 40.0), 40.0),
+    # eye level, looking down the south avenue towards the gate: this is the shot
+    # that has to prove street frontages. The old camera sat at radius 152, i.e.
+    # inside the inner curtain wall, so the frame was solid masonry.
+    ("ars_street", (0.0, -168.0, 1.75), (0.0, -262.0, 2.6), 26.0),
+    ("ars_street2", (84.8, 84.8, 1.75), (126.0, 126.0, 2.8), 26.0),
+    ("ars_plaza", (36.0, -34.0, 6.2), (0.0, 20.0, 7.5), 34.0),
+    ("ars_market", (60.0, -60.0, 34.0), (0.0, 10.0, 4.0), 38.0),
+    ("ars_harbour", (-40.0, -250.0, 26.0), (10.0, -350.0, 2.0), 40.0),
+    ("ars_gate", (10.0, -390.0, 12.0), (0.0, -300.0, 12.0), 42.0),
+)
+
+# --hd renders its own set: same 16:9 frame, aimed at the new landmarks.
+HD_SHOTS = (
+    # the gate is shot from inside: south of the wall the river + quay wall sit
+    # only 26 m out, so an outside camera cannot see the gatehouse at all
+    ("hd_gate_south", (3.5, -230.0, 1.7), (0.0, -300.0, 13.0), 32.0),
+    ("hd_castle", (95.0, 40.0, 62.0), (0.0, 196.0, 44.0), 40.0),
+    ("hd_cathedral", (-238.0, -90.0, 25.0), (-152.0, 40.0, 36.0), 22.0),
+    ("hd_market", (34.0, -52.0, 5.5), (0.0, 16.0, 12.0), 32.0),
+    # a ring-road street: the first rows to fill are always the innermost ring
+    ("hd_street", (51.0, 51.0, 1.7), (14.0, 72.0, 3.0), 20.0),
+    ("hd_overview", (430.0, -560.0, 330.0), (0.0, 20.0, 0.0), 34.0),
+)
+
+
+def join_group(name, parts):
+    """Join a whole group into one multi-material mesh.
+
+    Every piece is authored in world space with an identity transform, so a plain
+    join changes nothing visually - it just removes tens of thousands of object
+    overheads, which is what made the full-city build so slow.
+    """
+    parts = [p for p in parts if p is not None and getattr(p, "type", "") == "MESH"]
+    if not parts:
+        return []
+    bpy.ops.object.select_all(action="DESELECT")
+    for p in parts:
+        p.select_set(True)
+    bpy.context.view_layer.objects.active = parts[0]
+    if len(parts) > 1:
+        bpy.ops.object.join()
+    ob = parts[0]
+    ob.name = name
+    bpy.ops.object.select_all(action="DESELECT")
+    return [ob]
+
+
+def main(argv):
+    # Blender's stdout is block-buffered when redirected to a file, so a 40-minute
+    # build shows an empty log and looks hung. Force line buffering and print
+    # progress so the log is a real progress indicator.
+    try:
+        sys.stdout.reconfigure(line_buffering=True)
+    except Exception:
+        pass
+    stage = "full"
+    do_render = True
+    export = True
+    if "--stage" in argv:
+        stage = argv[argv.index("--stage") + 1]
+    if "--no-render" in argv:
+        do_render = False
+    if "--no-export" in argv:
+        export = False
+    if "--houses" in argv:
+        BUDGET["houses"] = int(argv[argv.index("--houses") + 1])
+    if "--hd" in argv:
+        HD["on"] = True
+    if "--cap" in argv:
+        HD_CAP["houses"] = int(argv[argv.index("--cap") + 1])
+    print("[capital] house budget =", BUDGET["houses"], " hd =", HD["on"])
+
+    groups = build(stage)
+    if "--join" in argv:
+        for k in list(groups.keys()):
+            groups[k] = join_group("ars_" + k, flatten(groups[k]))
+    report(groups)
+
+    # Save the built scene so render/export passes do not have to rebuild.
+    # Rebuilding the capital costs 15-40 minutes; opening the .blend costs seconds.
+    if "--save" in argv:
+        blend = os.path.join(OUT_PNG, "capital_%s.blend" % stage)
+        bpy.ops.wm.save_as_mainfile(filepath=blend)
+        print("[save]", blend, os.path.getsize(blend), flush=True)
+
+    KC.clear_lights_cameras()
+    KC.setup_lighting()
+    KC.setup_render(w=1600, h=900, samples=32)
+
+    if do_render:
+        if HD["on"] and stage == "full":
+            shots = HD_SHOTS
+        else:
+            shots = SHOTS if stage == "full" else SHOTS[:2]
+        for name, loc, look, lens in shots:
+            KC.setup_camera(loc, look, lens)
+            print("[render]", KC.render_to(os.path.join(OUT_PNG, name + ".png")))
+
+    if export:
+        os.makedirs(OUT_FBX, exist_ok=True)
+        for k, parts in groups.items():
+            if not parts:
+                continue
+            p = os.path.join(OUT_FBX, "ars_%s.fbx" % k)
+            KC.export_group(parts, p, "ars_" + k)
+            print("[export]", p, os.path.getsize(p))
+    print("CAPITAL_DONE")
+
+
+if __name__ == "__main__":
+    main(sys.argv)

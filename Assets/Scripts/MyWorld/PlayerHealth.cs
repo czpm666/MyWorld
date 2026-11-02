@@ -180,6 +180,17 @@ namespace MyWorld
             HealthChanged?.Invoke(health, maxHealth);
         }
 
+        /// <summary>
+        /// 切场景进来时恢复血量（SessionBridge 调）。跨图保留但不低于 1：
+        /// 真正的"死亡"由本场景的复活流程处理，不会把 0 血带进下一张图。
+        /// </summary>
+        public void ImportHealth(float current, float max)
+        {
+            if (max > 0f) maxHealth = max;
+            health = Mathf.Clamp(current, 1f, maxHealth);
+            HealthChanged?.Invoke(health, maxHealth);
+        }
+
         private void Update()
         {
             float dt = Time.deltaTime;

@@ -63,7 +63,21 @@ namespace MyWorld
             head.transform.localScale = new Vector3(0.12f, 0.12f, 0.18f);
             head.GetComponent<Renderer>().sharedMaterial = metal;
 
+            // 箭风：一条细长的白线拖尾（把"弓"和其它武器区分开）
+            var wind = gameObject.AddComponent<TrailRenderer>();
+            wind.time = 0.16f;
+            wind.startWidth = 0.09f;
+            wind.endWidth = 0f;
+            wind.minVertexDistance = 0.05f;
+            wind.material = PlaceholderArt.GetVertexColorMaterial();
+            wind.startColor = new Color(0.95f, 0.97f, 1f, 0.55f);
+            wind.endColor = new Color(0.85f, 0.9f, 1f, 0f);
+            wind.sortingOrder = 29;
+
             transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
+
+            // 离弦瞬间的弦风 + 光斑（VfxCombat 语义层；同时触发程序化弓弦音）
+            VfxCombat.ArrowRelease(transform.position, dir);
         }
 
         private void Update()
@@ -100,13 +114,29 @@ namespace MyWorld
         {
             var target = hit.collider.GetComponentInParent<IDamageable>();
             bool isEnemy = target != null && target.IsAlive;
-            if (isEnemy) target.TakeDamage(damage, hit.point, hit.normal);
+            if (isEnemy)
+            {
+                target.TakeDamage(damage, hit.point, hit.normal);
+
+                // 打击特效（vfx-dev，T-0xx）：受击方**按伤害分级**踉跄一下（箭把它顶得往后一挫）。
+                // 方向 = 本箭的飞行方向（水平化）—— 与命中特效的火花同向，不会"特效往前、人往后飞"。
+                var enemy = hit.collider.GetComponentInParent<Enemy>();
+                if (enemy != null)
+                    enemy.ApplyKnockback(new Vector3(dir.x, 0f, dir.z), VfxFeel.KnockbackDistance(damage));
+            }
 
             Explode(hit.point, hit.normal, isEnemy);
         }
 
         private void Explode(Vector3 position, Vector3 normal, bool isEnemy)
         {
+            // 打击特效（vfx-dev，T-0xx）：把**真实碰撞点 + 受击法线 + 弹道方向 + 伤害**一起递下去。
+            //   * `position` = 射线/球扫的 `hit.point`（真实碰撞点，不是目标的 transform.position）；
+            //   * `dir`      = 本箭的飞行方向 → 木屑/血花沿它往前钻，冲击环垂直于它立起来；
+            //   * `damage`   → 分级（轻/重/暴）：粒子量、顿帧、震屏、飘字全按它查同一张表。
+            // 打中敌人时 `damage` 就是真实伤害；打墙时传 -1（不飘数字、不顿帧）。
+            VfxCombat.ArrowImpact(position, normal, dir, isEnemy ? damage : -1f, isEnemy);
+
             ArcaneBurst.Spawn(position, normal, 0.5f, isEnemy ? EnemyHitColor : SurfaceHitColor);
             Destroy(gameObject);
         }

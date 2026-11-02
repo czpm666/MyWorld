@@ -1,0 +1,45 @@
+[capital] house budget = 100000  hd = True
+E:\My World\Blender\kingdom\capital.py:160: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  mat.use_nodes = True
+[capital] hd layout: 320 blocks / 7 sub-blocks / 1498 plots (houses 872, shops 617) in 0.7 s
+[capital] hd build budget: 1422 of 1422 plots (0 core / 838 outer), 584 shops
+[hd] gate0          objects=377   faces=18780   tris=42280
+[hd] gate1          objects=377   faces=18759   tris=42232
+[hd] gate2          objects=377   faces=18819   tris=42352
+[hd] gate3          objects=377   faces=18791   tris=42288
+[hd] ogate0         objects=377   faces=18659   tris=42036
+[hd] ogate1         objects=377   faces=18774   tris=42268
+[hd] ogate2         objects=377   faces=18777   tris=42268
+[hd] ogate3         objects=377   faces=18725   tris=42168
+[castle] paving slabs=3929
+[castle] cobbles stones=5593
+[hd] castle         objects=18172 faces=190367  tris=389254
+[hd] cathedral      objects=9330  faces=85388   tris=175136
+[hd] guild_hall     objects=3568  faces=79115   tris=158326
+[hd] market_hall    objects=3752  faces=82289   tris=164986
+[hd] fountain       objects=927   faces=36401   tris=71654
+[capital] hd: 4 gatehouses, castle, cathedral, guild hall, market
+[capital] purged 96 orphan objects from the plaza
+[capital] ground     objects=426    faces=1994
+[capital] walls      objects=456    faces=5436
+[capital] gates      objects=1508   faces=75149
+[capital] outer      objects=1      faces=7808
+[capital] ogates     objects=1      faces=74935
+[capital] roads      objects=8      faces=48
+[capital] fields     objects=92     faces=552
+[capital] props      objects=1      faces=48075
+[capital] wells      objects=1      faces=120
+[capital] burbs      objects=0      faces=0
+[capital] inner      objects=0      faces=0
+[capital] castle     objects=18201  faces=191170
+[capital] cathedral  objects=9330   faces=85388
+[capital] guild      objects=3568   faces=79115
+[capital] market     objects=5163   faces=126280
+[capital] harbour    objects=94     faces=974
+[capital] city       objects=0      faces=0
+[capital] suburbs    objects=0      faces=0
+[capital] TOTAL objects=38850 faces=697044
+CAPITAL_DONE
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

@@ -1,0 +1,436 @@
+[
+ {
+  "file": "port_a.fbx",
+  "bytes": 2583196,
+  "objects": 7,
+  "tris": 194574,
+  "polys": 93157,
+  "verts": 119520,
+  "materials": 64,
+  "bbox": [
+   -60.0,
+   -60.0,
+   -3.112,
+   60.0,
+   60.0,
+   17.4
+  ],
+  "size": [
+   120.0,
+   120.0,
+   20.512
+  ],
+  "detail": {
+   "port_a_boats": [
+    1884,
+    3816
+   ],
+   "port_a_buildings": [
+    18832,
+    37598
+   ],
+   "port_a_foliage": [
+    33528,
+    68912
+   ],
+   "port_a_ground": [
+    6,
+    12
+   ],
+   "port_a_props": [
+    22918,
+    50908
+   ],
+   "port_a_quay": [
+    12383,
+    26116
+   ],
+   "port_a_works": [
+    3606,
+    7212
+   ]
+  },
+  "root": {
+   "name": "port_a_boats",
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_deg": [
+    -0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  "plate_check": [
+   {
+    "name": "port_a_ground",
+    "max_z": 1e-05,
+    "ok": true
+   }
+  ],
+  "mat_names": [
+   "cloth_banner_red",
+   "cloth_banner_trim",
+   "cloth_bloom",
+   "cloth_net",
+   "cloth_rope",
+   "cloth_sack",
+   "cloth_sail_canvas",
+   "cobble_far",
+   "cobble_main",
+   "earth_garden",
+   "earth_path",
+   "earth_yard.001",
+   "fish",
+   "flag_main",
+   "glass",
+   "glass_lamp",
+   "gold",
+   "grass_field",
+   "hedge",
+   "iron",
+   "iron_port",
+   "leaf",
+   "leaf_broad_hi",
+   "leaf_crop",
+   "leaf_fruit",
+   "leaf_hay",
+   "leaf_poplar_hi",
+   "plaster_2",
+   "plaster_3",
+   "plaster_4",
+   "plaster_5",
+   "stone",
+   "stone_barn",
+   "stone_port",
+   "stone_slab",
+   "stone_step",
+   "tile_0",
+   "tile_1",
+   "tile_2",
+   "tile_3",
+   "tile_4",
+   "tile_barn",
+   "water_foam",
+   "water_port",
+   "wood_bark",
+   "wood_barn",
+   "wood_barrel",
+   "wood_basket",
+   "wood_boat",
+   "wood_bollard",
+   "wood_cart",
+   "wood_cork",
+   "wood_crate",
+   "wood_door",
+   "wood_door_big",
+   "wood_fence",
+   "wood_hull",
+   "wood_market",
+   "wood_pier",
+   "wood_pile",
+   "wood_platform",
+   "wood_shutter",
+   "wood_sign",
+   "wood_timber"
+  ],
+  "variant": "port_a"
+ },
+ {
+  "file": "port_b.fbx",
+  "bytes": 2584972,
+  "objects": 7,
+  "tris": 197034,
+  "polys": 94275,
+  "verts": 121373,
+  "materials": 65,
+  "bbox": [
+   -60.0,
+   -60.0,
+   -3.112,
+   60.0,
+   60.0,
+   16.029
+  ],
+  "size": [
+   120.0,
+   120.0,
+   19.141
+  ],
+  "detail": {
+   "port_b_boats": [
+    1884,
+    3816
+   ],
+   "port_b_buildings": [
+    21635,
+    43210
+   ],
+   "port_b_foliage": [
+    31543,
+    64824
+   ],
+   "port_b_ground": [
+    6,
+    12
+   ],
+   "port_b_props": [
+    23536,
+    52480
+   ],
+   "port_b_quay": [
+    12383,
+    26116
+   ],
+   "port_b_works": [
+    3288,
+    6576
+   ]
+  },
+  "root": {
+   "name": "port_b_boats",
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_deg": [
+    -0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  "plate_check": [
+   {
+    "name": "port_b_ground",
+    "max_z": 1e-05,
+    "ok": true
+   }
+  ],
+  "mat_names": [
+   "cloth_banner_red",
+   "cloth_banner_trim",
+   "cloth_bloom",
+   "cloth_net",
+   "cloth_rope",
+   "cloth_sack",
+   "cloth_sail_canvas",
+   "cobble_far",
+   "cobble_main",
+   "earth_garden",
+   "earth_path",
+   "earth_yard.001",
+   "fish",
+   "flag_main",
+   "glass",
+   "glass_lamp",
+   "gold",
+   "grass_field",
+   "hedge",
+   "iron",
+   "iron_port",
+   "leaf",
+   "leaf_broad_hi",
+   "leaf_crop",
+   "leaf_fruit",
+   "leaf_hay",
+   "leaf_poplar_hi",
+   "plaster_2",
+   "plaster_3",
+   "plaster_4",
+   "plaster_5",
+   "stone",
+   "stone_barn",
+   "stone_port",
+   "stone_slab",
+   "stone_step",
+   "tile_0",
+   "tile_1",
+   "tile_2",
+   "tile_3",
+   "tile_4",
+   "tile_barn",
+   "water_foam",
+   "water_port",
+   "wood_bark",
+   "wood_barn",
+   "wood_barrel",
+   "wood_basket",
+   "wood_boat",
+   "wood_bollard",
+   "wood_cart",
+   "wood_cork",
+   "wood_crane",
+   "wood_crate",
+   "wood_door",
+   "wood_door_big",
+   "wood_fence",
+   "wood_hull",
+   "wood_market",
+   "wood_pier",
+   "wood_pile",
+   "wood_platform",
+   "wood_shutter",
+   "wood_sign",
+   "wood_timber"
+  ],
+  "variant": "port_b"
+ },
+ {
+  "file": "port_c.fbx",
+  "bytes": 2557836,
+  "objects": 7,
+  "tris": 193948,
+  "polys": 93047,
+  "verts": 119394,
+  "materials": 65,
+  "bbox": [
+   -60.0,
+   -60.0,
+   -3.112,
+   60.0,
+   60.0,
+   15.909
+  ],
+  "size": [
+   120.0,
+   120.0,
+   19.021
+  ],
+  "detail": {
+   "port_c_boats": [
+    1884,
+    3816
+   ],
+   "port_c_buildings": [
+    22089,
+    44108
+   ],
+   "port_c_foliage": [
+    30821,
+    63348
+   ],
+   "port_c_ground": [
+    6,
+    12
+   ],
+   "port_c_props": [
+    22648,
+    50116
+   ],
+   "port_c_quay": [
+    12383,
+    26116
+   ],
+   "port_c_works": [
+    3216,
+    6432
+   ]
+  },
+  "root": {
+   "name": "port_c_boats",
+   "loc": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "rot_deg": [
+    -0.0,
+    0.0,
+    0.0
+   ],
+   "scale": [
+    1.0,
+    1.0,
+    1.0
+   ]
+  },
+  "plate_check": [
+   {
+    "name": "port_c_ground",
+    "max_z": 1e-05,
+    "ok": true
+   }
+  ],
+  "mat_names": [
+   "cloth_banner_red",
+   "cloth_banner_trim",
+   "cloth_bloom",
+   "cloth_net",
+   "cloth_rope",
+   "cloth_sack",
+   "cloth_sail_canvas",
+   "cobble_far",
+   "cobble_main",
+   "earth_garden",
+   "earth_path",
+   "earth_yard.001",
+   "fish",
+   "flag_main",
+   "glass",
+   "glass_lamp",
+   "gold",
+   "grass_field",
+   "hedge",
+   "iron",
+   "iron_port",
+   "leaf",
+   "leaf_broad_hi",
+   "leaf_crop",
+   "leaf_fruit",
+   "leaf_hay",
+   "leaf_poplar_hi",
+   "plaster_2",
+   "plaster_3",
+   "plaster_4",
+   "plaster_5",
+   "stone",
+   "stone_barn",
+   "stone_port",
+   "stone_slab",
+   "stone_step",
+   "tile_0",
+   "tile_1",
+   "tile_2",
+   "tile_3",
+   "tile_4",
+   "tile_barn",
+   "water_foam",
+   "water_port",
+   "wood_bark",
+   "wood_barn",
+   "wood_barrel",
+   "wood_basket",
+   "wood_boat",
+   "wood_bollard",
+   "wood_cart",
+   "wood_cork",
+   "wood_crane",
+   "wood_crate",
+   "wood_door",
+   "wood_door_big",
+   "wood_fence",
+   "wood_hull",
+   "wood_market",
+   "wood_pier",
+   "wood_pile",
+   "wood_platform",
+   "wood_shutter",
+   "wood_sign",
+   "wood_timber"
+  ],
+  "variant": "port_c"
+ }
+]

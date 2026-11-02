@@ -30,17 +30,21 @@ namespace MyWorld
 
         [Header("刀尖拖尾（T-012）")]
         [Tooltip("拖尾残留时间（秒）。比法术弹的 0.22 短 —— 近战扫过更快，长尾会糊")]
-        [SerializeField] private float trailTime = 0.18f;
+        [SerializeField] private float trailTime = 0.26f;
         [Tooltip("拖尾起始宽度（米）。比法术弹的 0.3 细 —— 刀刃不是弹体")]
-        [SerializeField] private float trailStartWidth = 0.10f;
+        [SerializeField] private float trailStartWidth = 0.16f;
         [Tooltip("最小顶点间距（米）。挥砍位移比弹体小，需要更密的采样")]
         [SerializeField] private float trailMinVertexDistance = 0.04f;
+        [Tooltip("外层柔光拖尾相对主拖尾的宽度倍率（0 = 关闭外层）")]
+        [SerializeField] private float trailGlowWidthMul = 2.8f;
 
         private GameObject mainInstance;
         private GameObject offInstance;
 
         /// <summary>主手武器上的刀尖拖尾（每次重建武器实例时重建）。</summary>
         private TrailRenderer mainTrail;
+        /// <summary>外层柔光拖尾（同一刀尖锚点，更宽更淡 → "拖尾增强"）。</summary>
+        private TrailRenderer mainGlowTrail;
         /// <summary>拖尾还要发射多久（秒）。≤0 即关闭发射。</summary>
         private float trailEmitTimer;
 
@@ -92,6 +96,19 @@ namespace MyWorld
             mainTrail.startColor = start;
             mainTrail.endColor = end;
             mainTrail.emitting = true;
+
+            // 外层柔光：更宽、更淡，让刀光在屏幕上"糊"出一圈光
+            if (mainGlowTrail != null)
+            {
+                Color gs = color;
+                gs.a = 0.35f;
+                Color ge = color;
+                ge.a = 0f;
+                mainGlowTrail.startColor = gs;
+                mainGlowTrail.endColor = ge;
+                mainGlowTrail.emitting = true;
+            }
+
             if (seconds > trailEmitTimer) trailEmitTimer = seconds;
         }
 
@@ -99,7 +116,10 @@ namespace MyWorld
         {
             if (trailEmitTimer <= 0f) return;
             trailEmitTimer -= Time.deltaTime;
-            if (trailEmitTimer <= 0f && mainTrail != null) mainTrail.emitting = false;
+            if (trailEmitTimer > 0f) return;
+
+            if (mainTrail != null) mainTrail.emitting = false;
+            if (mainGlowTrail != null) mainGlowTrail.emitting = false;
         }
 
         /// <summary>
@@ -157,6 +177,28 @@ namespace MyWorld
             t.autodestruct = false;
 
             mainTrail = t;
+
+            // 外层柔光拖尾：挂在同一刀尖锚点下，更宽更淡（"拖尾增强"，但仍是同一个拖尾技术）
+            mainGlowTrail = null;
+            if (trailGlowWidthMul > 1.01f)
+            {
+                var glowGo = new GameObject("BladeTipGlow");
+                glowGo.transform.SetParent(anchor.transform, false);
+
+                var g = glowGo.AddComponent<TrailRenderer>();
+                g.time = trailTime * 1.5f;
+                g.startWidth = trailStartWidth * trailGlowWidthMul;
+                g.endWidth = 0f;
+                g.minVertexDistance = trailMinVertexDistance;
+                g.material = PlaceholderArt.GetGlowMaterial();
+                g.startColor = new Color(1f, 1f, 1f, 0.45f);
+                g.endColor = new Color(1f, 1f, 1f, 0f);
+                g.sortingOrder = 29;
+                g.emitting = false;
+                g.autodestruct = false;
+                mainGlowTrail = g;
+            }
+
             Debug.Log($"[My World] 刀尖锚点 localPos={tip.ToString("F3")}（|pos|={bestLen:F3}）"
                       + " —— 由 renderer.localBounds 取最远端算出");
         }
@@ -165,7 +207,7 @@ namespace MyWorld
             GameObject current, Transform slot, WeaponDefinition weapon,
             Vector3 offset, Vector3 euler, bool withTrail)
         {
-            if (withTrail) { mainTrail = null; trailEmitTimer = 0f; }   // 主手被替换 → 旧拖尾随实例一起销毁
+            if (withTrail) { mainTrail = null; mainGlowTrail = null; trailEmitTimer = 0f; }   // 主手被替换 → 旧拖尾随实例一起销毁
 
             if (current != null)
             {

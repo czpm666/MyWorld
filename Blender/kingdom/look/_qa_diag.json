@@ -1,0 +1,390 @@
+{
+ "grid": "24x14",
+ "shots": [
+  {
+   "name": "diag_plaza_old",
+   "kind": "landmark",
+   "pos": [
+    13.62,
+    32.56,
+    12.0
+   ],
+   "look": [
+    13.62,
+    136.16,
+    6.0
+   ],
+   "lens": 35.0,
+   "fov": null,
+   "verdict": "FAIL",
+   "bad": [
+    "sky 100% (max 55%)",
+    "ground/street 0% (min 5%)",
+    "facade 0% (min 10%)"
+   ],
+   "warn": [],
+   "buckets": {
+    "sky": 1.0,
+    "ground": 0.0,
+    "roof": 0.0,
+    "facade": 0.0,
+    "other": 0.0
+   },
+   "detail": {
+    "sky": 1.0
+   },
+   "near3": 0.0,
+   "hit_d_med": 0.0,
+   "hit_d_min": 0.0,
+   "hit_z_med": 0.0,
+   "objects": 0,
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": null,
+    "ground_mat": "",
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": -1.0
+    }
+   },
+   "stand": null,
+   "los": null,
+   "materials": {}
+  },
+  {
+   "name": "diag_game_pick1",
+   "kind": "game",
+   "pos": [
+    -204.0,
+    -42.93,
+    27.79
+   ],
+   "look": [
+    -204.0,
+    -20.5,
+    1.0
+   ],
+   "lens": null,
+   "fov": 30.0,
+   "verdict": "FAIL",
+   "bad": [
+    "sky 100% (max 40%)",
+    "ground/street 0% (min 10%)",
+    "facade 0% (min 10%)"
+   ],
+   "warn": [
+    "street is only 0% of the frame"
+   ],
+   "buckets": {
+    "sky": 1.0,
+    "ground": 0.0,
+    "roof": 0.0,
+    "facade": 0.0,
+    "other": 0.0
+   },
+   "detail": {
+    "sky": 1.0
+   },
+   "near3": 0.0,
+   "hit_d_med": 0.0,
+   "hit_d_min": 0.0,
+   "hit_z_med": 0.0,
+   "objects": 0,
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": null,
+    "ground_mat": "",
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": -1.0
+    }
+   },
+   "stand": null,
+   "los": null,
+   "materials": {}
+  },
+  {
+   "name": "diag_game_pick4",
+   "kind": "game",
+   "pos": [
+    105.19,
+    178.8,
+    27.79
+   ],
+   "look": [
+    121.06,
+    162.94,
+    1.0
+   ],
+   "lens": null,
+   "fov": 30.0,
+   "verdict": "FAIL",
+   "bad": [
+    "sky 100% (max 40%)",
+    "ground/street 0% (min 10%)",
+    "facade 0% (min 10%)"
+   ],
+   "warn": [
+    "street is only 0% of the frame"
+   ],
+   "buckets": {
+    "sky": 1.0,
+    "ground": 0.0,
+    "roof": 0.0,
+    "facade": 0.0,
+    "other": 0.0
+   },
+   "detail": {
+    "sky": 1.0
+   },
+   "near3": 0.0,
+   "hit_d_med": 0.0,
+   "hit_d_min": 0.0,
+   "hit_z_med": 0.0,
+   "objects": 0,
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": null,
+    "ground_mat": "",
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": -1.0
+    }
+   },
+   "stand": null,
+   "los": null,
+   "materials": {}
+  },
+  {
+   "name": "diag_eye_pick1",
+   "kind": "eye",
+   "pos": [
+    -204.0,
+    -22.0,
+    1.72
+   ],
+   "look": [
+    -204.0,
+    24.0,
+    3.2
+   ],
+   "lens": 24.0,
+   "fov": null,
+   "verdict": "FAIL",
+   "bad": [
+    "sky 100% (max 45%)",
+    "ground/street 0% (min 6%)",
+    "facade 0% (min 12%)",
+    "cannot stand: no floor under the camera"
+   ],
+   "warn": [],
+   "buckets": {
+    "sky": 1.0,
+    "ground": 0.0,
+    "roof": 0.0,
+    "facade": 0.0,
+    "other": 0.0
+   },
+   "detail": {
+    "sky": 1.0
+   },
+   "near3": 0.0,
+   "hit_d_med": 0.0,
+   "hit_d_min": 0.0,
+   "hit_z_med": 0.0,
+   "objects": 0,
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": null,
+    "ground_mat": "",
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": -1.0
+    }
+   },
+   "stand": {
+    "stand_h": null,
+    "floor_spread": null,
+    "eye_clear": 1.2,
+    "clear_by_height": {
+     "0.35": 1.2,
+     "1.00": 1.2,
+     "1.72": 1.2,
+     "2.05": 1.2
+    },
+    "ok": false
+   },
+   "los": {
+    "los": 60.0,
+    "los_12": true,
+    "stop_mat": "",
+    "stop_z": 0.0,
+    "stop_d": 60.0
+   },
+   "materials": {}
+  },
+  {
+   "name": "diag_eye_pick4",
+   "kind": "eye",
+   "pos": [
+    120.0,
+    164.0,
+    1.72
+   ],
+   "look": [
+    152.5,
+    131.5,
+    3.2
+   ],
+   "lens": 24.0,
+   "fov": null,
+   "verdict": "FAIL",
+   "bad": [
+    "sky 100% (max 45%)",
+    "ground/street 0% (min 6%)",
+    "facade 0% (min 12%)",
+    "cannot stand: no floor under the camera"
+   ],
+   "warn": [],
+   "buckets": {
+    "sky": 1.0,
+    "ground": 0.0,
+    "roof": 0.0,
+    "facade": 0.0,
+    "other": 0.0
+   },
+   "detail": {
+    "sky": 1.0
+   },
+   "near3": 0.0,
+   "hit_d_med": 0.0,
+   "hit_d_min": 0.0,
+   "hit_z_med": 0.0,
+   "objects": 0,
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": null,
+    "ground_mat": "",
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": -1.0
+    }
+   },
+   "stand": {
+    "stand_h": null,
+    "floor_spread": null,
+    "eye_clear": 1.2,
+    "clear_by_height": {
+     "0.35": 1.2,
+     "1.00": 1.2,
+     "1.72": 1.2,
+     "2.05": 1.2
+    },
+    "ok": false
+   },
+   "los": {
+    "los": 60.0,
+    "los_12": true,
+    "stop_mat": "",
+    "stop_z": 0.0,
+    "stop_d": 60.0
+   },
+   "materials": {}
+  },
+  {
+   "name": "diag_plaza_south",
+   "kind": "landmark",
+   "pos": [
+    0.0,
+    -46.0,
+    1.72
+   ],
+   "look": [
+    0.0,
+    34.0,
+    7.0
+   ],
+   "lens": 35.0,
+   "fov": null,
+   "verdict": "FAIL",
+   "bad": [
+    "sky 99% (max 55%)",
+    "ground/street 0% (min 5%)",
+    "facade 0% (min 10%)"
+   ],
+   "warn": [],
+   "buckets": {
+    "sky": 0.994,
+    "ground": 0.0,
+    "roof": 0.0,
+    "facade": 0.0,
+    "other": 0.006
+   },
+   "detail": {
+    "sky": 0.994,
+    "prop": 0.006
+   },
+   "near3": 0.0,
+   "hit_d_med": 45.04,
+   "hit_d_min": 45.04,
+   "hit_z_med": 0.05,
+   "objects": 1,
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": null,
+    "ground_mat": "",
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": -1.0
+    }
+   },
+   "stand": null,
+   "los": null,
+   "materials": {
+    "Material": 2
+   }
+  }
+ ]
+}

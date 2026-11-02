@@ -1,5 +1,9 @@
 # My World
 
+> **给接手的 AI / 新同事：先读 [`Docs/AI_HANDOFF.md`](Docs/AI_HANDOFF.md)。**
+> 那里有完整的环境配方（Unity MCP / Blender 管线）、当前功能状态、已知缺陷和下一步优先级。
+> 本 README 只描述项目本身的玩法与原貌。
+
 A **2.5D top-down action game** built in Unity, with a **toy-diorama** look
 (tilted perspective camera, chunky low-poly shapes, solid-colour materials).
 

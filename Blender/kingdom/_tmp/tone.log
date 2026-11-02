@@ -1,0 +1,12 @@
+00:01.328  blend            | Read blend: "E:\My World\Blender\renders\kingdom\capital_full.blend"
+E:\My World\Blender\kingdom\_tmp\tone2.py:45: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  if not mat.use_nodes:
+[tone] ['cobble', 'earth', 'town_ground', 'town_street']
+00:29.484  render           | Saved: 'E:\My World\Blender\renders\kingdom\b5_gate_in_tone.png'
+[tone] E:\My World\Blender\renders\kingdom\b5_gate_in_tone.png
+00:44.000  render           | Saved: 'E:\My World\Blender\renders\kingdom\b5_overview_tone.png'
+[tone] E:\My World\Blender\renders\kingdom\b5_overview_tone.png
+TONE_DONE
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

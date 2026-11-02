@@ -1,0 +1,123 @@
+[capital] house budget = 100000  hd = True
+E:\My World\Blender\kingdom\capital.py:160: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  mat.use_nodes = True
+[layout] refilled 6 empty blocks -> 3 buildings
+[capital] hd layout: 373 blocks / 7 sub-blocks / 2928 plots (houses 1664, shops 1256) in 1.1 s
+[capital] hd build budget: 500 of 2642 plots (249 shops, 358 blocks)
+[capital] hd city blk 1/64  6 buildings  build 0.7 s  merge 0.0 s  objs 1088  meshes 1088
+[capital] hd city blk 2/64  9 buildings  build 0.8 s  merge 0.0 s  objs 1089  meshes 1089
+[capital] hd city blk 3/64  10 buildings  build 0.7 s  merge 0.0 s  objs 1090  meshes 1090
+[capital] hd city blk 4/64  12 buildings  build 1.0 s  merge 0.0 s  objs 1091  meshes 1091
+[capital] hd city blk 5/64  11 buildings  build 0.9 s  merge 0.1 s  objs 1092  meshes 1092
+[capital] hd city blk 6/64  9 buildings  build 0.9 s  merge 0.0 s  objs 1093  meshes 1093
+[capital] hd city blk 7/64  14 buildings  build 2.0 s  merge 0.1 s  objs 1094  meshes 1094
+[capital] hd city blk 8/64  10 buildings  build 2.3 s  merge 0.1 s  objs 1095  meshes 1095
+[capital] hd city blk 9/64  14 buildings  build 2.1 s  merge 0.1 s  objs 1096  meshes 1096
+[capital] hd city blk 10/64  17 buildings  build 1.7 s  merge 0.1 s  objs 1097  meshes 1097
+[capital] hd city blk 11/64  14 buildings  build 2.3 s  merge 0.1 s  objs 1098  meshes 1098
+[capital] hd city blk 12/64  16 buildings  build 2.7 s  merge 0.1 s  objs 1099  meshes 1099
+[capital] hd city blk 13/64  11 buildings  build 1.3 s  merge 0.0 s  objs 1100  meshes 1100
+[capital] hd city blk 14/64  7 buildings  build 0.6 s  merge 0.0 s  objs 1101  meshes 1101
+[capital] hd city blk 15/64  11 buildings  build 1.1 s  merge 0.1 s  objs 1102  meshes 1102
+[capital] hd city blk 16/64  5 buildings  build 0.8 s  merge 0.0 s  objs 1103  meshes 1103
+[capital] hd city blk 17/64  4 buildings  build 0.8 s  merge 0.0 s  objs 1104  meshes 1104
+[capital] hd city blk 18/64  9 buildings  build 1.3 s  merge 0.1 s  objs 1105  meshes 1105
+[capital] hd city blk 19/64  7 buildings  build 0.8 s  merge 0.0 s  objs 1106  meshes 1106
+[capital] hd city blk 20/64  6 buildings  build 0.7 s  merge 0.0 s  objs 1107  meshes 1107
+[capital] hd city blk 21/64  6 buildings  build 1.1 s  merge 0.1 s  objs 1108  meshes 1108
+[capital] hd city blk 22/64  5 buildings  build 1.4 s  merge 0.0 s  objs 1109  meshes 1109
+[capital] hd city blk 23/64  5 buildings  build 1.0 s  merge 0.1 s  objs 1110  meshes 1110
+[capital] hd city blk 24/64  3 buildings  build 0.7 s  merge 0.0 s  objs 1111  meshes 1111
+[capital] hd city blk 25/64  16 buildings  build 2.0 s  merge 0.1 s  objs 1112  meshes 1112
+[capital] hd city blk 26/64  9 buildings  build 1.8 s  merge 0.0 s  objs 1113  meshes 1113
+[capital] hd city blk 27/64  3 buildings  build 0.7 s  merge 0.0 s  objs 1114  meshes 1114
+[capital] hd city blk 28/64  1 buildings  build 0.2 s  merge 0.0 s  objs 1115  meshes 1115
+[capital] hd city blk 29/64  1 buildings  build 0.4 s  merge 0.0 s  objs 1116  meshes 1116
+[capital] hd city blk 30/64  5 buildings  build 0.7 s  merge 0.0 s  objs 1117  meshes 1117
+[capital] hd city blk 31/64  2 buildings  build 0.3 s  merge 0.0 s  objs 1118  meshes 1118
+[capital] hd city blk 32/64  7 buildings  build 1.1 s  merge 0.0 s  objs 1119  meshes 1119
+[capital] hd city blk 33/64  2 buildings  build 0.1 s  merge 0.0 s  objs 1120  meshes 1120
+[capital] hd city blk 34/64  4 buildings  build 0.4 s  merge 0.0 s  objs 1121  meshes 1121
+[capital] hd city blk 35/64  12 buildings  build 0.7 s  merge 0.0 s  objs 1122  meshes 1122
+[capital] hd city blk 36/64  1 buildings  build 0.1 s  merge 0.0 s  objs 1123  meshes 1123
+[capital] hd city blk 37/64  5 buildings  build 0.4 s  merge 0.0 s  objs 1124  meshes 1124
+[capital] hd city blk 38/64  4 buildings  build 0.6 s  merge 0.0 s  objs 1125  meshes 1125
+[capital] hd city blk 39/64  5 buildings  build 0.9 s  merge 0.0 s  objs 1126  meshes 1126
+[capital] hd city blk 40/64  2 buildings  build 0.2 s  merge 0.0 s  objs 1127  meshes 1127
+[capital] hd city blk 41/64  1 buildings  build 0.1 s  merge 0.0 s  objs 1128  meshes 1128
+[capital] hd city blk 42/64  13 buildings  build 1.7 s  merge 0.1 s  objs 1129  meshes 1129
+[capital] hd city blk 43/64  5 buildings  build 0.5 s  merge 0.0 s  objs 1130  meshes 1130
+[capital] hd city blk 44/64  6 buildings  build 1.3 s  merge 0.1 s  objs 1131  meshes 1131
+[capital] hd city blk 45/64  4 buildings  build 0.5 s  merge 0.0 s  objs 1132  meshes 1132
+[capital] hd city blk 46/64  11 buildings  build 2.4 s  merge 0.1 s  objs 1133  meshes 1133
+[capital] hd city blk 47/64  3 buildings  build 0.5 s  merge 0.0 s  objs 1134  meshes 1134
+[capital] hd city blk 48/64  3 buildings  build 0.2 s  merge 0.0 s  objs 1135  meshes 1135
+[capital] hd city blk 49/64  16 buildings  build 2.1 s  merge 0.1 s  objs 1136  meshes 1136
+[capital] hd city blk 50/64  1 buildings  build 0.1 s  merge 0.0 s  objs 1137  meshes 1137
+[capital] hd city blk 51/64  4 buildings  build 1.0 s  merge 0.0 s  objs 1138  meshes 1138
+[capital] hd city blk 52/64  1 buildings  build 0.2 s  merge 0.0 s  objs 1139  meshes 1139
+[capital] hd city blk 53/64  12 buildings  build 3.2 s  merge 0.1 s  objs 1140  meshes 1140
+[capital] hd city blk 54/64  12 buildings  build 2.3 s  merge 0.1 s  objs 1141  meshes 1141
+[capital] hd city blk 55/64  8 buildings  build 1.8 s  merge 0.0 s  objs 1142  meshes 1142
+[capital] hd city blk 56/64  11 buildings  build 1.3 s  merge 0.0 s  objs 1143  meshes 1143
+[capital] hd city blk 57/64  10 buildings  build 1.8 s  merge 0.1 s  objs 1144  meshes 1144
+[capital] hd city blk 58/64  11 buildings  build 2.3 s  merge 0.1 s  objs 1145  meshes 1145
+[capital] hd city blk 59/64  12 buildings  build 1.6 s  merge 0.1 s  objs 1146  meshes 1146
+[capital] hd city blk 60/64  10 buildings  build 1.3 s  merge 0.0 s  objs 1147  meshes 1147
+[capital] hd city blk 61/64  13 buildings  build 1.9 s  merge 0.1 s  objs 1148  meshes 1148
+[capital] hd city blk 62/64  12 buildings  build 3.2 s  merge 0.1 s  objs 1149  meshes 1149
+[capital] hd city blk 63/64  15 buildings  build 1.8 s  merge 0.1 s  objs 1150  meshes 1150
+[capital] hd city blk 64/64  6 buildings  build 1.1 s  merge 0.1 s  objs 1151  meshes 1151
+[capital] hd city done: 500 buildings (houses 251 / shops 249 / failed 0) objects=64 faces=1289664 tris=2709266 in 78 s
+[hd] ogate0         objects=389   faces=22354   tris=49516
+[hd] ogate1         objects=389   faces=22342   tris=49492
+[hd] ogate2         objects=389   faces=22317   tris=49452
+[hd] ogate3         objects=389   faces=22367   tris=49544
+[castle] paving slabs=3896
+[castle] cobbles stones=5593
+[hd] castle         objects=18172 faces=190334  tris=389188
+[hd] cathedral      objects=9330  faces=85388   tris=175136
+[hd] guild_hall     objects=3568  faces=79115   tris=158326
+[hd] market_hall    objects=3753  faces=82295   tris=164998
+[hd] fountain       objects=927   faces=36401   tris=71654
+[capital] hd: 4 gatehouses, castle, cathedral, guild hall, market
+[capital] purged 32 orphan objects from the plaza
+[capital] ground     objects=1087   faces=5738
+[capital] city       objects=64     faces=1289664
+[capital] walls      objects=0      faces=0
+[capital] gates      objects=0      faces=0
+[capital] outer      objects=1      faces=7808
+[capital] ogates     objects=1      faces=89380
+[capital] roads      objects=8      faces=48
+[capital] fields     objects=104    faces=624
+[capital] props      objects=1      faces=207721
+[capital] wells      objects=1      faces=120
+[capital] burbs      objects=4      faces=66677
+[capital] inner      objects=0      faces=0
+[capital] castle     objects=18201  faces=191137
+[capital] cathedral  objects=9330   faces=85388
+[capital] guild      objects=3568   faces=79115
+[capital] market     objects=5164   faces=126286
+[capital] harbour    objects=94     faces=974
+[capital] suburbs    objects=0      faces=0
+[capital] TOTAL objects=37628 faces=2150680
+06:59.406  render           | Saved: 'E:\My World\Blender\renders\kingdom\b5_gate_in.png'
+[render] E:\My World\Blender\renders\kingdom\b5_gate_in.png
+07:25.688  render           | Saved: 'E:\My World\Blender\renders\kingdom\b5_castle.png'
+[render] E:\My World\Blender\renders\kingdom\b5_castle.png
+07:49.313  render           | Saved: 'E:\My World\Blender\renders\kingdom\b5_cathedral.png'
+[render] E:\My World\Blender\renders\kingdom\b5_cathedral.png
+08:11.531  render           | Saved: 'E:\My World\Blender\renders\kingdom\b5_plaza.png'
+[render] E:\My World\Blender\renders\kingdom\b5_plaza.png
+08:30.719  render           | Saved: 'E:\My World\Blender\renders\kingdom\b5_street.png'
+[render] E:\My World\Blender\renders\kingdom\b5_street.png
+08:43.860  render           | Saved: 'E:\My World\Blender\renders\kingdom\b5_overview.png'
+[render] E:\My World\Blender\renders\kingdom\b5_overview.png
+08:57.203  render           | Saved: 'E:\My World\Blender\renders\kingdom\b5_outer.png'
+[render] E:\My World\Blender\renders\kingdom\b5_outer.png
+09:15.438  render           | Saved: 'E:\My World\Blender\renders\kingdom\b5_suburb.png'
+[render] E:\My World\Blender\renders\kingdom\b5_suburb.png
+
+FBX export starting... 'E:\\My World\\Blender\\export\\capital\\ars_ground.fbx'
+export finished in 0.1207 sec.
+[export] E:\My World\Blender\export\capital\ars_ground.fbx 173228

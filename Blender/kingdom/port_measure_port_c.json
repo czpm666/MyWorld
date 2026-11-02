@@ -1,0 +1,170 @@
+{
+ "objects": 7,
+ "triangles": 193948,
+ "polygons": 93047,
+ "materials": 65,
+ "bbox_min": [
+  -60.0,
+  -60.0,
+  -3.11
+ ],
+ "bbox_max": [
+  60.0,
+  60.0,
+  15.91
+ ],
+ "size": [
+  120.0,
+  120.0,
+  19.02
+ ],
+ "detail": {
+  "port_c_ground": [
+   6,
+   12
+  ],
+  "port_c_quay": [
+   12383,
+   26116
+  ],
+  "port_c_works": [
+   3216,
+   6432
+  ],
+  "port_c_boats": [
+   1884,
+   3816
+  ],
+  "port_c_buildings": [
+   22089,
+   44108
+  ],
+  "port_c_props": [
+   22648,
+   50116
+  ],
+  "port_c_foliage": [
+   30821,
+   63348
+  ]
+ },
+ "mat_names": [
+  "cloth_banner_red",
+  "cloth_banner_trim",
+  "cloth_bloom",
+  "cloth_net",
+  "cloth_rope",
+  "cloth_sack",
+  "cloth_sail_canvas",
+  "cobble_far",
+  "cobble_main",
+  "earth_garden",
+  "earth_path",
+  "earth_yard.001",
+  "fish",
+  "flag_main",
+  "glass",
+  "glass_lamp",
+  "gold",
+  "grass_field",
+  "hedge",
+  "iron",
+  "iron_port",
+  "leaf",
+  "leaf_broad_hi",
+  "leaf_crop",
+  "leaf_fruit",
+  "leaf_hay",
+  "leaf_poplar_hi",
+  "plaster_2",
+  "plaster_3",
+  "plaster_4",
+  "plaster_5",
+  "stone",
+  "stone_barn",
+  "stone_port",
+  "stone_slab",
+  "stone_step",
+  "tile_0",
+  "tile_1",
+  "tile_2",
+  "tile_3",
+  "tile_4",
+  "tile_barn",
+  "water_foam",
+  "water_port",
+  "wood_bark",
+  "wood_barn",
+  "wood_barrel",
+  "wood_basket",
+  "wood_boat",
+  "wood_bollard",
+  "wood_cart",
+  "wood_cork",
+  "wood_crane",
+  "wood_crate",
+  "wood_door",
+  "wood_door_big",
+  "wood_fence",
+  "wood_hull",
+  "wood_market",
+  "wood_pier",
+  "wood_pile",
+  "wood_platform",
+  "wood_shutter",
+  "wood_sign",
+  "wood_timber"
+ ],
+ "variant": "port_c",
+ "check": {
+  "core_center": [
+   0.0,
+   -3.0
+  ],
+  "core_radius": 27.7,
+  "core_diameter": 55.41,
+  "house_count": 12,
+  "street_width": 4.8,
+  "setback": 0.3,
+  "gaps": [
+   0.5,
+   0.5,
+   0.4,
+   0.4
+  ],
+  "levels": [
+   0.0,
+   0.35,
+   0.45,
+   0.9
+  ],
+  "level_count": 4,
+  "hard_surface_ratio": 0.74,
+  "isolated_fences": 0,
+  "fence_runs": 17,
+  "piers": [
+   [
+    "pier0",
+    5.2,
+    31.2
+   ],
+   [
+    "pier1",
+    5.2,
+    31.2
+   ]
+  ],
+  "pier_max_len": 5.2,
+  "pier_max_radius": 34.2,
+  "landmark": [
+   "mast cluster",
+   15.9,
+   0.0,
+   18.2
+  ],
+  "gate": [
+   0.0,
+   -28.4
+  ]
+ }
+}

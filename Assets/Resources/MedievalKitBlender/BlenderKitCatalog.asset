@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bff1acf67aaf92a40b1e173b8108422b, type: 3}
+  m_Name: BlenderKitCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::MyWorld.Maps.BlenderKitCatalog
+  entries:
+  - name: barrel
+    prefab: {fileID: 8822796319626974493, guid: 7181681bdbc2f7b43ae68bfce472c917, type: 3}
+  - name: barrel_cluster
+    prefab: {fileID: 194883558038538423, guid: b675f8164165bab49b659cca8461196a, type: 3}
+  - name: bush
+    prefab: {fileID: 7938634296143358904, guid: 10814db44cf80d34285e0da9af830cc7, type: 3}
+  - name: cart
+    prefab: {fileID: 8524634175920997696, guid: 198b4f0be05e17a488091e151fc996a4, type: 3}
+  - name: crate
+    prefab: {fileID: 3312878504448427005, guid: 154bc42bbcf6f42438c191d70597986c, type: 3}
+  - name: crate_stack
+    prefab: {fileID: 1806624315526329181, guid: d69f7f61d56cef746b36be7c4a28a81b, type: 3}
+  - name: fence
+    prefab: {fileID: 9171607786977770078, guid: c0ef11d6023d7c948a16851d5719ad9e, type: 3}
+  - name: house_a
+    prefab: {fileID: 3032158593696540890, guid: f4025b79c31ba3449ba6c6b688a8c438, type: 3}
+  - name: house_b
+    prefab: {fileID: 8837971702783191805, guid: 9f7702d9c875c7d49b0c5fbe56da61b5, type: 3}
+  - name: house_c
+    prefab: {fileID: 4169064332301036980, guid: ed33a3c46a8543b49a322f88cfcaf4fe, type: 3}
+  - name: house_d
+    prefab: {fileID: 6108719348850610896, guid: 483520e71df28fd41a63496da2200261, type: 3}
+  - name: house_e
+    prefab: {fileID: 5278826490752003590, guid: 8f66bcd9dbc5fb74eb06251d46416403, type: 3}
+  - name: house_f
+    prefab: {fileID: 6882901305248537962, guid: 55ef81a702fb43a4ea329a9a6f818ecf, type: 3}
+  - name: market_stall
+    prefab: {fileID: 7102159881838095363, guid: c0eb62ae3b4156c42adc7b80a204d54e, type: 3}
+  - name: sack
+    prefab: {fileID: 5190588630073742798, guid: 0ad3a8b7a005dbf4e829e136786a1324, type: 3}
+  - name: tree
+    prefab: {fileID: 1068986564264443667, guid: 61910a79f9c937542af159b5849d8872, type: 3}
+  - name: tree_broad
+    prefab: {fileID: 2010958874130440461, guid: c16a16c871ded804daac543ca1f3236a, type: 3}
+  - name: tree_conifer
+    prefab: {fileID: 569472020743068632, guid: 5ed1a2764b9d04547a6af61e288a1e90, type: 3}
+  - name: tree_dead
+    prefab: {fileID: 4969238710809559000, guid: 797b50020819a714aac12f858162c679, type: 3}
+  - name: tree_poplar
+    prefab: {fileID: 5395482435043105512, guid: 993f002fea0a03a448eb9da6955306cb, type: 3}
+  - name: well
+    prefab: {fileID: 3710227212590324607, guid: 1350098de3be9f84abd3d7565d99443d, type: 3}

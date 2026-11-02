@@ -1,0 +1,27 @@
+VFX QA — 编辑期自检（不需要 Play 模式）
+unity=6000.3.0b1  time=2026-10-18 22:02:29
+
+VfxTextPool.SelfTest
+  glyphs=21 bits=147 expectedBits=147
+  atlas=504x32  all 21 glyphs have ink
+  mustSupport="0123456789+-!BLOCKRIT"  (= 数字 + - ! BLOCK CRIT 需要的全部字符)
+
+VfxFeel 分级表自洽性
+  hitStopSeconds = [0.035, 0.065, 0.095]  递增=YES 全正=YES
+  shakeAmplitude = [0.140, 0.300, 0.460]  递增=YES 全正=YES
+  shakeSeconds = [0.100, 0.160, 0.220]  递增=YES 全正=YES
+  effectScale = [1.000, 1.550, 2.200]  递增=YES 全正=YES
+  flashSeconds = [0.100, 0.150, 0.220]  递增=YES 全正=YES
+  stunScale = [1.000, 1.250, 1.500]  递增=YES 全正=YES
+  knockbackGrids = [0.300, 0.800, 1.450]  递增=YES 全正=YES
+  textScale = [0.420, 0.580, 0.780]  递增=YES 全正=YES
+  闪色每档各不相同: YES
+
+分级随伤害单调（轻 < 重 < 暴）
+  轻击样本 9.0 → Light（期望 Light） OK
+  重击样本 26.0 → Heavy（期望 Heavy） OK
+  暴击样本 35.0 → Crit（期望 Crit） OK
+  击退距离随伤害不减: YES（1→80 伤害逐一比对）
+  顿帧/震屏/粒子量 三档严格递增: YES
+
+EDIT-MODE VERDICT: PASS (0 fail)

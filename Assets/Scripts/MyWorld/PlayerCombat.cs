@@ -258,6 +258,11 @@ namespace MyWorld
             if (empty == null || cooldown > 0f) return;
             cooldown = empty.cooldown;      // 0.45f（暂定值；单一来源 = WeaponLoadout.unarmed，由生成器写）
             if (mage != null) mage.PlayUnarmedAttack();
+
+            // 表现层（vfx-dev，T-0xx）：补一个"出拳了"的拳风。
+            // ⚠️ **空手依然不落任何伤害**（§⑨ I4 不变）—— 这里只加视觉，没有任何判定/伤害改动。
+            // `VfxCombat.Punch` 之前定义了但没人调，这里接上。
+            VfxCombat.Punch(transform.position + Vector3.up * meleeHeight, transform.forward);
         }
 
         // ---------------- 法术 ----------------
@@ -304,7 +309,9 @@ namespace MyWorld
 
             cooldown = cd;
             aimTurnTimer = aimTurnDuration;   // 出手瞬间把朝向交给鼠标
-            mage?.PlayCast();
+            // 动画按"实际拿的武器"映射：法杖=施法、护手=左手拳击（见 WeaponAnimMap）。
+            // ⚠️ 只换动作；冷却/伤害/弹道一行没动（护手这里仍是法术弹道，玩法未改）。
+            mage?.PlayWeaponAttack(weapon.kind);
             GameAudio.PlayCast();             // ④ 施法音（T-063；槽位空则静默跳过）
 
             // 弹道方向：锁定 > 鼠标 > 角色朝向。
@@ -452,7 +459,8 @@ namespace MyWorld
         {
             cooldown = weapon.cooldown;
             aimTurnTimer = aimTurnDuration;
-            mage?.PlayAttack();
+            // 盾击动作：左手盾击（原来借的是剑的横劈 PlayAttack，与盾毫无关系）。只换动作，判定/伤害/击退没动。
+            mage?.PlayWeaponAttack(weapon.kind);
 
             Vector3 center = transform.position + Vector3.up * meleeHeight;
             int count = Physics.OverlapSphereNonAlloc(
@@ -479,6 +487,12 @@ namespace MyWorld
                 if (cc != null && to.sqrMagnitude > 0.0001f)
                     cc.Move(to.normalized * (weapon.shieldBashKnockbackGrids * 2f) * 0.35f);
             }
+
+            // 表现层（vfx-dev，T-0xx）：盾击的正面光弧 + 冲击环 + 火花 + 震屏 + 金属音。
+            // 位置用**判定中心**、方向沿**角色朝向** —— 与上面的判定同源，不会"打的是一边、亮的是另一边"。
+            // （`VfxCombat.ShieldBash` 之前定义了但没人调，这里接上；判定/伤害/击退一概没动。）
+            VfxCombat.ShieldBash(center, transform.forward, weapon.shieldBashRange);
+            GameAudio.PlayBlock();
 
             ArcaneBurst.Spawn(center + transform.forward * (weapon.shieldBashRange * 0.5f),
                 transform.forward, 0.8f, new Color(0.8f, 0.85f, 0.95f));
@@ -526,6 +540,15 @@ namespace MyWorld
             // 最后一段是突刺：命中的敌人要被打飞。先收集，扫完再推，免得边改位置边判定。
             bool finisher = step == PlayerMage.ComboLength - 1 && weapon.stabKnockbackGrids > 0f;
 
+            // 打击特效（vfx-dev，T-0xx）：记下**第一次真正打中的真实碰撞点**和攻击方向。
+            // 这两个量只有这里拿得到（`Collider.ClosestPoint(判定中心)` + `to`），表现层
+            // **不能**靠 `敌人.position + up*0.85` 猜 —— 那样"从背后砍"和"正面砍"的火花
+            // 都炸在身体正中间，看起来就是"特效没打在敌人身上"。
+            bool hasHitPoint = false;
+            Vector3 firstHitPoint = Vector3.zero;
+            Vector3 firstHitNormal = Vector3.up;
+            Vector3 firstHitDir = transform.forward;
+
             meleeDamaged.Clear();
             for (int i = 0; i < count; i++)
             {
@@ -540,27 +563,59 @@ namespace MyWorld
                 if (target == null || !target.IsAlive) continue;
                 if (!meleeDamaged.Add(target)) continue;   // 同一目标只打一次
 
-                target.TakeDamage(weapon.damage, col.ClosestPoint(center), Vector3.up);
+                // 真实碰撞点：判定球心到目标碰撞体的最近点（**不是**目标的 transform.position）
+                Vector3 hitPoint = col.ClosestPoint(center);
+                target.TakeDamage(weapon.damage, hitPoint, Vector3.up);
 
+                if (!hasHitPoint)
+                {
+                    hasHitPoint = true;
+                    firstHitPoint = hitPoint;
+
+                    // 表面法线 = 从碰撞点指回判定中心（"刀是从这个方向压上去的"）
+                    Vector3 n = center - hitPoint;
+                    n.y = 0f;
+                    firstHitNormal = n.sqrMagnitude > 0.0001f ? n.normalized : -transform.forward;
+
+                    // 攻击方向 = 判定中心 → 该目标（每个目标各不相同，比 transform.forward 准）
+                    firstHitDir = to.sqrMagnitude > 0.0001f ? to.normalized : transform.forward;
+                }
+
+                var enemy = col.GetComponentInParent<Enemy>();
                 if (finisher)
                 {
-                    var enemy = col.GetComponentInParent<Enemy>();
                     if (enemy != null)
                         enemy.ApplyKnockback(to.sqrMagnitude > 0.0001f ? to : transform.forward,
                                              weapon.stabKnockbackGrids * 2f);   // 1 格 = 2 米，和敌人技能同一套换算
+                }
+                else if (enemy != null)
+                {
+                    // 打击特效（vfx-dev，T-0xx）：前三段的击退**按伤害分级**（轻/重/暴，表在 VfxFeel）。
+                    // ⚠️ **只补非突刺段** —— 第四段突刺的击退是硬契约（4.00 m，验收区间 3.70~4.30，
+                    //    见 `Enemy.ApplyKnockback` 的长注释），**不参与分级、原样保留**，避免把
+                    //    一个已经验证过的距离契约改成"看伤害"。
+                    enemy.ApplyKnockback(to.sqrMagnitude > 0.0001f ? to : transform.forward,
+                                         VfxFeel.KnockbackDistance(weapon.damage));
                 }
             }
 
             // ② 命中音（T-063）：**只在真的打中目标时才响** —— `meleeDamaged` 非空即"打到了"。
             // ⚠️ 不要挪到循环外面无条件播：那样"挥空也响命中音"会误导玩家以为自己打中了。
-            if (meleeDamaged.Count > 0) GameAudio.PlayHit();
+            // T-0xx：改为**按伤害分级**播（轻/重/暴三档，走 GameAudio 的新重载）。
+            //   这里先问一次档位 —— `VfxFeel.Grade` 在同一帧内对同一伤害值只掷一次骰子，
+            //   所以紧接着 `SwordSlash` 内部问到的**必定是同一档**，不会音画不同级。
+            bool hitSomething = meleeDamaged.Count > 0;
+            if (hitSomething) GameAudio.PlayHit(VfxFeel.Grade(weapon.damage));
 
             // 挥砍刀光：一段有厚度的弧带，形状／朝向／层宽／颜色全部在 SkillVfx 里。
             // 这里只把**判定**用的半径和半张角原样递过去，视觉参数一概不写在本文件。
             // ⚠️ 判定条件、范围、伤害、击退都不在这里动。
             // T-011：把**段位**传下去（1..4）→ 四段的形状/朝向/尺寸/颜色由 SkillVfx 的分段表决定。
             //   用的是 `step`（命中帧回调里已快照的段位），不是当前 `comboStep` —— 后者可能已经变了。
-            SkillVfx.SwordSlash(center, transform.forward, weapon.meleeRange, weapon.meleeHalfAngle, step + 1);
+            // T-0xx：再多递**真实碰撞点 / 攻击方向 / 伤害 / 表面法线**。
+            //   最后一个参数 `damage < 0` = 这一下没打中 → 只放刀光和刀风，不生成命中叠层。
+            SkillVfx.SwordSlash(center, transform.forward, weapon.meleeRange, weapon.meleeHalfAngle, step + 1,
+                                firstHitPoint, firstHitDir, hitSomething ? weapon.damage : -1f, firstHitNormal);
 
             // T-012：刀尖拖尾。颜色 = **当段刀光的颜色**（规格 §2.3：同色以强化该段的颜色维度）。
             // ⚠️ 发射门控在 `WeaponMount` 内部（0.30s 后自动停）—— 这样"平时没有拖尾"（判据 F7）

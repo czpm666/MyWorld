@@ -21,8 +21,14 @@ namespace MyWorld
         private InputAction jumpAction;
         private InputAction menuAction;
         private InputAction settingsAction;
+        private InputAction interactAction;
+        private InputAction dodgeAction;
+        private InputAction cameraToggleAction;
+        private InputAction cameraRotateAction;
+        private InputAction cameraZoomAction;
 
-        /// <summary>移动输入，长度已被夹到 ≤1。屏幕上方 = +Z 方向。</summary>
+        /// <summary>移动输入，长度已被夹到 ≤1。**屏幕空间**：x = 屏幕右，y = 屏幕上。
+        /// 与世界方向的关系由 `TopDownCameraRig.MovementYaw` 决定（yaw=0 时屏幕上 = 世界 +Z）。</summary>
         public Vector2 Move { get; private set; }
 
         /// <summary>本帧是否有移动输入。</summary>
@@ -58,6 +64,27 @@ namespace MyWorld
 
         /// <summary>本帧是否按下了 Esc（直接打开设置页）。</summary>
         public bool SettingsPressed { get; private set; }
+
+        /// <summary>本帧是否按下了交互键（E，手柄 A 同款但用 buttonEast）。NPC 对话/商店/委托板/传送门/拾取都用它。</summary>
+        public bool InteractPressed { get; private set; }
+
+        /// <summary>
+        /// 本帧是否按下了**翻滚**键（左 Ctrl / 手柄左扳机）。切换式？——不是，是一次性边沿，
+        /// 由 `PlayerController8Dir` 的翻滚窗口消费（它有冷却与落地判定，见 `dodgeCooldown`）。
+        /// </summary>
+        public bool DodgePressed { get; private set; }
+
+        /// <summary>本帧是否按下了 **V**（俯视 / 第三人称 相机模式切换）。切换式，只在按下的那一帧为 true。</summary>
+        public bool CameraTogglePressed { get; private set; }
+
+        /// <summary>
+        /// 相机绕 Y 轴旋转输入：**-1 = 逆时针（`,`）**、**+1 = 顺时针（`.`）**、0 = 没按。
+        /// ⚠️ 不用左右方向键 —— 那两个键已经绑给移动了（见本文件 :80-81），占用会直接串味。
+        /// </summary>
+        public float CameraRotate { get; private set; }
+
+        /// <summary>本帧滚轮缩放量，已折算成"格"（不是原始 ±120）。**正 = 向上滚 = 拉近**。</summary>
+        public float CameraZoom { get; private set; }
 
         private void Awake()
         {
@@ -115,6 +142,31 @@ namespace MyWorld
             settingsAction.AddBinding("<Keyboard>/escape");
             settingsAction.AddBinding("<Gamepad>/select");
 
+            // 交互：E（手柄用 B/圆圈位，避开跳跃的 A）
+            interactAction = new InputAction("Interact", InputActionType.Button);
+            interactAction.AddBinding("<Keyboard>/e");
+            interactAction.AddBinding("<Gamepad>/buttonEast");
+
+            // 翻滚闪避：左 Ctrl（手柄左扳机）。T-091 批次 1 新增。
+            // ⚠️ 不占用鼠标键（左右键已给主手/副手）、不占用 Shift（疾跑）、不占用空格（跳跃）。
+            dodgeAction = new InputAction("Dodge", InputActionType.Button);
+            dodgeAction.AddBinding("<Keyboard>/leftCtrl");
+            dodgeAction.AddBinding("<Gamepad>/leftTrigger");
+
+            // 相机模式切换：V。**不加手柄绑定** —— 手柄上 buttonNorth / rightStickPress 都已经是锁定键了。
+            cameraToggleAction = new InputAction("CameraToggle", InputActionType.Button);
+            cameraToggleAction.AddBinding("<Keyboard>/v");
+
+            // 相机旋转：`,` / `.`（1DAxis 合成，读出来是 -1/0/+1）。
+            cameraRotateAction = new InputAction("CameraRotate", InputActionType.Value);
+            cameraRotateAction.AddCompositeBinding("1DAxis")
+                .With("Negative", "<Keyboard>/comma")
+                .With("Positive", "<Keyboard>/period");
+
+            // 相机缩放：鼠标滚轮。
+            cameraZoomAction = new InputAction("CameraZoom", InputActionType.Value);
+            cameraZoomAction.AddBinding("<Mouse>/scroll");
+
             moveAction.Enable();
             sprintAction.Enable();
             attackAction.Enable();
@@ -123,6 +175,11 @@ namespace MyWorld
             jumpAction.Enable();
             menuAction.Enable();
             settingsAction.Enable();
+            interactAction.Enable();
+            dodgeAction.Enable();
+            cameraToggleAction.Enable();
+            cameraRotateAction.Enable();
+            cameraZoomAction.Enable();
         }
 
         private void OnDisable()
@@ -137,16 +194,22 @@ namespace MyWorld
             JumpPressed = false;
             MenuPressed = false;
             SettingsPressed = false;
+            InteractPressed = false;
+            DodgePressed = false;
+            CameraTogglePressed = false;
+            CameraRotate = 0f;
+            CameraZoom = 0f;
         }
 
         private void OnDestroy()
         {
-            foreach (var a in new[] { moveAction, sprintAction, attackAction, lockOnAction, offHandAction, jumpAction, menuAction, settingsAction })
+            foreach (var a in new[] { moveAction, sprintAction, attackAction, lockOnAction, offHandAction, jumpAction, menuAction, settingsAction, interactAction, dodgeAction, cameraToggleAction, cameraRotateAction, cameraZoomAction })
             {
                 a?.Disable();
                 a?.Dispose();
             }
-            moveAction = sprintAction = attackAction = lockOnAction = offHandAction = jumpAction = menuAction = settingsAction = null;
+            moveAction = sprintAction = attackAction = lockOnAction = offHandAction = jumpAction = menuAction = settingsAction = interactAction = dodgeAction = null;
+            cameraToggleAction = cameraRotateAction = cameraZoomAction = null;
         }
 
         private void Update()
@@ -166,6 +229,16 @@ namespace MyWorld
             JumpPressed = jumpAction != null && jumpAction.WasPressedThisFrame();
             MenuPressed = menuAction != null && menuAction.WasPressedThisFrame();
             SettingsPressed = settingsAction != null && settingsAction.WasPressedThisFrame();
+            InteractPressed = interactAction != null && interactAction.WasPressedThisFrame();
+            DodgePressed = dodgeAction != null && dodgeAction.WasPressedThisFrame();
+            CameraTogglePressed = cameraToggleAction != null && cameraToggleAction.WasPressedThisFrame();
+            CameraRotate = cameraRotateAction != null ? cameraRotateAction.ReadValue<float>() : 0f;
+
+            // ⚠️ 滚轮一格在不同后端会报成 ±120 或 ±1（Input System 不保证量纲）。统一折算成"格"，
+            //    这样 `TopDownCameraRig.zoomStep` 在两种后端下是同一个手感。
+            //    10 这个分界很安全：没有任何后端会把"一格"报成 11~119 这种中间值。
+            float rawScroll = cameraZoomAction != null ? cameraZoomAction.ReadValue<Vector2>().y : 0f;
+            CameraZoom = Mathf.Abs(rawScroll) > 10f ? rawScroll / 120f : rawScroll;
         }
     }
 }

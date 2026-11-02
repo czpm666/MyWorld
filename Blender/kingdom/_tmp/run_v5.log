@@ -1,0 +1,21 @@
+[capital] house budget = 100000  hd = True
+E:\My World\Blender\kingdom\capital.py:160: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  mat.use_nodes = True
+[capital] hd layout: 320 blocks / 7 sub-blocks / 1498 plots (houses 872, shops 617) in 0.7 s
+[capital] hd build budget: 1498 of 1498 plots (0 core / 881 outer), 617 shops
+Traceback (most recent call last):
+  File "E:\My World\Blender\kingdom\capital.py", line 1675, in <module>
+    main(sys.argv)
+    ~~~~^^^^^^^^^^
+  File "E:\My World\Blender\kingdom\capital.py", line 1637, in main
+    groups = build(stage)
+  File "E:\My World\Blender\kingdom\capital.py", line 1446, in build
+    groups["city"] = build_city_hd()
+                     ~~~~~~~~~~~~~^^
+  File "E:\My World\Blender\kingdom\capital.py", line 1372, in build_city_hd
+    m = G.merge_objects("c%d_%d" % (bi, i), buf)
+                        ~~~~~~~~~^~~~~~~~~
+TypeError: %d format: a real number is required, not str
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

@@ -1,0 +1,13 @@
+var root = UnityEngine.GameObject.Find("Towns");
+var tr = root.transform.Find("port_b_2");
+if (tr == null) return "NO_TOWN";
+float yaw = tr.eulerAngles.y * UnityEngine.Mathf.Deg2Rad;
+float ix = UnityEngine.Mathf.Sin(yaw), iz = UnityEngine.Mathf.Cos(yaw);
+UnityEngine.Vector3 p = tr.position;
+var ty = System.Type.GetType("MyWorldProbes.ZzKingdomShots, Assembly-CSharp-Editor");
+var mi = ty.GetMethod("Shoot", new System.Type[] { typeof(string), typeof(float), typeof(float), typeof(float), typeof(float), typeof(float), typeof(float), typeof(float), typeof(bool) });
+float cx = p.x - ix * 55f, cy = p.y + 50f, cz = p.z - iz * 55f;
+object r1 = mi.Invoke(null, new object[] { "pb2_air", cx, cy, cz, p.x, p.y + 1f, p.z, 40f, false });
+float ex = p.x + iz * 12f, ey = p.y + 6f, ez = p.z - ix * 12f;
+object r2 = mi.Invoke(null, new object[] { "pb2_water", ex, ey, ez, p.x, p.y, p.z, 45f, false });
+return r1 + " || " + r2;

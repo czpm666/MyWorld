@@ -1,0 +1,77 @@
+[capital] house budget = 100000  hd = True
+E:\My World\Blender\kingdom\capital.py:160: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  mat.use_nodes = True
+[capital] hd layout: 30 blocks / 57 sub-blocks / 4246 plots (houses 4054, shops 192) in 2.1 s
+[capital] hd build budget: 1392 of 4246 plots (1012 core / 188 outer), 192 shops
+[capital] hd city blk 1/30  38 buildings  build 4.5 s  merge 0.3 s  objs 50  meshes 50
+[capital] hd city blk 2/30  50 buildings  build 6.3 s  merge 0.4 s  objs 51  meshes 51
+[capital] hd city blk 3/30  50 buildings  build 4.7 s  merge 0.2 s  objs 52  meshes 52
+[capital] hd city blk 4/30  44 buildings  build 4.0 s  merge 0.3 s  objs 53  meshes 53
+[capital] hd city blk 5/30  58 buildings  build 6.2 s  merge 0.3 s  objs 54  meshes 54
+[capital] hd city blk 6/30  68 buildings  build 6.2 s  merge 0.4 s  objs 55  meshes 55
+[capital] hd city blk 7/30  22 buildings  build 2.9 s  merge 0.1 s  objs 56  meshes 56
+[capital] hd city blk 8/30  43 buildings  build 5.0 s  merge 0.3 s  objs 57  meshes 57
+[capital] hd city blk 9/30  59 buildings  build 4.9 s  merge 0.2 s  objs 58  meshes 58
+[capital] hd city blk 10/30  64 buildings  build 4.3 s  merge 0.1 s  objs 59  meshes 59
+[capital] hd city blk 11/30  45 buildings  build 1.8 s  merge 0.1 s  objs 60  meshes 60
+[capital] hd city blk 12/30  76 buildings  build 3.2 s  merge 0.2 s  objs 61  meshes 61
+[capital] hd city blk 13/30  50 buildings  build 1.8 s  merge 0.1 s  objs 62  meshes 62
+[capital] hd city blk 14/30  33 buildings  build 1.4 s  merge 0.1 s  objs 63  meshes 63
+[capital] hd city blk 15/30  53 buildings  build 2.3 s  merge 0.2 s  objs 64  meshes 64
+[capital] hd city blk 16/30  62 buildings  build 2.7 s  merge 0.2 s  objs 65  meshes 65
+[capital] hd city blk 17/30  38 buildings  build 1.5 s  merge 0.1 s  objs 66  meshes 66
+[capital] hd city blk 18/30  55 buildings  build 2.5 s  merge 0.1 s  objs 67  meshes 67
+[capital] hd city blk 19/30  37 buildings  build 1.4 s  merge 0.1 s  objs 68  meshes 68
+[capital] hd city blk 20/30  67 buildings  build 2.8 s  merge 0.2 s  objs 69  meshes 69
+[capital] hd city blk 21/30  30 buildings  build 1.3 s  merge 0.1 s  objs 70  meshes 70
+[capital] hd city blk 22/30  34 buildings  build 1.6 s  merge 0.1 s  objs 71  meshes 71
+[capital] hd city blk 23/30  34 buildings  build 1.5 s  merge 0.1 s  objs 72  meshes 72
+[capital] hd city blk 24/30  38 buildings  build 3.2 s  merge 0.1 s  objs 73  meshes 73
+[capital] hd city blk 25/30  31 buildings  build 2.8 s  merge 0.2 s  objs 74  meshes 74
+[capital] hd city blk 26/30  23 buildings  build 1.3 s  merge 0.1 s  objs 75  meshes 75
+[capital] hd city blk 27/30  55 buildings  build 2.8 s  merge 0.2 s  objs 76  meshes 76
+[capital] hd city blk 28/30  43 buildings  build 2.0 s  merge 0.1 s  objs 77  meshes 77
+[capital] hd city blk 29/30  37 buildings  build 1.7 s  merge 0.1 s  objs 78  meshes 78
+[capital] hd city blk 30/30  55 buildings  build 3.0 s  merge 0.2 s  objs 79  meshes 79
+[capital] hd city done: 1392 buildings (houses 1200 / shops 192 / failed 0) objects=30 faces=2555030 tris=5236698 in 97 s
+[hd] gate0          objects=310   faces=14076   tris=31878
+[hd] gate1          objects=310   faces=14100   tris=31914
+[hd] gate2          objects=310   faces=14072   tris=31862
+[hd] gate3          objects=310   faces=14103   tris=31926
+[castle] paving slabs=4103
+[hd] castle         objects=14729 faces=116320  tris=258010
+[hd] cathedral      objects=9330  faces=85388   tris=175136
+[hd] guild_hall     objects=3568  faces=79115   tris=158326
+[hd] market_hall    objects=3754  faces=82301   tris=165010
+[hd] fountain       objects=927   faces=36401   tris=71654
+[capital] hd: 4 gatehouses, castle, cathedral, guild hall, market
+[capital] ground     objects=49     faces=765
+[capital] city       objects=30     faces=2555030
+[capital] walls      objects=456    faces=5436
+[capital] gates      objects=1240   faces=56351
+[capital] inner      objects=0      faces=0
+[capital] castle     objects=14758  faces=117123
+[capital] cathedral  objects=9330   faces=85388
+[capital] guild      objects=3568   faces=79115
+[capital] market     objects=5165   faces=126292
+[capital] harbour    objects=94     faces=974
+[capital] suburbs    objects=0      faces=0
+[capital] TOTAL objects=34690 faces=3026474
+Info: Saved as "capital_full.blend"
+[save] E:\My World\Blender\renders\kingdom\capital_full.blend 84795122
+05:12.313  render           | Saved: 'E:\My World\Blender\renders\kingdom\hd_gate_south.png'
+[render] E:\My World\Blender\renders\kingdom\hd_gate_south.png
+05:23.735  render           | Saved: 'E:\My World\Blender\renders\kingdom\hd_castle.png'
+[render] E:\My World\Blender\renders\kingdom\hd_castle.png
+05:35.110  render           | Saved: 'E:\My World\Blender\renders\kingdom\hd_cathedral.png'
+[render] E:\My World\Blender\renders\kingdom\hd_cathedral.png
+05:46.500  render           | Saved: 'E:\My World\Blender\renders\kingdom\hd_market.png'
+[render] E:\My World\Blender\renders\kingdom\hd_market.png
+06:00.266  render           | Saved: 'E:\My World\Blender\renders\kingdom\hd_street.png'
+[render] E:\My World\Blender\renders\kingdom\hd_street.png
+06:11.875  render           | Saved: 'E:\My World\Blender\renders\kingdom\hd_overview.png'
+[render] E:\My World\Blender\renders\kingdom\hd_overview.png
+CAPITAL_DONE
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:37:04)
+
+Blender quit

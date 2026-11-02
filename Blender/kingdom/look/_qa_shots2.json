@@ -1,0 +1,2960 @@
+{
+ "grid": "24x14",
+ "shots": [
+  {
+   "name": "game_avenue_north",
+   "kind": "game",
+   "pos": [
+    0.0,
+    619.07,
+    28.51
+   ],
+   "look": [
+    0.0,
+    641.5,
+    1.0
+   ],
+   "lens": null,
+   "fov": 30.0,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.0,
+    "ground": 0.5327,
+    "roof": 0.0298,
+    "facade": 0.1518,
+    "other": 0.2857
+   },
+   "detail": {
+    "ground": 0.5327,
+    "prop": 0.2768,
+    "facade": 0.1518,
+    "roof": 0.0298,
+    "tree": 0.0089
+   },
+   "ground_near": 0.5327,
+   "near3": 0.0,
+   "hit_d_med": 32.75,
+   "hit_d_min": 26.81,
+   "hit_z_med": 0.12,
+   "objects": 5,
+   "top_objects": [
+    [
+     "city_blk249",
+     0.485
+    ],
+    [
+     "road_in2",
+     0.268
+    ],
+    [
+     "blk_322",
+     0.143
+    ],
+    [
+     "streets_bed",
+     0.095
+    ]
+   ],
+   "top1_share": 0.485,
+   "nearest": {
+    "obj": "city_blk249",
+    "mat": "hu_roof_hd_tile_terra2_100",
+    "d": 26.81,
+    "z": 10.43,
+    "cls": "roof"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 28.4,
+    "ground_mat": "cobble",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 28.4
+    }
+   },
+   "stand": null,
+   "los": null
+  },
+  {
+   "name": "game_avenue_east",
+   "kind": "game",
+   "pos": [
+    599.07,
+    0.0,
+    28.51
+   ],
+   "look": [
+    621.5,
+    0.0,
+    1.0
+   ],
+   "lens": null,
+   "fov": 30.0,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.0,
+    "ground": 0.4048,
+    "roof": 0.1845,
+    "facade": 0.1071,
+    "other": 0.3036
+   },
+   "detail": {
+    "ground": 0.4048,
+    "prop": 0.2946,
+    "roof": 0.1845,
+    "facade": 0.1071,
+    "tree": 0.0089
+   },
+   "ground_near": 0.4048,
+   "near3": 0.0,
+   "hit_d_med": 31.9,
+   "hit_d_min": 17.35,
+   "hit_z_med": 6.15,
+   "objects": 6,
+   "top_objects": [
+    [
+     "city_blk183",
+     0.393
+    ],
+    [
+     "road_in0",
+     0.262
+    ],
+    [
+     "city_blk236",
+     0.235
+    ],
+    [
+     "streets_bed",
+     0.098
+    ]
+   ],
+   "top1_share": 0.393,
+   "nearest": {
+    "obj": "city_blk183",
+    "mat": "stone_dark",
+    "d": 17.35,
+    "z": 13.87,
+    "cls": "prop"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 28.39,
+    "ground_mat": "cobble",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 28.39
+    }
+   },
+   "stand": null,
+   "los": null
+  },
+  {
+   "name": "game_avenue_west",
+   "kind": "game",
+   "pos": [
+    -679.07,
+    0.0,
+    28.51
+   ],
+   "look": [
+    -701.5,
+    0.0,
+    1.0
+   ],
+   "lens": null,
+   "fov": 30.0,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.0,
+    "ground": 0.5923,
+    "roof": 0.2619,
+    "facade": 0.119,
+    "other": 0.0268
+   },
+   "detail": {
+    "ground": 0.5923,
+    "roof": 0.2619,
+    "facade": 0.119,
+    "tree": 0.0149,
+    "prop": 0.0119
+   },
+   "ground_near": 0.5923,
+   "near3": 0.0,
+   "hit_d_med": 33.96,
+   "hit_d_min": 20.51,
+   "hit_z_med": 0.11,
+   "objects": 5,
+   "top_objects": [
+    [
+     "city_blk263",
+     0.399
+    ],
+    [
+     "blk_335",
+     0.33
+    ],
+    [
+     "road_in4",
+     0.247
+    ],
+    [
+     "city_trees",
+     0.015
+    ]
+   ],
+   "top1_share": 0.399,
+   "nearest": {
+    "obj": "city_blk263",
+    "mat": "timber_dark",
+    "d": 20.51,
+    "z": 10.36,
+    "cls": "facade"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 28.4,
+    "ground_mat": "cobble",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 28.4
+    }
+   },
+   "stand": null,
+   "los": null
+  },
+  {
+   "name": "game_avenue_south",
+   "kind": "game",
+   "pos": [
+    0.0,
+    -539.07,
+    28.51
+   ],
+   "look": [
+    0.0,
+    -561.5,
+    1.0
+   ],
+   "lens": null,
+   "fov": 30.0,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.0,
+    "ground": 0.4345,
+    "roof": 0.0595,
+    "facade": 0.2321,
+    "other": 0.2738
+   },
+   "detail": {
+    "ground": 0.4345,
+    "prop": 0.2708,
+    "facade": 0.2321,
+    "roof": 0.0595,
+    "tree": 0.003
+   },
+   "ground_near": 0.4345,
+   "near3": 0.0,
+   "hit_d_med": 34.75,
+   "hit_d_min": 17.56,
+   "hit_z_med": 2.23,
+   "objects": 12,
+   "top_objects": [
+    [
+     "city_blk169",
+     0.286
+    ],
+    [
+     "road_in6",
+     0.253
+    ],
+    [
+     "city_blk116",
+     0.217
+    ],
+    [
+     "streets_bed",
+     0.116
+    ]
+   ],
+   "top1_share": 0.286,
+   "nearest": {
+    "obj": "city_blk116",
+    "mat": "hu_roof_hd_tile_slate3_086",
+    "d": 17.56,
+    "z": 13.59,
+    "cls": "roof"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 28.4,
+    "ground_mat": "cobble",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 28.4
+    }
+   },
+   "stand": null,
+   "los": null
+  },
+  {
+   "name": "game_street_roof",
+   "kind": "game",
+   "pos": [
+    -12.56,
+    -466.75,
+    28.51
+   ],
+   "look": [
+    0.9,
+    -448.8,
+    1.0
+   ],
+   "lens": null,
+   "fov": 30.0,
+   "verdict": "WARN",
+   "bad": [],
+   "warn": [
+    "one object (city_blk62) is 70% of everything hit"
+   ],
+   "buckets": {
+    "sky": 0.0,
+    "ground": 0.3065,
+    "roof": 0.2143,
+    "facade": 0.1905,
+    "other": 0.2887
+   },
+   "detail": {
+    "ground": 0.3065,
+    "prop": 0.2887,
+    "roof": 0.2143,
+    "facade": 0.1905
+   },
+   "ground_near": 0.3065,
+   "near3": 0.0,
+   "hit_d_med": 28.73,
+   "hit_d_min": 16.89,
+   "hit_z_med": 8.58,
+   "objects": 6,
+   "top_objects": [
+    [
+     "city_blk62",
+     0.702
+    ],
+    [
+     "blk_154",
+     0.256
+    ],
+    [
+     "streets_bed",
+     0.024
+    ],
+    [
+     "ground_town",
+     0.009
+    ]
+   ],
+   "top1_share": 0.702,
+   "nearest": {
+    "obj": "city_blk62",
+    "mat": "hu_stone_warm",
+    "d": 16.89,
+    "z": 13.23,
+    "cls": "facade"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 28.47,
+    "ground_mat": "cobble",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 28.47
+    }
+   },
+   "stand": null,
+   "los": null
+  },
+  {
+   "name": "game_street_1",
+   "kind": "game",
+   "pos": [
+    -295.93,
+    5.0,
+    28.51
+   ],
+   "look": [
+    -273.5,
+    5.0,
+    1.0
+   ],
+   "lens": null,
+   "fov": 30.0,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.0,
+    "ground": 0.6756,
+    "roof": 0.0268,
+    "facade": 0.1399,
+    "other": 0.1577
+   },
+   "detail": {
+    "ground": 0.6756,
+    "prop": 0.1577,
+    "facade": 0.1399,
+    "roof": 0.0268
+   },
+   "ground_near": 0.6756,
+   "near3": 0.0,
+   "hit_d_med": 36.1,
+   "hit_d_min": 19.25,
+   "hit_z_med": 0.05,
+   "objects": 12,
+   "top_objects": [
+    [
+     "streets_bed",
+     0.494
+    ],
+    [
+     "city_blk437",
+     0.19
+    ],
+    [
+     "ground_town",
+     0.113
+    ],
+    [
+     "city_blk483",
+     0.062
+    ]
+   ],
+   "top1_share": 0.494,
+   "nearest": {
+    "obj": "city_blk483",
+    "mat": "hu_roof_hd_tile_terra3_086",
+    "d": 19.25,
+    "z": 12.59,
+    "cls": "roof"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 28.47,
+    "ground_mat": "cobble",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 28.47
+    }
+   },
+   "stand": null,
+   "los": null
+  },
+  {
+   "name": "game_street_2",
+   "kind": "game",
+   "pos": [
+    -248.87,
+    -889.47,
+    28.51
+   ],
+   "look": [
+    -268.3,
+    -878.25,
+    1.0
+   ],
+   "lens": null,
+   "fov": 30.0,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.0,
+    "ground": 0.6042,
+    "roof": 0.1012,
+    "facade": 0.2232,
+    "other": 0.0714
+   },
+   "detail": {
+    "ground": 0.6042,
+    "facade": 0.2232,
+    "roof": 0.1012,
+    "prop": 0.0655,
+    "tree": 0.006
+   },
+   "ground_near": 0.6042,
+   "near3": 0.0,
+   "hit_d_med": 34.07,
+   "hit_d_min": 28.53,
+   "hit_z_med": 0.3,
+   "objects": 6,
+   "top_objects": [
+    [
+     "land_field_-1_-2",
+     0.574
+    ],
+    [
+     "city_blk378",
+     0.211
+    ],
+    [
+     "city_blk325",
+     0.173
+    ],
+    [
+     "streetlife_-5_-16",
+     0.021
+    ]
+   ],
+   "top1_share": 0.574,
+   "nearest": {
+    "obj": "city_blk325",
+    "mat": "hu_roof_hd_tile_terra1_100",
+    "d": 28.53,
+    "z": 10.54,
+    "cls": "roof"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 28.28,
+    "ground_mat": "land_ground",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 28.28
+    }
+   },
+   "stand": null,
+   "los": null
+  },
+  {
+   "name": "game_street_3",
+   "kind": "game",
+   "pos": [
+    -691.47,
+    474.87,
+    28.51
+   ],
+   "look": [
+    -680.25,
+    494.3,
+    1.0
+   ],
+   "lens": null,
+   "fov": 30.0,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.0,
+    "ground": 0.3958,
+    "roof": 0.0952,
+    "facade": 0.256,
+    "other": 0.253
+   },
+   "detail": {
+    "ground": 0.3958,
+    "facade": 0.256,
+    "prop": 0.253,
+    "roof": 0.0952
+   },
+   "ground_near": 0.3958,
+   "near3": 0.0,
+   "hit_d_med": 33.55,
+   "hit_d_min": 18.84,
+   "hit_z_med": 3.78,
+   "objects": 11,
+   "top_objects": [
+    [
+     "land_terrain",
+     0.351
+    ],
+    [
+     "city_blk309",
+     0.208
+    ],
+    [
+     "city_blk310",
+     0.19
+    ],
+    [
+     "city_blk363",
+     0.137
+    ]
+   ],
+   "top1_share": 0.351,
+   "nearest": {
+    "obj": "city_blk310",
+    "mat": "hu_roof_hd_tile_terra1_086",
+    "d": 18.84,
+    "z": 12.71,
+    "cls": "roof"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 28.46,
+    "ground_mat": "land_ground",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 28.46
+    }
+   },
+   "stand": null,
+   "los": null
+  },
+  {
+   "name": "game_street_4",
+   "kind": "game",
+   "pos": [
+    -369.22,
+    781.58,
+    28.51
+   ],
+   "look": [
+    -347.55,
+    787.39,
+    1.0
+   ],
+   "lens": null,
+   "fov": 30.0,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.0,
+    "ground": 0.3482,
+    "roof": 0.0744,
+    "facade": 0.2292,
+    "other": 0.3482
+   },
+   "detail": {
+    "prop": 0.3482,
+    "ground": 0.3482,
+    "facade": 0.2292,
+    "roof": 0.0744
+   },
+   "ground_near": 0.3482,
+   "near3": 0.0,
+   "hit_d_med": 32.55,
+   "hit_d_min": 17.74,
+   "hit_z_med": 6.15,
+   "objects": 7,
+   "top_objects": [
+    [
+     "land_terrain",
+     0.336
+    ],
+    [
+     "city_blk358",
+     0.205
+    ],
+    [
+     "city_blk359",
+     0.176
+    ],
+    [
+     "city_blk401",
+     0.167
+    ]
+   ],
+   "top1_share": 0.336,
+   "nearest": {
+    "obj": "city_blk359",
+    "mat": "hu_roof_hd_tile_slate7_100",
+    "d": 17.74,
+    "z": 14.12,
+    "cls": "prop"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 28.38,
+    "ground_mat": "land_ground",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 28.38
+    }
+   },
+   "stand": null,
+   "los": null
+  },
+  {
+   "name": "eye_avenue_gate",
+   "kind": "eye",
+   "pos": [
+    0.0,
+    860.0,
+    1.72
+   ],
+   "look": [
+    0.0,
+    967.2,
+    26.0
+   ],
+   "lens": 28.0,
+   "fov": null,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.2798,
+    "ground": 0.1815,
+    "roof": 0.0298,
+    "facade": 0.3393,
+    "other": 0.1696
+   },
+   "detail": {
+    "facade": 0.3393,
+    "sky": 0.2798,
+    "ground": 0.1815,
+    "prop": 0.1696,
+    "roof": 0.0298
+   },
+   "ground_near": 0.0804,
+   "near3": 0.0,
+   "hit_d_med": 30.2,
+   "hit_d_min": 7.15,
+   "hit_z_med": 4.65,
+   "objects": 8,
+   "top_objects": [
+    [
+     "city_blk430",
+     0.483
+    ],
+    [
+     "land_terrain",
+     0.252
+    ],
+    [
+     "outer_gates",
+     0.095
+    ],
+    [
+     "streetlife_-1_15",
+     0.091
+    ]
+   ],
+   "top1_share": 0.483,
+   "nearest": {
+    "obj": "streetlife_-1_15",
+    "mat": "sl_cloth_cream",
+    "d": 7.15,
+    "z": 2.03,
+    "cls": "prop"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 1.61,
+    "ground_mat": "cobble",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": 25.26,
+     "-x": 5.53,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 1.61
+    }
+   },
+   "stand": {
+    "stand_h": 1.61,
+    "floor_spread": 0.0,
+    "eye_clear": 1.2,
+    "clear_by_height": {
+     "0.35": 1.2,
+     "1.00": 1.2,
+     "1.72": 1.2,
+     "2.05": 1.2
+    },
+    "tight": false,
+    "ok": true
+   },
+   "los": {
+    "los": 60.0,
+    "los_12": true,
+    "stop_mat": "",
+    "stop_z": 0.0,
+    "stop_d": 60.0
+   }
+  },
+  {
+   "name": "eye_avenue_south",
+   "kind": "eye",
+   "pos": [
+    0.0,
+    -700.0,
+    1.72
+   ],
+   "look": [
+    0.0,
+    -900.0,
+    8.0
+   ],
+   "lens": 24.0,
+   "fov": null,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.1994,
+    "ground": 0.372,
+    "roof": 0.0268,
+    "facade": 0.3393,
+    "other": 0.0625
+   },
+   "detail": {
+    "ground": 0.372,
+    "facade": 0.3393,
+    "sky": 0.1994,
+    "tree": 0.0327,
+    "prop": 0.0298,
+    "roof": 0.0268
+   },
+   "ground_near": 0.369,
+   "near3": 0.0,
+   "hit_d_med": 14.57,
+   "hit_d_min": 3.33,
+   "hit_z_med": 1.12,
+   "objects": 10,
+   "top_objects": [
+    [
+     "bridge_deck",
+     0.461
+    ],
+    [
+     "city_blk221",
+     0.327
+    ],
+    [
+     "bridge_parapetb",
+     0.059
+    ],
+    [
+     "bridge_parapeta",
+     0.052
+    ]
+   ],
+   "top1_share": 0.461,
+   "nearest": {
+    "obj": "bridge_deck",
+    "mat": "flag",
+    "d": 3.33,
+    "z": 0.6,
+    "cls": "ground"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 1.6,
+    "ground_mat": "cobble",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": 51.24,
+     "-x": 8.94,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 1.6
+    }
+   },
+   "stand": {
+    "stand_h": 1.6,
+    "floor_spread": 0.44,
+    "eye_clear": 1.2,
+    "clear_by_height": {
+     "0.35": 1.2,
+     "1.00": 1.2,
+     "1.72": 1.2,
+     "2.05": 1.2
+    },
+    "tight": false,
+    "ok": true
+   },
+   "los": {
+    "los": 60.0,
+    "los_12": true,
+    "stop_mat": "",
+    "stop_z": 0.0,
+    "stop_d": 60.0
+   }
+  },
+  {
+   "name": "eye_plaza_south",
+   "kind": "eye",
+   "pos": [
+    -14.0,
+    -48.0,
+    1.72
+   ],
+   "look": [
+    2.0,
+    30.0,
+    9.0
+   ],
+   "lens": 35.0,
+   "fov": null,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.2232,
+    "ground": 0.3988,
+    "roof": 0.0685,
+    "facade": 0.1964,
+    "other": 0.1131
+   },
+   "detail": {
+    "ground": 0.3988,
+    "sky": 0.2232,
+    "facade": 0.1964,
+    "prop": 0.1101,
+    "roof": 0.0685,
+    "void": 0.003
+   },
+   "ground_near": 0.2827,
+   "near3": 0.0,
+   "hit_d_med": 60.85,
+   "hit_d_min": 9.33,
+   "hit_z_med": 3.86,
+   "objects": 66,
+   "top_objects": [
+    [
+     "land_terrain",
+     0.199
+    ],
+    [
+     "plaza_3_0",
+     0.126
+    ],
+    [
+     "land_tower",
+     0.119
+    ],
+    [
+     "ground_town",
+     0.054
+    ]
+   ],
+   "top1_share": 0.199,
+   "nearest": {
+    "obj": "plaza_3_0",
+    "mat": "flag",
+    "d": 9.33,
+    "z": 0.13,
+    "cls": "ground"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 1.72,
+    "ground_mat": "town_ground",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 1.72
+    }
+   },
+   "stand": {
+    "stand_h": 1.72,
+    "floor_spread": 0.0,
+    "eye_clear": 1.2,
+    "clear_by_height": {
+     "0.35": 1.2,
+     "1.00": 1.2,
+     "1.72": 1.2,
+     "2.05": 1.2
+    },
+    "tight": false,
+    "ok": true
+   },
+   "los": {
+    "los": 47.0,
+    "los_12": true,
+    "stop_mat": "stone",
+    "stop_z": 1.72,
+    "stop_d": 47.0
+   }
+  },
+  {
+   "name": "eye_cathedral_front",
+   "kind": "eye",
+   "pos": [
+    -225.0,
+    4.0,
+    1.72
+   ],
+   "look": [
+    -225.0,
+    43.0,
+    16.0
+   ],
+   "lens": 18.0,
+   "fov": null,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.253,
+    "ground": 0.1071,
+    "roof": 0.0149,
+    "facade": 0.4643,
+    "other": 0.1607
+   },
+   "detail": {
+    "facade": 0.4643,
+    "sky": 0.253,
+    "ground": 0.1071,
+    "prop": 0.0982,
+    "void": 0.0595,
+    "roof": 0.0149,
+    "tree": 0.003
+   },
+   "ground_near": 0.0952,
+   "near3": 0.0,
+   "hit_d_med": 41.78,
+   "hit_d_min": 9.19,
+   "hit_z_med": 11.38,
+   "objects": 129,
+   "top_objects": [
+    [
+     "ground_town",
+     0.088
+    ],
+    [
+     "streetlife_-5_0",
+     0.048
+    ],
+    [
+     "city_blk101",
+     0.024
+    ],
+    [
+     "streets_bed",
+     0.024
+    ]
+   ],
+   "top1_share": 0.088,
+   "nearest": {
+    "obj": "streetlife_-5_0",
+    "mat": "sl_wood_dark",
+    "d": 9.19,
+    "z": 0.53,
+    "cls": "prop"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 1.68,
+    "ground_mat": "cobble",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": 38.94,
+     "-y": 3.75,
+     "+z": -1.0,
+     "-z": 1.68
+    }
+   },
+   "stand": {
+    "stand_h": 1.68,
+    "floor_spread": 0.01,
+    "eye_clear": 1.2,
+    "clear_by_height": {
+     "0.35": 1.2,
+     "1.00": 1.2,
+     "1.72": 1.2,
+     "2.05": 1.2
+    },
+    "tight": false,
+    "ok": true
+   },
+   "los": {
+    "los": 38.5,
+    "los_12": true,
+    "stop_mat": "stone_wall",
+    "stop_z": 1.72,
+    "stop_d": 38.5
+   }
+  },
+  {
+   "name": "eye_guild_front",
+   "kind": "eye",
+   "pos": [
+    210.0,
+    66.0,
+    1.72
+   ],
+   "look": [
+    210.0,
+    83.0,
+    6.5
+   ],
+   "lens": 18.0,
+   "fov": null,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.2887,
+    "ground": 0.1696,
+    "roof": 0.0149,
+    "facade": 0.4554,
+    "other": 0.0714
+   },
+   "detail": {
+    "facade": 0.4554,
+    "sky": 0.2887,
+    "ground": 0.1696,
+    "prop": 0.0625,
+    "roof": 0.0149,
+    "void": 0.0089
+   },
+   "ground_near": 0.1637,
+   "near3": 0.0,
+   "hit_d_med": 18.82,
+   "hit_d_min": 8.36,
+   "hit_z_med": 4.37,
+   "objects": 97,
+   "top_objects": [
+    [
+     "ground_town",
+     0.184
+    ],
+    [
+     "gh_rf_core",
+     0.079
+    ],
+    [
+     "streets_bed",
+     0.042
+    ],
+    [
+     "gh_tu_sh",
+     0.038
+    ]
+   ],
+   "top1_share": 0.184,
+   "nearest": {
+    "obj": "ground_town",
+    "mat": "town_ground",
+    "d": 8.36,
+    "z": -0.0,
+    "cls": "ground"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 1.67,
+    "ground_mat": "cobble",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": 27.34,
+     "+y": 17.8,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 1.67
+    }
+   },
+   "stand": {
+    "stand_h": 1.67,
+    "floor_spread": 0.01,
+    "eye_clear": 1.2,
+    "clear_by_height": {
+     "0.35": 1.2,
+     "1.00": 1.2,
+     "1.72": 1.2,
+     "2.05": 1.2
+    },
+    "tight": false,
+    "ok": true
+   },
+   "los": {
+    "los": 17.5,
+    "los_12": true,
+    "stop_mat": "timber",
+    "stop_z": 1.72,
+    "stop_d": 17.5
+   }
+  },
+  {
+   "name": "eye_castle_ramp",
+   "kind": "eye",
+   "pos": [
+    0.0,
+    172.0,
+    1.72
+   ],
+   "look": [
+    0.0,
+    266.0,
+    30.0
+   ],
+   "lens": 24.0,
+   "fov": null,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.4167,
+    "ground": 0.2411,
+    "roof": 0.0387,
+    "facade": 0.1339,
+    "other": 0.1696
+   },
+   "detail": {
+    "sky": 0.4167,
+    "ground": 0.2411,
+    "facade": 0.1339,
+    "rock": 0.125,
+    "prop": 0.0417,
+    "roof": 0.0387,
+    "tree": 0.003
+   },
+   "ground_near": 0.2113,
+   "near3": 0.0,
+   "hit_d_med": 75.01,
+   "hit_d_min": 20.12,
+   "hit_z_med": 10.83,
+   "objects": 62,
+   "top_objects": [
+    [
+     "rock_mass",
+     0.383
+    ],
+    [
+     "blk_11",
+     0.092
+    ],
+    [
+     "land_terrain",
+     0.056
+    ],
+    [
+     "castle_ramp",
+     0.046
+    ]
+   ],
+   "top1_share": 0.383,
+   "nearest": {
+    "obj": "blk_11",
+    "mat": "town_ground",
+    "d": 20.12,
+    "z": 0.09,
+    "cls": "ground"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 1.63,
+    "ground_mat": "town_ground",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": true,
+    "axis": {
+     "+x": 20.47,
+     "-x": 5.41,
+     "+y": 50.72,
+     "-y": 2.38,
+     "+z": -1.0,
+     "-z": 1.63
+    }
+   },
+   "stand": {
+    "stand_h": 1.63,
+    "floor_spread": 0.0,
+    "eye_clear": 1.2,
+    "clear_by_height": {
+     "0.35": 1.2,
+     "1.00": 1.2,
+     "1.72": 1.2,
+     "2.05": 1.2
+    },
+    "tight": false,
+    "ok": true
+   },
+   "los": {
+    "los": 50.5,
+    "los_12": true,
+    "stop_mat": "cliff_rock",
+    "stop_z": 1.72,
+    "stop_d": 50.5
+   }
+  },
+  {
+   "name": "eye_street_1",
+   "kind": "eye",
+   "pos": [
+    -407.2,
+    20.2,
+    1.72
+   ],
+   "look": [
+    -407.2,
+    60.2,
+    4.0
+   ],
+   "lens": 24.0,
+   "fov": null,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.0744,
+    "ground": 0.2857,
+    "roof": 0.0119,
+    "facade": 0.5506,
+    "other": 0.0774
+   },
+   "detail": {
+    "facade": 0.5506,
+    "ground": 0.2857,
+    "sky": 0.0744,
+    "prop": 0.0685,
+    "roof": 0.0119,
+    "void": 0.0089
+   },
+   "ground_near": 0.253,
+   "near3": 0.0,
+   "hit_d_med": 10.61,
+   "hit_d_min": 5.13,
+   "hit_z_med": 2.03,
+   "objects": 12,
+   "top_objects": [
+    [
+     "city_blk49",
+     0.331
+    ],
+    [
+     "city_blk102",
+     0.318
+    ],
+    [
+     "streets_bed",
+     0.225
+    ],
+    [
+     "land_terrain",
+     0.035
+    ]
+   ],
+   "top1_share": 0.331,
+   "nearest": {
+    "obj": "city_blk49",
+    "mat": "timber_dark",
+    "d": 5.13,
+    "z": 3.09,
+    "cls": "facade"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 1.67,
+    "ground_mat": "cobble",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": 14.27,
+     "-x": 6.82,
+     "+y": 53.81,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 1.67
+    }
+   },
+   "stand": {
+    "stand_h": 1.67,
+    "floor_spread": 0.01,
+    "eye_clear": 1.2,
+    "clear_by_height": {
+     "0.35": 1.2,
+     "1.00": 1.2,
+     "1.72": 1.2,
+     "2.05": 1.2
+    },
+    "tight": false,
+    "ok": true
+   },
+   "los": {
+    "los": 53.5,
+    "los_12": true,
+    "stop_mat": "timber_dark",
+    "stop_z": 1.72,
+    "stop_d": 53.5
+   }
+  },
+  {
+   "name": "eye_street_2",
+   "kind": "eye",
+   "pos": [
+    177.8,
+    119.2,
+    1.72
+   ],
+   "look": [
+    217.8,
+    119.2,
+    4.0
+   ],
+   "lens": 24.0,
+   "fov": null,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.2292,
+    "ground": 0.3839,
+    "roof": 0.0893,
+    "facade": 0.1696,
+    "other": 0.128
+   },
+   "detail": {
+    "ground": 0.3839,
+    "sky": 0.2292,
+    "facade": 0.1696,
+    "prop": 0.125,
+    "roof": 0.0893,
+    "void": 0.003
+   },
+   "ground_near": 0.381,
+   "near3": 0.0,
+   "hit_d_med": 22.28,
+   "hit_d_min": 5.42,
+   "hit_z_med": 0.37,
+   "objects": 48,
+   "top_objects": [
+    [
+     "streets_bed",
+     0.274
+    ],
+    [
+     "ground_town",
+     0.197
+    ],
+    [
+     "gh_rf_core",
+     0.05
+    ],
+    [
+     "city_blk466",
+     0.046
+    ]
+   ],
+   "top1_share": 0.274,
+   "nearest": {
+    "obj": "streets_bed",
+    "mat": "cobble",
+    "d": 5.42,
+    "z": 0.03,
+    "cls": "ground"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 1.67,
+    "ground_mat": "cobble",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": 5.41,
+     "+y": 11.62,
+     "-y": 7.33,
+     "+z": -1.0,
+     "-z": 1.67
+    }
+   },
+   "stand": {
+    "stand_h": 1.67,
+    "floor_spread": 0.02,
+    "eye_clear": 1.2,
+    "clear_by_height": {
+     "0.35": 1.2,
+     "1.00": 1.2,
+     "1.72": 1.2,
+     "2.05": 1.2
+    },
+    "tight": false,
+    "ok": true
+   },
+   "los": {
+    "los": 60.0,
+    "los_12": true,
+    "stop_mat": "",
+    "stop_z": 0.0,
+    "stop_d": 60.0
+   }
+  },
+  {
+   "name": "aerial_city",
+   "kind": "aerial",
+   "pos": [
+    1036.0,
+    -1835.0,
+    710.0
+   ],
+   "look": [
+    0.0,
+    20.0,
+    15.0
+   ],
+   "lens": 50.0,
+   "fov": null,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.0,
+    "ground": 0.1935,
+    "roof": 0.4226,
+    "facade": 0.2202,
+    "other": 0.1637
+   },
+   "detail": {
+    "roof": 0.4226,
+    "facade": 0.2202,
+    "ground": 0.1935,
+    "prop": 0.1637
+   },
+   "ground_near": 0.0,
+   "near3": 0.0,
+   "hit_d_med": 2325.85,
+   "hit_d_min": 1457.18,
+   "hit_z_med": 9.42,
+   "objects": 192,
+   "top_objects": [
+    [
+     "land_terrain",
+     0.241
+    ],
+    [
+     "land_field_-2_0",
+     0.03
+    ],
+    [
+     "land_field_-1_1",
+     0.027
+    ],
+    [
+     "streets_bed",
+     0.027
+    ]
+   ],
+   "top1_share": 0.241,
+   "nearest": {
+    "obj": "city_blk332",
+    "mat": "hu_roof_hd_tile_terra6_100",
+    "d": 1457.18,
+    "z": 9.52,
+    "cls": "prop"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": null,
+    "ground_mat": "",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": -1.0
+    }
+   },
+   "stand": null,
+   "los": null
+  },
+  {
+   "name": "aerial_castle",
+   "kind": "aerial",
+   "pos": [
+    222.0,
+    503.0,
+    120.0
+   ],
+   "look": [
+    0.0,
+    330.0,
+    55.0
+   ],
+   "lens": 50.0,
+   "fov": null,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.0,
+    "ground": 0.1905,
+    "roof": 0.3571,
+    "facade": 0.3095,
+    "other": 0.1429
+   },
+   "detail": {
+    "roof": 0.3571,
+    "facade": 0.3095,
+    "ground": 0.1905,
+    "prop": 0.1161,
+    "rock": 0.0238,
+    "tree": 0.003
+   },
+   "ground_near": 0.1399,
+   "near3": 0.0,
+   "hit_d_med": 433.72,
+   "hit_d_min": 256.08,
+   "hit_z_med": 12.07,
+   "objects": 135,
+   "top_objects": [
+    [
+     "rock_mass",
+     0.098
+    ],
+    [
+     "land_field_-2_-1",
+     0.065
+    ],
+    [
+     "land_terrain",
+     0.054
+    ],
+    [
+     "ground_town",
+     0.054
+    ]
+   ],
+   "top1_share": 0.098,
+   "nearest": {
+    "obj": "tw1_sp_body",
+    "mat": "roof_tile",
+    "d": 256.08,
+    "z": 45.2,
+    "cls": "roof"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": null,
+    "ground_mat": "",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": -1.0
+    }
+   },
+   "stand": null,
+   "los": null
+  },
+  {
+   "name": "aerial_harbour",
+   "kind": "aerial",
+   "pos": [
+    150.0,
+    -560.0,
+    150.0
+   ],
+   "look": [
+    0.0,
+    -770.0,
+    6.0
+   ],
+   "lens": 40.0,
+   "fov": null,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.0,
+    "ground": 0.3065,
+    "roof": 0.244,
+    "facade": 0.3065,
+    "other": 0.1429
+   },
+   "detail": {
+    "ground": 0.3065,
+    "facade": 0.3065,
+    "roof": 0.244,
+    "prop": 0.1369,
+    "tree": 0.006
+   },
+   "ground_near": 0.1994,
+   "near3": 0.0,
+   "hit_d_med": 303.93,
+   "hit_d_min": 203.24,
+   "hit_z_med": 6.5,
+   "objects": 47,
+   "top_objects": [
+    [
+     "city_blk221",
+     0.086
+    ],
+    [
+     "city_blk275",
+     0.071
+    ],
+    [
+     "city_blk276",
+     0.062
+    ],
+    [
+     "city_blk222",
+     0.057
+    ]
+   ],
+   "top1_share": 0.086,
+   "nearest": {
+    "obj": "city_blk221",
+    "mat": "hu_roof_hd_tile_terra6_112",
+    "d": 203.24,
+    "z": 13.19,
+    "cls": "prop"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": null,
+    "ground_mat": "",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": -1.0
+    }
+   },
+   "stand": null,
+   "los": null
+  },
+  {
+   "name": "overview_city",
+   "kind": "overview",
+   "pos": [
+    1391.0,
+    -1746.0,
+    903.0
+   ],
+   "look": [
+    0.0,
+    -20.0,
+    10.0
+   ],
+   "lens": 34.0,
+   "fov": null,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.0,
+    "ground": 0.3631,
+    "roof": 0.4167,
+    "facade": 0.1131,
+    "other": 0.1071
+   },
+   "detail": {
+    "roof": 0.4167,
+    "ground": 0.3631,
+    "facade": 0.1131,
+    "prop": 0.0833,
+    "water": 0.0238
+   },
+   "ground_near": 0.0,
+   "near3": 0.0,
+   "hit_d_med": 2534.67,
+   "hit_d_min": 1486.61,
+   "hit_z_med": 8.74,
+   "objects": 133,
+   "top_objects": [
+    [
+     "land_terrain",
+     0.33
+    ],
+    [
+     "land_field_1_-1",
+     0.068
+    ],
+    [
+     "land_field_-1_-2",
+     0.033
+    ],
+    [
+     "outer_wall",
+     0.024
+    ]
+   ],
+   "top1_share": 0.33,
+   "nearest": {
+    "obj": "quay_s_coping",
+    "mat": "stone",
+    "d": 1486.61,
+    "z": 0.29,
+    "cls": "ground"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": null,
+    "ground_mat": "",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": -1.0
+    }
+   },
+   "stand": null,
+   "los": null
+  },
+  {
+   "name": "landmark_castle_keep",
+   "kind": "landmark",
+   "pos": [
+    0.0,
+    200.0,
+    95.0
+   ],
+   "look": [
+    0.0,
+    333.0,
+    58.0
+   ],
+   "lens": 70.0,
+   "fov": null,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.0,
+    "ground": 0.0893,
+    "roof": 0.2054,
+    "facade": 0.5952,
+    "other": 0.1101
+   },
+   "detail": {
+    "facade": 0.5952,
+    "roof": 0.2054,
+    "prop": 0.1101,
+    "ground": 0.0893
+   },
+   "ground_near": 0.0685,
+   "near3": 0.0,
+   "hit_d_med": 129.32,
+   "hit_d_min": 70.59,
+   "hit_z_med": 51.87,
+   "objects": 103,
+   "top_objects": [
+    [
+     "k_body",
+     0.25
+    ],
+    [
+     "k_rf_sg2",
+     0.065
+    ],
+    [
+     "streets_bed",
+     0.057
+    ],
+    [
+     "city_blk87",
+     0.054
+    ]
+   ],
+   "top1_share": 0.25,
+   "nearest": {
+    "obj": "gtwr_r_bnf_cl",
+    "mat": "cloth_banner_red",
+    "d": 70.59,
+    "z": 68.85,
+    "cls": "prop"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": null,
+    "ground_mat": "",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": -1.0
+    }
+   },
+   "stand": null,
+   "los": null
+  },
+  {
+   "name": "landmark_cathedral_front",
+   "kind": "landmark",
+   "pos": [
+    -150.0,
+    -120.0,
+    38.0
+   ],
+   "look": [
+    -225.0,
+    93.0,
+    34.0
+   ],
+   "lens": 50.0,
+   "fov": null,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.006,
+    "ground": 0.2679,
+    "roof": 0.2054,
+    "facade": 0.378,
+    "other": 0.1429
+   },
+   "detail": {
+    "facade": 0.378,
+    "ground": 0.2679,
+    "roof": 0.2054,
+    "prop": 0.125,
+    "void": 0.0179,
+    "sky": 0.006
+   },
+   "ground_near": 0.0446,
+   "near3": 0.0,
+   "hit_d_med": 264.74,
+   "hit_d_min": 117.92,
+   "hit_z_med": 32.55,
+   "objects": 122,
+   "top_objects": [
+    [
+     "land_terrain",
+     0.323
+    ],
+    [
+     "city_blk101",
+     0.033
+    ],
+    [
+     "city_blk113",
+     0.024
+    ],
+    [
+     "land_ridges",
+     0.021
+    ]
+   ],
+   "top1_share": 0.323,
+   "nearest": {
+    "obj": "city_blk124",
+    "mat": "hu_soot",
+    "d": 117.92,
+    "z": 14.28,
+    "cls": "facade"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 24.78,
+    "ground_mat": "hu_soot",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 24.78
+    }
+   },
+   "stand": null,
+   "los": null
+  },
+  {
+   "name": "landmark_market_hall",
+   "kind": "landmark",
+   "pos": [
+    0.0,
+    -30.0,
+    9.0
+   ],
+   "look": [
+    0.0,
+    34.0,
+    11.0
+   ],
+   "lens": 35.0,
+   "fov": null,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.1101,
+    "ground": 0.3185,
+    "roof": 0.0387,
+    "facade": 0.4345,
+    "other": 0.0982
+   },
+   "detail": {
+    "facade": 0.4345,
+    "ground": 0.3185,
+    "sky": 0.1101,
+    "prop": 0.0952,
+    "roof": 0.0387,
+    "void": 0.003
+   },
+   "ground_near": 0.1518,
+   "near3": 0.0,
+   "hit_d_med": 54.53,
+   "hit_d_min": 25.39,
+   "hit_z_med": 9.28,
+   "objects": 66,
+   "top_objects": [
+    [
+     "land_tower",
+     0.314
+    ],
+    [
+     "land_terrain",
+     0.197
+    ],
+    [
+     "ground_town",
+     0.04
+    ],
+    [
+     "mh_rf_tf_t0",
+     0.033
+    ]
+   ],
+   "top1_share": 0.314,
+   "nearest": {
+    "obj": "land_tower",
+    "mat": "stone",
+    "d": 25.39,
+    "z": 8.22,
+    "cls": "facade"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 8.06,
+    "ground_mat": "stone",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": 25.4,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 8.06
+    }
+   },
+   "stand": null,
+   "los": null
+  },
+  {
+   "name": "landmark_guild",
+   "kind": "landmark",
+   "pos": [
+    196.0,
+    58.0,
+    26.0
+   ],
+   "look": [
+    210.1,
+    97.7,
+    12.0
+   ],
+   "lens": 45.0,
+   "fov": null,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.0,
+    "ground": 0.1399,
+    "roof": 0.131,
+    "facade": 0.3244,
+    "other": 0.4048
+   },
+   "detail": {
+    "prop": 0.4018,
+    "facade": 0.3244,
+    "ground": 0.1399,
+    "roof": 0.131,
+    "tree": 0.003
+   },
+   "ground_near": 0.1399,
+   "near3": 0.0,
+   "hit_d_med": 46.13,
+   "hit_d_min": 28.08,
+   "hit_z_med": 11.24,
+   "objects": 57,
+   "top_objects": [
+    [
+     "city_blk392",
+     0.167
+    ],
+    [
+     "gh_rf_core",
+     0.092
+    ],
+    [
+     "gh_rf_tf_t0",
+     0.089
+    ],
+    [
+     "gh_rf_tf_t2",
+     0.089
+    ]
+   ],
+   "top1_share": 0.167,
+   "nearest": {
+    "obj": "gh_bc-1-15",
+    "mat": "timber",
+    "d": 28.08,
+    "z": 15.05,
+    "cls": "facade"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 25.91,
+    "ground_mat": "town_ground",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 25.91
+    }
+   },
+   "stand": null,
+   "los": null
+  },
+  {
+   "name": "landmark_gate_north",
+   "kind": "landmark",
+   "pos": [
+    0.0,
+    860.0,
+    26.0
+   ],
+   "look": [
+    0.0,
+    947.2,
+    20.0
+   ],
+   "lens": 50.0,
+   "fov": null,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.0,
+    "ground": 0.1548,
+    "roof": 0.4048,
+    "facade": 0.3839,
+    "other": 0.0565
+   },
+   "detail": {
+    "roof": 0.4048,
+    "facade": 0.3839,
+    "ground": 0.1548,
+    "prop": 0.0565
+   },
+   "ground_near": 0.0476,
+   "near3": 0.0,
+   "hit_d_med": 176.64,
+   "hit_d_min": 84.87,
+   "hit_z_med": 16.25,
+   "objects": 7,
+   "top_objects": [
+    [
+     "land_terrain",
+     0.396
+    ],
+    [
+     "outer_gates",
+     0.318
+    ],
+    [
+     "outer_wall",
+     0.143
+    ],
+    [
+     "land_field_-1_1",
+     0.071
+    ]
+   ],
+   "top1_share": 0.396,
+   "nearest": {
+    "obj": "outer_gates",
+    "mat": "hd_stone_dark",
+    "d": 84.87,
+    "z": 23.85,
+    "cls": "facade"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 25.89,
+    "ground_mat": "cobble",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 25.89
+    }
+   },
+   "stand": null,
+   "los": null
+  },
+  {
+   "name": "landmark_gate_south",
+   "kind": "landmark",
+   "pos": [
+    -0.0,
+    -860.0,
+    26.0
+   ],
+   "look": [
+    -0.0,
+    -947.2,
+    20.0
+   ],
+   "lens": 50.0,
+   "fov": null,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.0,
+    "ground": 0.1548,
+    "roof": 0.3929,
+    "facade": 0.4077,
+    "other": 0.0446
+   },
+   "detail": {
+    "facade": 0.4077,
+    "roof": 0.3929,
+    "ground": 0.1548,
+    "prop": 0.0446
+   },
+   "ground_near": 0.122,
+   "near3": 0.0,
+   "hit_d_med": 194.26,
+   "hit_d_min": 54.91,
+   "hit_z_med": 14.42,
+   "objects": 20,
+   "top_objects": [
+    [
+     "land_terrain",
+     0.345
+    ],
+    [
+     "outer_gates",
+     0.304
+    ],
+    [
+     "outer_wall",
+     0.134
+    ],
+    [
+     "land_ridges",
+     0.045
+    ]
+   ],
+   "top1_share": 0.345,
+   "nearest": {
+    "obj": "city_blk328",
+    "mat": "hu_soot",
+    "d": 54.91,
+    "z": 12.35,
+    "cls": "roof"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 25.89,
+    "ground_mat": "cobble",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 25.89
+    }
+   },
+   "stand": null,
+   "los": null
+  },
+  {
+   "name": "landmark_gate_east",
+   "kind": "landmark",
+   "pos": [
+    860.0,
+    0.0,
+    26.0
+   ],
+   "look": [
+    947.2,
+    0.0,
+    20.0
+   ],
+   "lens": 50.0,
+   "fov": null,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.0,
+    "ground": 0.1726,
+    "roof": 0.4077,
+    "facade": 0.3661,
+    "other": 0.0536
+   },
+   "detail": {
+    "roof": 0.4077,
+    "facade": 0.3661,
+    "ground": 0.1726,
+    "prop": 0.0536
+   },
+   "ground_near": 0.0833,
+   "near3": 0.0,
+   "hit_d_med": 149.17,
+   "hit_d_min": 67.25,
+   "hit_z_med": 18.28,
+   "objects": 8,
+   "top_objects": [
+    [
+     "land_terrain",
+     0.387
+    ],
+    [
+     "outer_gates",
+     0.384
+    ],
+    [
+     "land_field_1_-1",
+     0.104
+    ],
+    [
+     "outer_wall",
+     0.068
+    ]
+   ],
+   "top1_share": 0.387,
+   "nearest": {
+    "obj": "outer_gates",
+    "mat": "stone",
+    "d": 67.25,
+    "z": 24.3,
+    "cls": "facade"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 25.88,
+    "ground_mat": "cobble",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 25.88
+    }
+   },
+   "stand": null,
+   "los": null
+  },
+  {
+   "name": "landmark_gate_west",
+   "kind": "landmark",
+   "pos": [
+    -860.0,
+    0.0,
+    26.0
+   ],
+   "look": [
+    -947.2,
+    0.0,
+    20.0
+   ],
+   "lens": 50.0,
+   "fov": null,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.0,
+    "ground": 0.2381,
+    "roof": 0.3155,
+    "facade": 0.378,
+    "other": 0.0685
+   },
+   "detail": {
+    "facade": 0.378,
+    "roof": 0.3155,
+    "ground": 0.2381,
+    "prop": 0.0595,
+    "water": 0.0089
+   },
+   "ground_near": 0.128,
+   "near3": 0.0,
+   "hit_d_med": 189.94,
+   "hit_d_min": 49.43,
+   "hit_z_med": 14.72,
+   "objects": 20,
+   "top_objects": [
+    [
+     "land_terrain",
+     0.426
+    ],
+    [
+     "outer_gates",
+     0.324
+    ],
+    [
+     "outer_wall",
+     0.11
+    ],
+    [
+     "land_field_-2_-1",
+     0.024
+    ]
+   ],
+   "top1_share": 0.426,
+   "nearest": {
+    "obj": "city_blk412",
+    "mat": "hu_roof_hd_tile_terra2_086",
+    "d": 49.43,
+    "z": 14.11,
+    "cls": "roof"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 24.63,
+    "ground_mat": "stone",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 24.63
+    }
+   },
+   "stand": null,
+   "los": null
+  },
+  {
+   "name": "extra_castle_gate",
+   "kind": "landmark",
+   "pos": [
+    0.0,
+    130.0,
+    30.0
+   ],
+   "look": [
+    0.0,
+    266.0,
+    32.0
+   ],
+   "lens": 40.0,
+   "fov": null,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.0179,
+    "ground": 0.3899,
+    "roof": 0.1607,
+    "facade": 0.2917,
+    "other": 0.1399
+   },
+   "detail": {
+    "ground": 0.3899,
+    "facade": 0.2917,
+    "roof": 0.1607,
+    "rock": 0.0863,
+    "prop": 0.0536,
+    "sky": 0.0179
+   },
+   "ground_near": 0.1756,
+   "near3": 0.0,
+   "hit_d_med": 145.1,
+   "hit_d_min": 103.71,
+   "hit_z_med": 29.6,
+   "objects": 89,
+   "top_objects": [
+    [
+     "land_terrain",
+     0.264
+    ],
+    [
+     "rock_mass",
+     0.248
+    ],
+    [
+     "g_mro",
+     0.036
+    ],
+    [
+     "castle_ramp",
+     0.027
+    ]
+   ],
+   "top1_share": 0.264,
+   "nearest": {
+    "obj": "castle_ramp_parr",
+    "mat": "stone_sand",
+    "d": 103.71,
+    "z": 7.79,
+    "cls": "facade"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 23.71,
+    "ground_mat": "hu_soot",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 23.71
+    }
+   },
+   "stand": null,
+   "los": null
+  },
+  {
+   "name": "extra_castle_keep_air",
+   "kind": "landmark",
+   "pos": [
+    0.0,
+    110.0,
+    52.0
+   ],
+   "look": [
+    0.0,
+    320.0,
+    62.0
+   ],
+   "lens": 70.0,
+   "fov": null,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.0,
+    "ground": 0.369,
+    "roof": 0.3214,
+    "facade": 0.2976,
+    "other": 0.0119
+   },
+   "detail": {
+    "ground": 0.369,
+    "roof": 0.3214,
+    "facade": 0.2976,
+    "prop": 0.0119
+   },
+   "ground_near": 0.0,
+   "near3": 0.0,
+   "hit_d_med": 1264.13,
+   "hit_d_min": 137.82,
+   "hit_z_med": 73.47,
+   "objects": 79,
+   "top_objects": [
+    [
+     "land_terrain",
+     0.506
+    ],
+    [
+     "k_body",
+     0.039
+    ],
+    [
+     "gtwr_l_sp_body",
+     0.021
+    ],
+    [
+     "gtwr_r_sp_body",
+     0.021
+    ]
+   ],
+   "top1_share": 0.506,
+   "nearest": {
+    "obj": "b_tl_sp_body",
+    "mat": "roof_slate",
+    "d": 137.82,
+    "z": 40.19,
+    "cls": "roof"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 51.97,
+    "ground_mat": "cobble",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 51.97
+    }
+   },
+   "stand": null,
+   "los": null
+  },
+  {
+   "name": "extra_cathedral_west",
+   "kind": "landmark",
+   "pos": [
+    -270.0,
+    16.0,
+    28.0
+   ],
+   "look": [
+    -225.0,
+    43.0,
+    25.0
+   ],
+   "lens": 18.0,
+   "fov": null,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.1637,
+    "ground": 0.1964,
+    "roof": 0.0685,
+    "facade": 0.4673,
+    "other": 0.1042
+   },
+   "detail": {
+    "facade": 0.4673,
+    "ground": 0.1964,
+    "sky": 0.1637,
+    "prop": 0.0804,
+    "roof": 0.0685,
+    "void": 0.0238
+   },
+   "ground_near": 0.1726,
+   "near3": 0.0,
+   "hit_d_med": 64.37,
+   "hit_d_min": 32.22,
+   "hit_z_med": 17.09,
+   "objects": 124,
+   "top_objects": [
+    [
+     "ground_town",
+     0.075
+    ],
+    [
+     "streets_bed",
+     0.068
+    ],
+    [
+     "land_terrain",
+     0.057
+    ],
+    [
+     "city_blk113",
+     0.032
+    ]
+   ],
+   "top1_share": 0.075,
+   "nearest": {
+    "obj": "tw1_c11_c",
+    "mat": "stone_trim",
+    "d": 32.22,
+    "z": 27.48,
+    "cls": "facade"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 25.47,
+    "ground_mat": "sl_awning_blue",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 25.47
+    }
+   },
+   "stand": null,
+   "los": null
+  },
+  {
+   "name": "extra_harbour_bridge",
+   "kind": "landmark",
+   "pos": [
+    60.0,
+    -700.0,
+    24.0
+   ],
+   "look": [
+    0.0,
+    -762.0,
+    4.0
+   ],
+   "lens": 35.0,
+   "fov": null,
+   "verdict": "PASS",
+   "bad": [],
+   "warn": [],
+   "buckets": {
+    "sky": 0.0,
+    "ground": 0.1071,
+    "roof": 0.4256,
+    "facade": 0.3304,
+    "other": 0.1369
+   },
+   "detail": {
+    "roof": 0.4256,
+    "facade": 0.3304,
+    "prop": 0.1339,
+    "ground": 0.1071,
+    "tree": 0.003
+   },
+   "ground_near": 0.0804,
+   "near3": 0.0,
+   "hit_d_med": 70.0,
+   "hit_d_min": 30.56,
+   "hit_z_med": 9.39,
+   "objects": 23,
+   "top_objects": [
+    [
+     "city_blk221",
+     0.405
+    ],
+    [
+     "city_blk275",
+     0.173
+    ],
+    [
+     "land_terrain",
+     0.092
+    ],
+    [
+     "city_blk274",
+     0.068
+    ]
+   ],
+   "top1_share": 0.405,
+   "nearest": {
+    "obj": "crane_jib",
+    "mat": "timber_dark",
+    "d": 30.56,
+    "z": 9.64,
+    "cls": "roof"
+   },
+   "solid": {
+    "up_hit": false,
+    "ceiling": null,
+    "ceiling_mat": "",
+    "ground": 16.83,
+    "ground_mat": "hu_roof_hd_tile_slate1_086",
+    "boxed": false,
+    "wedged": false,
+    "enclosed": false,
+    "axis": {
+     "+x": -1.0,
+     "-x": -1.0,
+     "+y": -1.0,
+     "-y": -1.0,
+     "+z": -1.0,
+     "-z": 16.83
+    }
+   },
+   "stand": null,
+   "los": null
+  }
+ ]
+}

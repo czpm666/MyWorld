@@ -1,0 +1,22 @@
+[stat] blocks 387  sub-blocks 0  plots 4992 (house 4992 / shop 0)
+[stat] coverage 30.1% of 1.27 km2   block fill 41.8% of 0.92 km2
+[stat] blocks with no building 14   declared squares/open 7
+[stat] street length  main 4715 m  secondary 21451 m  alley 19617 m
+[stat] names: 19 distinct, 0 gate-roads off-sector []
+[stat] intrusion (plot within 0.35 m of a carriageway edge): 0 of 4992
+[stat] kinds: house_timber 855, house_stone 596, house_craft 466, tavern 368, general_store 326, guard_post 302, warehouse 210, house_manor 196, bakery 186, apothecary 168, stable 162, chapel 122, blacksmith 118, house_warehouse 107, inn 105, weaponsmith 98, armory 94, house_shop 92
+[stat] by ring: None 4992
+[stat] block roles: dock 60, barracks 57, residential 47, palace 45, outer 38, temple 36, guild 30, craft 30, artisan 21, merchant 12
+[stat]   guild        -> house_shop 20%, tavern 19%, inn 17%
+[stat]   artisan      -> house_craft 19%, house_timber 16%, blacksmith 14%
+[stat]   temple       -> apothecary 22%, house_stone 21%, general_store 20%
+[stat]   palace       -> house_stone 22%, house_timber 21%, house_manor 20%
+[stat]   merchant     -> house_shop 21%, general_store 18%, clothier 16%
+[stat]   craft        -> house_timber 22%, house_craft 22%, blacksmith 18%
+[stat]   residential  -> house_timber 16%, house_stone 15%, house_craft 14%
+[stat]   market       -> clothier 16%, general_store 12%, house_shop 12%
+[stat]   barracks     -> guard_post 22%, house_timber 21%, house_stone 18%
+[stat]   dock         -> house_timber 17%, house_craft 17%, warehouse 14%
+[stat]   outer        -> house_timber 20%, house_stone 18%, house_craft 17%
+[stat] military kinds: n=405  dist-to-gate min 19 / med 316 / max 600 m
+[stat] noble kinds:    n=88  dist-to-palace med 346 m
